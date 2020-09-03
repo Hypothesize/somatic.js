@@ -12,7 +12,7 @@ interface Props {
 	checkedColor?: string,
 	useRadio: boolean,
 	iconSize?: string,
-	icons: Obj<string, () => JSX.Element>
+	icons: Obj<() => JSX.Element>
 }
 
 const defaultProps = {

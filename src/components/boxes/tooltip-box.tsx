@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable brace-style */
-import cuid from 'cuid'
 import { String, Obj } from "@agyemanjp/standard"
 import { getAsync } from "@agyemanjp/standard/web"
-import { keys } from "@agyemanjp/standard/collections/object"
-import { createElement, propsToCSS, render } from '../../core'
+import { keys } from "@agyemanjp/standard/collections"
+import { isKeyOf } from "@agyemanjp/standard/utility"
+import { createElement, render } from '../../core'
 import { Component, Props, Icon, CSSProperties, MouseEvent } from '../../types'
-import { config, mergeProps } from '../../utils'
+import { idProvider, stringifyStyle, mergeProps } from '../../utils'
 
 export type Props = {
 	/** If defined, this will be the content of the tooltip pop-up, rather than a definition from Wikipedia */
@@ -48,7 +48,7 @@ const tooltips: Record<string, string> = {}
 
 export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 	const { children, style, explicitTooltip, noRecursion, width, height, definitions } = mergeProps(defaultProps, props)
-	const tooltipId = cuid()
+	const tooltipId = idProvider.next()
 	// eslint-disable-next-line fp/no-let, init-declarations
 	let hidingTimer: NodeJS.Timeout | number
 
@@ -67,7 +67,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 				? [{ position: 0, length: explicitTooltip.length, node: createToolTip(originalStringElem) }]
 
 				// eslint-disable-next-line fp/no-mutating-methods
-				: keys(definitions)
+				: Object.keys(definitions)
 					.reduce((accum, currTerm) => {
 						const position = ((originalStringElem ?? "").toLowerCase()).search(currTerm)
 						// We add that term to the replacement, only if it was found, and not part of another replacement ("range" inside of "interquartile range")
@@ -138,7 +138,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 		// eslint-disable-next-line fp/no-mutation
 		hidingTimer = setTimeout(() => { // We hide the tooltip after half a second
 			[...document.getElementsByClassName(`${className}-tooltip`)]
-				.forEach(item => item.setAttribute("style", propsToCSS({ ...tooltipBoxStyle, display: "none", })))
+				.forEach(item => item.setAttribute("style", stringifyStyle({ ...tooltipBoxStyle, display: "none", })))
 		}, 300) //as unknown as number
 	}
 
@@ -148,7 +148,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 
 		// We immediately hide all tooltip boxes (we'll re-show that one immediately)
 		[...document.getElementsByClassName("tooltipBox")]
-			.forEach(item => item.setAttribute("style", propsToCSS({ display: "none" })));
+			.forEach(item => item.setAttribute("style", stringifyStyle({ display: "none" })));
 
 		// We show the tooltip
 		[...document.getElementsByClassName(`${className}-tooltip`)]
@@ -162,7 +162,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 					? proposedTopPos - ((proposedTopPos + (item.clientHeight + 34)) - window.innerHeight)
 					: proposedTopPos
 
-				item.setAttribute("style", propsToCSS({
+				item.setAttribute("style", stringifyStyle({
 					...tooltipBoxStyle,
 					display: "flex",
 					left: `${actualLeftPos}px`,
@@ -171,10 +171,10 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 			})
 
 		if (wordToReplace) {
-			const isUrl = definitions[wordToReplace] && definitions[wordToReplace].slice(0, 4) === "http"
+			const isUrl = (definitions as Obj)[wordToReplace] && (definitions as Obj<string>)[wordToReplace].slice(0, 4) === "http"
 
 			if (tooltips[wordToReplace] === undefined && isUrl) { // We only fetch the tooltip if it's not yet stored, and is a URL
-				await getAsync({ uri: definitions[wordToReplace] }).then(response => {
+				await getAsync({ uri: (definitions as Obj<string>)[wordToReplace] }).then(response => {
 					const foundPages = JSON.parse(response.body).query.pages
 					// eslint-disable-next-line fp/no-mutation
 					tooltips[wordToReplace] = foundPages[Object.keys(foundPages)[0]].extract
@@ -197,9 +197,10 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 	}
 
 	const createToolTip = (contentReplaced: string) => {
-		const className__ = cuid()
+		const className__ = idProvider.next()
 		const lowerCasedWord = contentReplaced.toLowerCase()
-		const isUrl = definitions[lowerCasedWord] && definitions[lowerCasedWord].slice(0, 4) === "http"
+
+		const isUrl = isKeyOf(lowerCasedWord, definitions) && definitions[lowerCasedWord] && definitions[lowerCasedWord].slice(0, 4) === "http"
 
 		return <span style={{ position: "relative" }}>
 			<span
@@ -253,7 +254,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 	}
 
 	if (noRecursion === true) {
-		const className__ = cuid()
+		const className__ = idProvider.next()
 		return <span
 			className={className__}
 			style={{ ...style, width: "100%", height: "100%", display: "contents" }}

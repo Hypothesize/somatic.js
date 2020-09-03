@@ -9,10 +9,11 @@ import fastMemoize from 'fast-memoize'
 import { flatten } from "@agyemanjp/standard/collections/iterable"
 import { Array } from "@agyemanjp/standard/collections"
 import { Obj } from "@agyemanjp/standard"
-import { String as SuperString } from "@agyemanjp/standard/text"
+
 import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
-import { setAttribute, isEventKey, stringifyStyle, encodeHTML } from "./utils"
+import { idProvider, setAttribute, isEventKey, separateWithSpace, stringifyStyle, encodeHTML } from "./utils"
 import { svgTags, selfClosingTags, eventNames, mouseMvmntEventNames, } from "./constants"
+
 
 // export const Fragment = (async () => ({})) as Renderer
 export const fnStore: ((evt: Event) => unknown)[] = []
@@ -24,21 +25,13 @@ export function createElement<P extends Obj = Obj, T extends VNodeType<P> = VNod
 
 /** Render virtual node to DOM node */
 export async function render<P extends Obj = Obj>(vnode?: { toString(): string } | VNode<P> | Promise<VNode<P>>): Promise<Node> {
-	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
-
-	if (vnode === null || vnode === undefined) {
-		// console.log(`VNode is null or undefined, returning empty text node`)
-		return document.createTextNode("")
-	}
+	if (vnode === null || vnode === undefined) { return document.createTextNode("") }
 
 	const _vnode = await vnode
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
-		// console.log(`vNode is object with 'type' and 'props' properties`)
-
 		const children = new Array(flatten(_vnode.children || [])) as Array<JSX.Element>
 		switch (typeof _vnode.type) {
 			case "function": {
-				// console.log(`vNode type is function, rendering as custom component`)
 				const _props: PropsExtended<P, Message> = { ..._vnode.props, children: [...children] }
 				const element = await _vnode.type(_props)
 
@@ -48,37 +41,58 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 			}
 
 			case "string": {
-				// console.log(`vNode type is string, rendering as intrinsic component`)
-				const node = svgTags.includes(_vnode.type)
+				const dom = svgTags.includes(_vnode.type)
 					? document.createElementNS('http://www.w3.org/2000/svg', _vnode.type)
 					: document.createElement(_vnode.type)
 
 				// render and append children in order
 				await Promise
-					.all(children.map(c => render(c)))
-					.then(rendered => rendered.forEach(child => node.appendChild(child)))
+					.all(children.map(child => render(child)))
+					.then(renderedChildren => renderedChildren.forEach(node => dom.appendChild(node)))
 
 				// attach attributes
 				const nodeProps = _vnode.props || {}
 				Object.keys(nodeProps).forEach(propKey => {
 					try {
-						// console.log(`Processing property "${propKey}" of vNode`)
+						//const dashCasePropKey = camelCaseToDash(propKey)
 						const propValue = nodeProps[propKey]
 						const htmlPropKey = propKey.toLowerCase()
-
 						if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-							// console.log(`Property "${propKey}" of vNode is event, handler code is:\n${propValue.toString()}`)
-							node.setAttribute(htmlPropKey, `(${(propValue.toString())})(this);`)
+							const eventId = idProvider.next()
+							// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
+							dom.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
+
+							// If the vNode had an event, we add it to the document-wide event. 
+							// We keep track of every event and its matching element through the eventId: 
+							// each listener contains one, each DOM element as well
+							document.addEventListener((eventNames)[htmlPropKey], event => {
+								const target = event.target as HTMLElement | null
+								if (target !== document.getRootNode()) { // We don't want to do anything when the document itself is the target
+									// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
+									//const indentedTarget = target?.closest ? target.closest(`[data-${htmlPropKey}-eventId]`) : undefined
+									const indentedTarget = target?.closest(`[data-${htmlPropKey}-eventId]`)
+
+									// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler 
+									// (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+									const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && indentedTarget !== target
+
+									// TODO: Deal with onLoad in a better way in the future
+									if (!shouldNotTrigger && indentedTarget && indentedTarget?.getAttribute(`data-${htmlPropKey}-eventId`) === eventId) {
+										(propValue)({ ...event, target: indentedTarget })
+									}
+								}
+							}, true)
 						}
 						else {
-							setAttribute(node, propKey, propValue as string)
+							setAttribute(dom, propKey, propValue as string)
 						}
 					}
 					catch (e) {
 						console.error(`\nError setting dom attribute "${propKey}" to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
 					}
 				})
-				return node
+
+				return dom
 			}
 
 			default: {
@@ -86,6 +100,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 				return document.createTextNode(String(_vnode))
 			}
 		}
+
 	}
 	else {
 		return document.createTextNode(String(_vnode))
@@ -95,15 +110,7 @@ const memoizedRender = fastMemoize(render, {})
 
 /** Render virtual node to HTML string */
 export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): string } | VNode<P> | Promise<VNode<P>>): Promise<string> {
-	const elt = (await render(vnode)) as Node | Element
-	const result = ('outerHTML' in elt)
-		? elt.outerHTML
-		: (elt.textContent ?? elt.nodeValue ?? "")
-
-	console.log(`renderToString output: ${result}`)
-	return result
-
-	/*if (vnode === null || vnode === undefined) {
+	if (vnode === null || vnode === undefined) {
 		return ""
 	}
 	const _vnode = await vnode
@@ -129,29 +136,31 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 					: ""
 
 				const nodeProps = _vnode.props || {}
-				const attributesHtml = new SuperString(Object.keys(nodeProps)
+				const attributesHtml = (Object.keys(nodeProps)
 					.map(propName => {
 						const propValue = nodeProps[propName]
+						if (typeof propValue === "function") {
+							// eslint-disable-next-line fp/no-mutating-methods
+							fnStore.push(propValue as (e: Event) => unknown)
+						}
+						//if (propValue === null || propValue === undefined)
 						switch (propName) {
-							case "style":
-								return `${propName}="${stringifyStyle(propValue as CSSProperties)}"`
+							case "style": return `${propName}="${stringifyStyle(propValue as CSSProperties)}"`
 
-							default:
-								return typeof propValue === "string"
-									? `${propName}="${encodeHTML(propValue)}"`
-									: typeof propValue === "function"
-										? `${propName.toLowerCase()}="(${escape(propValue.toString())})(this);"`
-										: ""
+							default: return /*propValue &&*/ typeof propValue === "string"
+								? `${propName}="${encodeHTML(propValue)}"`
+								: typeof propValue === "function"
+									? `${propName.toLowerCase()}="${fnStore.length - 1}"`
+									: ""
 						}
 					})
 					.filter(attrHTML => attrHTML?.length > 0)
 					.join(" ")
-				).prependSpaceIfNotEmpty().toString()
+				)
 
 				return notSelfClosing
-					? `<${_vnode.type}${attributesHtml}>${childrenHtml}</${_vnode.type}>`
-					: `<${_vnode.type}${attributesHtml}>`
-
+					? `<${_vnode.type}${separateWithSpace(attributesHtml)}>${childrenHtml}</${_vnode.type}>`
+					: `<${_vnode.type}${separateWithSpace(attributesHtml)}>`
 			}
 
 			default:
@@ -161,7 +170,7 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 	}
 	else {
 		return String(_vnode)
-	}*/
+	}
 }
 const memoizedRenderToString = memoize(renderToString, (obj: VNode) => obj.props)
 

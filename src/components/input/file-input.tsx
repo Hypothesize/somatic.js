@@ -4,6 +4,7 @@
 import { hasValue } from '@agyemanjp/standard'
 import * as Request from 'request'
 import { createElement } from '../../core'
+import { idProvider } from '../../utils'
 import { Props, Icon, CSSProperties, Component } from '../../types'
 import { config, mergeProps } from '../../utils'
 import { StackPanel } from '../panels/stack-panel'
@@ -36,7 +37,7 @@ const defaultProps = {
 }
 
 export const _: Component<Props> = async (props) => {
-	const { icon, postMsgAsync, onDataLoaded, uri } = mergeProps(defaultProps, props)
+	const { postMsgAsync, onDataLoaded, uri } = mergeProps(defaultProps, props)
 
 	const loadRaw = (file?: File | null | undefined) => {
 		try {

@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"types": "index.d.ts",
 	"files": [
-		"/*",
+		"dist/*",
 		"!*.tsbuildinfo"
 	],
 	"scripts": {
@@ -16,7 +16,9 @@
 		"compile": "tsc",
 		"test": "mocha --require ts-node/register test/*.test.*",
 		"test-report": "mocha --require ts-node/register test/*.test.* --reporter mocha-reporter-json-standard >| .test-report.json",
-		"build": "npm run clean && npm run lint && npm run compile && npm run test"
+		"build": "npm run clean && npm run lint && npm run compile && npm run test",
+		"package": "git push --follow-tags && cp package.json README.md dist && cd dist && npm publish --dry-run",
+		"pub": "cd dist && npm publish --access public"
 	},
 	"repository": {
 		"type": "git",
@@ -30,7 +32,7 @@
 	},
 	"homepage": "https://github.com/Hypothesize/somatic.js#readme",
 	"dependencies": {
-		"@agyemanjp/standard": "^2.0.8",
+		"@agyemanjp/standard": "^2.3.0",
 		"cuid": "^2.1.8",
 		"fast-memoize": "^2.5.2",
 		"lodash": "^4.17.4",

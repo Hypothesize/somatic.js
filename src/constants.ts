@@ -173,10 +173,12 @@ export const selfClosingTags = [
 	"base",
 	"br",
 	"col",
+	"command",
 	"embed",
 	"hr",
 	"img",
 	"input",
+	"keygen",
 	"link",
 	"meta",
 	"param",
@@ -184,3 +186,4 @@ export const selfClosingTags = [
 	"track",
 	"wbr"
 ]
+

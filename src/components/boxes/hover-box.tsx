@@ -1,17 +1,14 @@
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable brace-style */
-import cuid from "cuid"
-import { first } from "@agyemanjp/standard/collections/iterable"
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createElement, propsToCSS } from "../../core"
+import { createElement } from "../../core"
+import { first } from "@agyemanjp/standard/collections/iterable"
 import { Component, Props, CSSProperties } from '../../types'
-import { mergeProps } from '../../utils'
+import { idProvider, mergeProps, stringifyStyle } from '../../utils'
 
 type Messages = { type: "hover-start" } | { type: "hover-stop" }
 
-type Props = Props.Html & Props.Themed & {
-	hoverStyle?: CSSProperties
-}
+type Props = Props.Html & Props.Themed & { hoverStyle?: CSSProperties }
 
 export const HoverBox: Component<Props, Messages> = async (props) => {
 	const defaultProps = Object.freeze({
@@ -25,9 +22,16 @@ export const HoverBox: Component<Props, Messages> = async (props) => {
 		hoverStyle: {}
 	})
 
-	const { children, theme, postMsgAsync, hoverStyle, style, ...htmlProps } = mergeProps(defaultProps, props) //as PropsExtended<Props>
+	const {
+		children,
+		theme,
+		postMsgAsync,
+		hoverStyle,
+		style,
+		...htmlProps
+	} = mergeProps(defaultProps, props) //as PropsExtended<Props>
 
-	const className__ = cuid()
+	const className__ = idProvider.next()
 	// eslint-disable-next-line fp/no-let
 	let child = children ? await first(children) : undefined
 	if (typeof child === "object") {
@@ -53,16 +57,16 @@ export const HoverBox: Component<Props, Messages> = async (props) => {
 	}
 
 	const html = `
-		.${className__} {${propsToCSS({ ...style }, true)}
+		.${className__} {${stringifyStyle({ ...style }, true)}
 
 		}
-        .${className__}:hover {${propsToCSS({
+        .${className__}:hover {${stringifyStyle({
 		color: theme.colors.primary.light,
 		...defaultProps.hoverStyle,
 		...hoverStyle
 	}, true)}}
                 
-        input[type="text"].${className__} {${propsToCSS({
+        input[type="text"].${className__} {${stringifyStyle({
 		backgroundColor: "#fff",
 	}, true)}}
     `

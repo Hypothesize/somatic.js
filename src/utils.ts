@@ -1,9 +1,15 @@
+/* eslint-disable fp/no-mutation */
+/* eslint-disable fp/no-mutating-methods */
+/* eslint-disable fp/no-loops */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
-import { PropsExtended, Message } from "./types"
+// import { PropsExtended, Message } from "./types"
+import { default as cuid } from "cuid"
 import { eventNames } from "./constants"
+import { CSSProperties } from "./types"
 import { deepMerge } from "@agyemanjp/standard/collections/object"
-import { Obj } from "@agyemanjp/standard/utility"
+import { Obj, hasValue } from "@agyemanjp/standard/utility"
+
 
 /** Calculates a lighter or darker color of a base color in Hex representation.
  * @param hexColor a hex color value such as “#abc” or “#123456” (the hash is optional)
@@ -37,7 +43,7 @@ export function colorLuminance(hexColor: string, luminosity: number) {
 
 /** Merge default props with actual props of renderer */
 export function mergeProps<P extends Obj, D extends Partial<P>>(defaults: D, props: P): D & P & Partial<P> {
-	return deepMerge([defaults, props]) //as PropsExtended<P>
+	return deepMerge(defaults, props) as D & P & Partial<P>
 }
 
 export function setAttribute(dom: HTMLElement | SVGElement, key: string, value: string | ((e: Event) => unknown)) {
@@ -68,10 +74,9 @@ export function setAttribute(dom: HTMLElement | SVGElement, key: string, value: 
 	}
 }
 
-/** Checks if a string corresponds to an event name */
+/** Checks if a string corresponds to one of the (uppercase) event names keys */
 export function isEventKey(key: string): key is keyof typeof eventNames {
 	const keyUpper = key.toUpperCase()
-
 	return keyUpper.startsWith("ON") // this condition is simply to prevent useless searches through the events list.
 		&& Object.keys(eventNames).includes(keyUpper)
 }
@@ -87,11 +92,82 @@ export function camelCaseToDash(str: string) {
 		.toLowerCase()
 }
 
-export function separateWithSpace(str: string) {
-	if (str === undefined || str === null || str === "" || str.replace(/^\s+|\s+$/g, '').length === 0)
+/** Converts a css props object literal to a string */
+export function stringifyStyle(style: CSSProperties, important = false) {
+	if (typeof style === "object") {
+		return Object.keys(style)
+			.map((key) => `${camelCaseToDash(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
+			.join("; ")
+			.concat(";")
+	}
+	else {
+		console.warn(`Input "${JSON.stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
 		return ""
-	else return " " + str
+	}
 }
+
+export function stringifyAttribs(props: Obj) {
+	return Object.keys(props)
+		.map(name => {
+			const value = props[name]
+			switch (true) {
+				case name === "style":
+					return (`style="${encodeHTML(stringifyStyle(value as CSSProperties))}"`)
+				case typeof value === "string":
+					return (`${encodeHTML(name)}="${encodeHTML(String(value))}"`)
+				case typeof value === "number":
+					return (`${encodeHTML(name)}="${value}"`)
+				// case typeof value === "function":
+				// 	fnStore.push(value as (e: Event) => unknown)
+				// 	return (`${encodeHTML(name.toLowerCase())}="${fnStore.length - 1}"`)
+				case value === true:
+					return (`${encodeHTML(name)}`)
+				default:
+					return ""
+			}
+		})
+		.filter(attrHTML => attrHTML?.length > 0)
+		.join(" ")
+}
+
+/** Encode html string */
+export function encodeHTML(str: string) {
+	return str.replace(/[&<>"']/g, (match) => {
+		switch (match) {
+			case "&":
+				return "&amp;"
+			case "<":
+				return "&lt;"
+			case ">":
+				return "&gt;"
+			case '"':
+				return "&quot;"
+			case "'":
+				return "&#039;"
+			default:
+				return ""
+		}
+	})
+}
+
+class IdProvider {
+	private cache: string[]
+	private pointer: number
+	constructor() {
+		this.cache = []
+		this.pointer = 0
+	}
+	next() {
+		if (this.pointer >= this.cache.length) {
+			this.cache.push(cuid())
+		}
+		return this.cache[this.pointer++]
+	}
+	reset() {
+		this.pointer = 0
+	}
+}
+export const idProvider = new IdProvider()
 
 export const config = {
 	theme: {
