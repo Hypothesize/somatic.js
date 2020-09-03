@@ -45,7 +45,9 @@ describe("Somatic", () => {
 			idProvider.reset()
 			const renderedString = await renderToString(vNode)
 
-			// assert.equal((renderedHTML), (renderedString))
+			console.log(`renderedNodeHTML: ${renderedHTML}`)
+			console.log(`renderedString: ${renderedString}`)
+
 			assert.equal(normalizeHTML(renderedHTML), normalizeHTML(renderedString))
 		})
 
