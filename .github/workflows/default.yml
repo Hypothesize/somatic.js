@@ -40,7 +40,7 @@ jobs:
         run: npm run test-report
         continue-on-error: true
          
-      - name: Annotate Code Linting Results
+      - name: Annotate code checks
         uses: agyemanjp/ci-checks-action@2.0.2
         with:
           ghToken: "${{ secrets.GITHUB_TOKEN }}"
