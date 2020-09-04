@@ -32,10 +32,6 @@ jobs:
       - name: Build
         run: npm run compile --if-present
         
-      - name: Run Lint Check to Console
-        run: npm run lint
-        continue-on-error: true
-        
       - name: Run Lint Check
         run: npm run lint-report
         continue-on-error: true
