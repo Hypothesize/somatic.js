@@ -100,7 +100,7 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 		? elt.outerHTML
 		: (elt.textContent ?? elt.nodeValue ?? "")
 
-	console.log(`renderToString output: ${result}`)
+	// console.log(`renderToString output: ${result}`)
 	return result
 
 	/*if (vnode === null || vnode === undefined) {
