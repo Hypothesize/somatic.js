@@ -9,6 +9,7 @@ import fastMemoize from 'fast-memoize'
 import { flatten } from "@agyemanjp/standard/collections/iterable"
 import { Array } from "@agyemanjp/standard/collections"
 import { Obj } from "@agyemanjp/standard"
+import { default as cuid } from "cuid"
 import { String as SuperString } from "@agyemanjp/standard/text"
 import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
 import { setAttribute, isEventKey, stringifyStyle, encodeHTML } from "./utils"
@@ -62,20 +63,39 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 				const nodeProps = _vnode.props || {}
 				Object.keys(nodeProps).forEach(propKey => {
 					try {
-						// console.log(`Processing property "${propKey}" of vNode`)
+						//const dashCasePropKey = camelCaseToDash(propKey)
 						const propValue = nodeProps[propKey]
-						const htmlPropKey = propKey.toLowerCase()
+						if (propValue !== undefined) {
+							const htmlPropKey = propKey.toLowerCase()
+							if (propKey.startsWith("on") && Object.keys(eventNames).includes(htmlPropKey.toUpperCase())) { // The first condition is here simply to prevent useless searches through the events list.
+								const eventId = cuid()
+								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
+								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
+								/** If the vNode had an event, we add it to the document-wide event. We keep track of every event and its matching element through the eventId: each listener contains one, each DOM element as well */
+								addListener(document, events[htmlPropKey], () => {
+									const target = event?.target as HTMLElement | null
+									if (target !== document.getRootNode()) { // We don't want to do anything when the document itself is the target
+										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
+										const intendedTarget = target ? target.closest(`[data-${htmlPropKey}-eventId="${eventId}"]`) : undefined
 
-						if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-							// console.log(`Property "${propKey}" of vNode is event, handler code is:\n${propValue.toString()}`)
-							node.setAttribute(htmlPropKey, `(${(propValue.toString())})(this);`)
-						}
-						else {
-							setAttribute(node, propKey, propValue as string)
+										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+										const shouldNotTrigger = mouseMovements.includes(htmlPropKey) && intendedTarget !== target
+
+										if (!shouldNotTrigger && intendedTarget) {
+											// Execute the callback with the context set to the found element
+											// jQuery goes way further, it even has it's own event object
+											propValue.call(intendedTarget, event);
+										}
+									}
+								}, true)
+							}
+							else {
+								setAttribute(node, propKey, propValue)
+							}
 						}
 					}
 					catch (e) {
-						console.error(`\nError setting dom attribute "${propKey}" to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
+						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
 					}
 				})
 				return node
