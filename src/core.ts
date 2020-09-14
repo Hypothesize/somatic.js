@@ -232,6 +232,21 @@ const addListener = (node: Node, event: string, handler: (e: Event) => void, cap
 	node.addEventListener(event, handler, capture)
 }
 
+export const removeAllListeners = (targetNode: Node) => {
+	Object.keys(_eventHandlers).forEach(eventName => {
+		// remove listeners from the matching nodes
+		_eventHandlers[eventName]
+			.filter(({ node }) => node === targetNode)
+			.forEach(({ node, handler, capture }) => node.removeEventListener(eventName, handler, capture))
+
+		// update _eventHandlers global
+		// eslint-disable-next-line fp/no-mutation
+		_eventHandlers[eventName] = _eventHandlers[eventName].filter(
+			({ node }) => node !== targetNode,
+		)
+	})
+}
+
 /*export function difference(object: Obj, base: Obj): Obj {
 	function changes(_object: Obj, _base: Obj) {
 		return transform(_object, function (result: Obj, value, key) {
