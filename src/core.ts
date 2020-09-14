@@ -67,7 +67,10 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 						const propValue: unknown = nodeProps[propKey]
 						if (propValue !== undefined) {
 							const htmlPropKey = propKey.toUpperCase()
-							if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
+							if (htmlPropKey === "onload") {
+								node.setAttribute(htmlPropKey, `(${((propValue as (e: Event) => unknown).toString())})(this);`)
+							}
+							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
 								const eventId = cuid()
 								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
 								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
