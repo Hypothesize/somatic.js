@@ -6,7 +6,6 @@
 import morphdom from 'morphdom'
 import memoize from 'lodash/memoize'
 import fastMemoize from 'fast-memoize'
-import { flatten } from "@agyemanjp/standard/collections/iterable"
 import { Array } from "@agyemanjp/standard/collections"
 import { Obj } from "@agyemanjp/standard"
 import { default as cuid } from "cuid"
@@ -36,7 +35,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = new Array(flatten(_vnode.children || [])) as Array<JSX.Element>
+		const children = flattenNodes(_vnode.children || []) as JSX.Element[]
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
@@ -67,7 +66,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 						const propValue: unknown = nodeProps[propKey]
 						if (propValue !== undefined) {
 							const htmlPropKey = propKey.toUpperCase()
-							if (htmlPropKey === "onload") {
+							if (htmlPropKey === "ONLOAD") {
 								node.setAttribute(htmlPropKey, `(${((propValue as (e: Event) => unknown).toString())})(this);`)
 							}
 							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
@@ -220,9 +219,34 @@ export function hydrate(element: HTMLElement): void {
  */
 export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
 
+function flattenNodes(arr: unknown[]) {
+	const result: unknown[] = []
+	if (!arr.length) { return result }
+
+	const toString = Object.prototype.toString
+	const arrayTypeStr = '[object Array]'
+	const nodes = [...arr].slice() // Cloning
+	// eslint-disable-next-line fp/no-mutating-methods, fp/no-let
+	let node: unknown | undefined = nodes.pop()
+	// eslint-disable-next-line fp/no-mutating-methods, fp/no-mutation, fp/no-loops
+	do {
+		if (toString.call(node) === arrayTypeStr)
+			// eslint-disable-next-line prefer-spread, fp/no-mutating-methods
+			nodes.push.apply(nodes, node as unknown[])
+		else
+			// eslint-disable-next-line fp/no-mutating-methods
+			result.push(node)
+		// eslint-disable-next-line fp/no-mutation, fp/no-mutating-methods
+	} while (nodes.length && (node = nodes.pop()) !== undefined)
+
+	// eslint-disable-next-line fp/no-mutating-methods
+	result.reverse()
+	return result
+}
+
 const _eventHandlers: { [key: string /** The name of a JS event, i.e. onmouseenter */]: { node: Node, handler: (e: Event) => void, capture: boolean }[] } = {} // Global dictionary of events
 const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
-	if (event in _eventHandlers) {
+	if (_eventHandlers[event] === undefined) {
 		// eslint-disable-next-line fp/no-mutation
 		_eventHandlers[event] = []
 	}
