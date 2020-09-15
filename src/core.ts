@@ -66,8 +66,13 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 						const propValue: unknown = nodeProps[propKey]
 						if (propValue !== undefined) {
 							const htmlPropKey = propKey.toUpperCase()
-							if (htmlPropKey === "ONLOAD") {
-								node.setAttribute(htmlPropKey, `(${((propValue as (e: Event) => unknown).toString())})(this);`)
+							if (isEventKey(htmlPropKey) && htmlPropKey === "ONLOAD") {
+								// eslint-disable-next-line fp/no-mutating-methods
+								fnStore.push(propValue as (evt: Event) => unknown)
+								node.setAttribute(propKey.toLowerCase(), `${fnStore.length - 1}`)
+
+								const callback: (evt: Event) => void = fnStore[fnStore.length - 1]
+								node.addEventListener(eventNames[htmlPropKey], { handleEvent: callback })
 							}
 							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
 								const eventId = cuid()
