@@ -84,7 +84,9 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
 
 										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
 										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
+											|| e.cancelBubble
 
 										if (!shouldNotTrigger && intendedTarget) {
 											// Execute the callback with the context set to the found element

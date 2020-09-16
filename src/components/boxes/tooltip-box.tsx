@@ -126,6 +126,7 @@ export const TooltipBox: Component<Props & Props.Html> = async (props) => {
 		background: "#f0f6ff",
 		textAlign: "left" as const,
 		borderRadius: ".25em",
+		border: "solid 1px #666",
 		zIndex: 1,
 		maxWidth: `600px`,
 		maxHeight: `180px`,
