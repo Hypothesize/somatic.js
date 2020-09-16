@@ -6,11 +6,9 @@
 import morphdom from 'morphdom'
 import memoize from 'lodash/memoize'
 import fastMemoize from 'fast-memoize'
-import * as cuid from "cuid"
-import { flatten } from "@agyemanjp/standard/collections/iterable"
-import { Array } from "@agyemanjp/standard/collections"
 import { Obj } from "@agyemanjp/standard"
-import { VNode, VNodeType, PropsExtended, Message, } from "./types"
+import { default as cuid } from "cuid"
+import { VNode, VNodeType, PropsExtended, Message } from "./types"
 import { setAttribute, isEventKey } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
 
@@ -35,7 +33,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = new Array(flatten(_vnode.children || [])) as Array<JSX.Element>
+		const children = flattenNodes(_vnode.children || []) as JSX.Element[]
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
@@ -74,7 +72,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 								node.addEventListener(eventNames[htmlPropKey], { handleEvent: callback })
 							}
 							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
-								const eventId = cuid.default()
+								const eventId = cuid()
 								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
 								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
 								/** If the vNode had an event, we add it to the document-wide event. We keep track of every event and its matching element through the eventId: each listener contains one, each DOM element as well */
@@ -222,6 +220,31 @@ export function hydrate(element: HTMLElement): void {
  * @param node A node obtained by rendering a VNode
  */
 export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
+
+function flattenNodes(arr: unknown[]) {
+	const result: unknown[] = []
+	if (!arr.length) { return result }
+
+	const toString = Object.prototype.toString
+	const arrayTypeStr = '[object Array]'
+	const nodes = [...arr].slice() // Cloning
+	// eslint-disable-next-line fp/no-mutating-methods, fp/no-let
+	let node: unknown | undefined = nodes.pop()
+	// eslint-disable-next-line fp/no-mutating-methods, fp/no-mutation, fp/no-loops
+	do {
+		if (toString.call(node) === arrayTypeStr)
+			// eslint-disable-next-line prefer-spread, fp/no-mutating-methods
+			nodes.push.apply(nodes, node as unknown[])
+		else
+			// eslint-disable-next-line fp/no-mutating-methods
+			result.push(node)
+		// eslint-disable-next-line fp/no-mutation, fp/no-mutating-methods
+	} while (nodes.length && (node = nodes.pop()) !== undefined)
+
+	// eslint-disable-next-line fp/no-mutating-methods
+	result.reverse()
+	return result
+}
 
 const _eventHandlers: { [key: string /** The name of a JS event, i.e. onmouseenter */]: { node: Node, handler: (e: Event) => void, capture: boolean }[] } = {} // Global dictionary of events
 const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
