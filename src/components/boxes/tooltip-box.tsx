@@ -10,7 +10,7 @@ import { idProvider, stringifyStyle, mergeProps } from '../../utils'
 
 export type Props = {
 	/** If defined, this will be the content of the tooltip pop-up, rather than a definition from Wikipedia */
-	explicitTooltip?: string
+	explicitTooltip?: JSX.Element | string
 
 	/** True if we know that only the first element has to be tool-tipped */
 	noRecursion?: boolean

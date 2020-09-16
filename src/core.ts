@@ -6,11 +6,12 @@
 import morphdom from 'morphdom'
 import memoize from 'lodash/memoize'
 import fastMemoize from 'fast-memoize'
-import { Obj } from "@agyemanjp/standard"
 import { default as cuid } from "cuid"
 import { VNode, VNodeType, PropsExtended, Message } from "./types"
 import { setAttribute, isEventKey } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
+import { Array } from "@agyemanjp/standard/collections"
+import { Obj } from "@agyemanjp/standard"
 
 // export const Fragment = (async () => ({})) as Renderer
 export const fnStore: ((evt: Event) => unknown)[] = []
