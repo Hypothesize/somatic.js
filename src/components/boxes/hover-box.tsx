@@ -13,7 +13,6 @@ type Props = Props.Html & Props.Themed & { hoverStyle?: CSSProperties }
 export const HoverBox: Component<Props, Messages> = async (props) => {
 	const defaultProps = Object.freeze({
 		style: {
-			overflow: "hidden",
 			height: "auto",
 			width: "auto",
 			padding: 0,
@@ -61,7 +60,7 @@ export const HoverBox: Component<Props, Messages> = async (props) => {
 
 		}
         .${className__}:hover {${stringifyStyle({
-		color: theme.colors.primary.light,
+		color: "#333",
 		...defaultProps.hoverStyle,
 		...hoverStyle
 	}, true)}}
