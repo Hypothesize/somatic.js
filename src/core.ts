@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import morphdom from 'morphdom'
-import memoize from 'lodash/memoize'
 import fastMemoize from 'fast-memoize'
 import { default as cuid } from "cuid"
 import { VNode, VNodeType, PropsExtended, Message } from "./types"
@@ -69,8 +68,10 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 								fnStore.push(propValue as (evt: Event) => unknown)
 								node.setAttribute(propKey.toLowerCase(), `${fnStore.length - 1}`)
 
-								const callback: (evt: Event) => void = fnStore[fnStore.length - 1]
-								node.addEventListener(eventNames[htmlPropKey], { handleEvent: callback })
+								// const callback: (evt: Event) => void = fnStore[fnStore.length - 1]
+								// node.addEventListener(eventNames[htmlPropKey], { handleEvent: callback })
+
+								node.setAttribute(htmlPropKey, `(${((propValue as (evt: Event) => unknown).toString())})(this);`)
 							}
 							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
 								const eventId = cuid()
@@ -190,7 +191,8 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 		return String(_vnode)
 	}*/
 }
-const memoizedRenderToString = memoize(renderToString, (obj: VNode) => obj.props)
+
+// const memoizedRenderToString = memoize(renderToString, (obj: VNode) => obj.props)
 
 /** Attach event listeners from element to corresponding nodes in container */
 export function hydrate(element: HTMLElement): void {
