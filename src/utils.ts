@@ -187,7 +187,8 @@ export const config = {
 
 			whitish: "#f5f5f5",
 			blackish: "#555555",
-			grayish: "#808080"
+			grayish: "#808080",
+			blueish: "#f0f6ff"
 		},
 		fonts: {
 			text: "normal normal 12px serif",

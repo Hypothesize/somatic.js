@@ -4,7 +4,7 @@
 import { createElement } from "../../core"
 import { first } from "@agyemanjp/standard/collections/iterable"
 import { Component, Props, CSSProperties } from '../../types'
-import { idProvider, mergeProps, stringifyStyle } from '../../utils'
+import { idProvider, mergeProps, stringifyStyle, config } from '../../utils'
 
 type Messages = { type: "hover-start" } | { type: "hover-stop" }
 
@@ -60,7 +60,7 @@ export const HoverBox: Component<Props, Messages> = async (props) => {
 
 		}
         .${className__}:hover {${stringifyStyle({
-		color: "#333",
+		color: config.theme.colors.blackish,
 		...defaultProps.hoverStyle,
 		...hoverStyle
 	}, true)}}
