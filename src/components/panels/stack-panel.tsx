@@ -6,14 +6,6 @@ export interface Props extends Props.Panel, Props.Themed, Props.Html {
 }
 
 export const StackPanel: Component<Partial<Props>> = async (props) => {
-	const defaultProps = {
-		// ...componentDefaults.html,
-		// ...componentDefaults.panel,
-		//postMessage: componentDefaults.postMessage,
-		//theme: componentDefaults.theme
-	}
-	const _props = {}
-
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -46,16 +38,12 @@ export const StackPanel: Component<Partial<Props>> = async (props) => {
 
 	try {
 		const {
-
 			orientation,
 			itemsAlignH,
 			itemsAlignV,
-
 			children,
 			theme,
-
 			style,
-
 			...htmlProps
 		} = props
 
@@ -79,5 +67,4 @@ export const StackPanel: Component<Partial<Props>> = async (props) => {
 		console.error(`StackPanel render: ${e}`)
 		throw e
 	}
-
 }
