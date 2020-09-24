@@ -1,10 +1,10 @@
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createElement } from "../../core"
+import { createElement, stringifyStyle } from "../../core"
 import { first } from "@agyemanjp/standard/collections/iterable"
 import { Component, Props, CSSProperties } from '../../types'
-import { idProvider, mergeProps, stringifyStyle, config } from '../../utils'
+import { idProvider, mergeProps, config } from '../../utils'
 
 type Messages = { type: "hover-start" } | { type: "hover-stop" }
 

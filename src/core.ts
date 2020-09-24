@@ -5,11 +5,11 @@
 
 import morphdom from 'morphdom'
 import fastMemoize from 'fast-memoize'
-import { VNode, VNodeType, PropsExtended, Message } from "./types"
-import { setAttribute, isEventKey } from "./utils"
+import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
+import { setAttribute, isEventKey, camelCaseToDash, encodeHTML } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
-import { Array } from "@agyemanjp/standard/collections"
 import { Obj } from "@agyemanjp/standard"
+import { flatten } from "@agyemanjp/standard/collections"
 
 // export const Fragment = (async () => ({})) as Renderer
 export const fnStore: ((evt: Event) => unknown)[] = []
@@ -32,7 +32,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = flattenNodes(_vnode.children || []) as JSX.Element[]
+		const children = flatten(_vnode.children || []) as JSX.Element[]
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
@@ -195,31 +195,6 @@ export function hydrate(element: HTMLElement): void {
  */
 export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
 
-function flattenNodes(arr: unknown[]) {
-	const result: unknown[] = []
-	if (!arr.length) { return result }
-
-	const toString = Object.prototype.toString
-	const arrayTypeStr = '[object Array]'
-	const nodes = [...arr].slice() // Cloning
-	// eslint-disable-next-line fp/no-mutating-methods, fp/no-let
-	let node: unknown | undefined = nodes.pop()
-	// eslint-disable-next-line fp/no-mutating-methods, fp/no-mutation, fp/no-loops
-	do {
-		if (toString.call(node) === arrayTypeStr)
-			// eslint-disable-next-line prefer-spread, fp/no-mutating-methods
-			nodes.push.apply(nodes, node as unknown[])
-		else
-			// eslint-disable-next-line fp/no-mutating-methods
-			result.push(node)
-		// eslint-disable-next-line fp/no-mutation, fp/no-mutating-methods
-	} while (nodes.length && (node = nodes.pop()) !== undefined)
-
-	// eslint-disable-next-line fp/no-mutating-methods
-	result.reverse()
-	return result
-}
-
 const _eventHandlers: { [key: string /** The name of a JS event, i.e. onmouseenter */]: { node: Node, handler: (e: Event) => void, capture: boolean }[] } = {} // Global dictionary of events
 const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
 	if (_eventHandlers[event] === undefined) {
@@ -257,3 +232,81 @@ export const removeAllListeners = (targetNode: Node) => {
 	}
 	return changes(object, base)
 }*/
+
+
+/** Converts a css props object literal to a string */
+export function stringifyStyle(style: CSSProperties, important = false) {
+	if (typeof style === "object") {
+		return Object.keys(style)
+			.map((key) => `${camelCaseToDash(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
+			.join("; ")
+			.concat(";")
+	}
+	else {
+		console.warn(`Input "${JSON.stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
+		return ""
+	}
+}
+
+export function stringifyAttribs(props: Obj) {
+	return Object.keys(props)
+		.map(name => {
+			const value = props[name]
+			switch (true) {
+				case name === "style":
+					return (`style="${encodeHTML(stringifyStyle(value as CSSProperties))}"`)
+				case typeof value === "string":
+					return (`${encodeHTML(name)}="${encodeHTML(String(value))}"`)
+				case typeof value === "number":
+					return (`${encodeHTML(name)}="${value}"`)
+				// case typeof value === "function":
+				// 	fnStore.push(value as (e: Event) => unknown)
+				// 	return (`${encodeHTML(name.toLowerCase())}="${fnStore.length - 1}"`)
+				case value === true:
+					return (`${encodeHTML(name)}`)
+				default:
+					return ""
+			}
+		})
+		.filter(attrHTML => attrHTML?.length > 0)
+		.join(" ")
+}
+
+export function* flatten2<X>(nestedIterable: Iterable<X>): Iterable<any> {
+	// console.log(`\nInput to flatten: ${JSON.stringify(nestedIterable)}`)
+	if (nestedIterable) {
+		for (const element of nestedIterable) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			if (hasValue(element) && typeof element !== "string" && typeof (element as any)[Symbol.iterator] === 'function') {
+				//console.log(`flatten: element <${JSON.stringify(element)}> is iterable; flattening it *`)
+				yield* flatten(element as unknown as Iterable<X>)
+			}
+			else {
+				//console.log(`flatten: element <${JSON.stringify(element)}> is not iterable; yielding it *`)
+				yield element as any
+			}
+		}
+	}
+}
+
+/** Determines if input argument has a value */
+export function hasValue<T>(value?: T): value is T {
+	switch (typeof value) {
+		case "function":
+		case "boolean":
+		case "bigint":
+		case "object":
+		case "symbol":
+			return (value !== null)
+		case "undefined":
+			return false
+		case "number":
+			return (value !== null && !isNaN(value) && !Number.isNaN(value) && value !== Number.NaN)
+		case "string":
+			return value !== undefined && value !== null && value.trim().length > 0 && !/^\s*$/.test(value)
+		/*if(str.replace(/\s/g,"") == "") return false*/
+
+		default:
+			return Boolean(value)
+	}
+}

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement } from '../../core'
-import { stringifyStyle } from '../../utils'
+import { createElement, stringifyStyle } from '../../core'
 import { Component, Props } from '../../types'
 
 // import { config } from './config'

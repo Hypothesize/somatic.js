@@ -4,9 +4,9 @@ import { String, Obj } from "@agyemanjp/standard"
 import { getAsync } from "@agyemanjp/standard/web"
 import { keys } from "@agyemanjp/standard/collections"
 import { isKeyOf } from "@agyemanjp/standard/utility"
-import { createElement, render } from '../../core'
+import { createElement, render, stringifyStyle } from '../../core'
 import { Component, Props, Icon, CSSProperties, MouseEvent } from '../../types'
-import { idProvider, stringifyStyle, mergeProps, config } from '../../utils'
+import { idProvider, mergeProps, config } from '../../utils'
 
 export type Props = {
 	/** If defined, this will be the content of the tooltip pop-up, rather than a definition from the "definitions" property */
