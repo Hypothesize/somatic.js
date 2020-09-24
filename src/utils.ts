@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
 // import { PropsExtended, Message } from "./types"
-import { default as cuid } from "cuid"
 import { eventNames } from "./constants"
 import { CSSProperties } from "./types"
 import { deepMerge } from "@agyemanjp/standard/collections/object"
@@ -159,7 +158,7 @@ class IdProvider {
 	}
 	next() {
 		if (this.pointer >= this.cache.length) {
-			this.cache.push(cuid())
+			this.cache.push(idProvider.next())
 		}
 		return this.cache[this.pointer++]
 	}

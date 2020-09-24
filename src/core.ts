@@ -5,7 +5,6 @@
 
 import morphdom from 'morphdom'
 import fastMemoize from 'fast-memoize'
-import { default as cuid } from "cuid"
 import { VNode, VNodeType, PropsExtended, Message } from "./types"
 import { setAttribute, isEventKey } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
