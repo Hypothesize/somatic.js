@@ -7,11 +7,11 @@ export { CommandBox } from './boxes/command-box'
 export { DisplayToggleBox } from './boxes/display-toggle-box'
 export { HoverBox } from './boxes/hover-box'
 export { ModalBox } from './boxes/modal-box'
-// export { TooltipBox } from './tooltip-box'
 
 export { CheckBoxInput } from './input/check-box-input'
 export { FileInput } from './input/file-input'
 export { SelectInput } from './input/select-input'
+export { UrlInput } from './input/url-input'
 export { ToggleSwitch } from './input/toggle-switch'
 
 export { Dialog } from './misc/dialog'
