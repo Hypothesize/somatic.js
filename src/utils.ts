@@ -6,8 +6,8 @@
 // import { PropsExtended, Message } from "./types"
 import { eventNames } from "./constants"
 import { CSSProperties } from "./types"
-import { deepMerge } from "@agyemanjp/standard/collections/object"
-import { Obj, hasValue } from "@agyemanjp/standard/utility"
+import { deepMerge } from "@sparkwave/standard/collections/object"
+import { Obj, hasValue } from "@sparkwave/standard/utility"
 
 
 /** Calculates a lighter or darker color of a base color in Hex representation.
@@ -120,7 +120,7 @@ class IdProvider {
 	}
 	next() {
 		if (this.pointer >= this.cache.length) {
-			this.cache.push(idProvider.next())
+			this.cache.push(this.cache.length.toString())
 		}
 		return this.cache[this.pointer++]
 	}
@@ -163,4 +163,3 @@ export const config = {
 		thickness: 1
 	}
 }
-

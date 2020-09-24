@@ -1,7 +1,7 @@
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { Obj } from "@agyemanjp/standard/utility"
+import { Obj } from "@sparkwave/standard/utility"
 import { createElement } from '../../core'
 import { mergeProps, config } from '../../utils'
 import { Component, Props, Orientation, Alignment, Icon, CSSProperties } from '../../types'

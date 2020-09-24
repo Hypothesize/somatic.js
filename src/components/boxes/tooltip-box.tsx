@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable brace-style */
-import { String, Obj } from "@agyemanjp/standard"
-import { getAsync } from "@agyemanjp/standard/web"
-import { keys } from "@agyemanjp/standard/collections"
-import { isKeyOf } from "@agyemanjp/standard/utility"
+import { String, Obj } from "@sparkwave/standard"
+import { getAsync } from "@sparkwave/standard/web"
+import { keys } from "@sparkwave/standard/collections"
+import { isKeyOf } from "@sparkwave/standard/utility"
 import { createElement, render, stringifyStyle } from '../../core'
 import { Component, Props, Icon, CSSProperties, MouseEvent } from '../../types'
 import { idProvider, mergeProps, config } from '../../utils'

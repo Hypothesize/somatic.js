@@ -2,7 +2,7 @@
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createElement, stringifyStyle } from "../../core"
-import { first } from "@agyemanjp/standard/collections/iterable"
+import { first } from "@sparkwave/standard/collections/iterable"
 import { Component, Props, CSSProperties } from '../../types'
 import { idProvider, mergeProps, config } from '../../utils'
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable brace-style */
-import { hasValue } from '@agyemanjp/standard'
+import { hasValue } from '@sparkwave/standard'
 import * as Request from 'request'
 import { createElement } from '../../core'
 import { idProvider } from '../../utils'

@@ -8,8 +8,8 @@ import fastMemoize from 'fast-memoize'
 import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
 import { setAttribute, isEventKey, camelCaseToDash, encodeHTML } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
-import { Obj } from "@agyemanjp/standard"
-import { flatten } from "@agyemanjp/standard/collections"
+import { Obj } from "@sparkwave/standard"
+import { flatten, Array } from "@sparkwave/standard/collections"
 
 // export const Fragment = (async () => ({})) as Renderer
 export const fnStore: ((evt: Event) => unknown)[] = []
@@ -32,7 +32,7 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = flatten(_vnode.children || []) as JSX.Element[]
+		const children = [...flatten(_vnode.children || []) as JSX.Element[]]
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
@@ -270,43 +270,4 @@ export function stringifyAttribs(props: Obj) {
 		})
 		.filter(attrHTML => attrHTML?.length > 0)
 		.join(" ")
-}
-
-export function* flatten2<X>(nestedIterable: Iterable<X>): Iterable<any> {
-	// console.log(`\nInput to flatten: ${JSON.stringify(nestedIterable)}`)
-	if (nestedIterable) {
-		for (const element of nestedIterable) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			if (hasValue(element) && typeof element !== "string" && typeof (element as any)[Symbol.iterator] === 'function') {
-				//console.log(`flatten: element <${JSON.stringify(element)}> is iterable; flattening it *`)
-				yield* flatten(element as unknown as Iterable<X>)
-			}
-			else {
-				//console.log(`flatten: element <${JSON.stringify(element)}> is not iterable; yielding it *`)
-				yield element as any
-			}
-		}
-	}
-}
-
-/** Determines if input argument has a value */
-export function hasValue<T>(value?: T): value is T {
-	switch (typeof value) {
-		case "function":
-		case "boolean":
-		case "bigint":
-		case "object":
-		case "symbol":
-			return (value !== null)
-		case "undefined":
-			return false
-		case "number":
-			return (value !== null && !isNaN(value) && !Number.isNaN(value) && value !== Number.NaN)
-		case "string":
-			return value !== undefined && value !== null && value.trim().length > 0 && !/^\s*$/.test(value)
-		/*if(str.replace(/\s/g,"") == "") return false*/
-
-		default:
-			return Boolean(value)
-	}
 }

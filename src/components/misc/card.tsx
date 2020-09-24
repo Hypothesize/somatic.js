@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { } from "@agyemanjp/standard"
+import { } from "@sparkwave/standard"
 import { Component, Orientation, Icon, CSSProperties } from "../../types"
 import { config, colorLuminance } from "../../utils"
 import { StackPanel } from "../panels/stack-panel"

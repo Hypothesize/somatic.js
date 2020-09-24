@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Obj } from "@agyemanjp/standard"
+import { Obj } from "@sparkwave/standard"
 import { createElement } from '../../core'
 import { PropsExtended, CSSProperties, Component, Icon } from '../../types'
 // import * as Icons from "./icons"
