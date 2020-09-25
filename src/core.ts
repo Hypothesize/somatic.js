@@ -6,10 +6,10 @@
 import morphdom from 'morphdom'
 import fastMemoize from 'fast-memoize'
 import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
-import { setAttribute, isEventKey, camelCaseToDash, encodeHTML } from "./utils"
+import { setAttribute, isEventKey, camelCaseToDash, encodeHTML, idProvider } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
 import { Obj } from "@sparkwave/standard"
-import { flatten, Array } from "@sparkwave/standard/collections"
+import { flatten } from "@sparkwave/standard/collections"
 
 // export const Fragment = (async () => ({})) as Renderer
 export const fnStore: ((evt: Event) => unknown)[] = []
@@ -59,16 +59,46 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 				const nodeProps = _vnode.props || {}
 				Object.keys(nodeProps).forEach(propKey => {
 					try {
-						// console.log(`Processing property "${propKey}" of vNode`)
-						const propValue = nodeProps[propKey]
-						const htmlPropKey = propKey.toLowerCase()
+						const propValue: unknown = nodeProps[propKey]
+						if (propValue !== undefined) {
+							const htmlPropKey = propKey.toUpperCase()
+							if (isEventKey(htmlPropKey) && htmlPropKey === "ONLOAD") {
+								// eslint-disable-next-line fp/no-mutating-methods
+								fnStore.push(propValue as (evt: Event) => unknown)
+								node.setAttribute(propKey.toLowerCase(), `${fnStore.length - 1}`)
 
-						if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-							// console.log(`Property "${propKey}" of vNode is event, handler code is:\n${propValue.toString()}`)
-							node.setAttribute(htmlPropKey, `(${(propValue.toString())})(this);`)
-						}
-						else {
-							setAttribute(node, propKey, propValue as string)
+								// const callback: (evt: Event) => void = fnStore[fnStore.length - 1]
+								// node.addEventListener(eventNames[htmlPropKey], { handleEvent: callback })
+
+								node.setAttribute(htmlPropKey, `(${((propValue as (evt: Event) => unknown).toString())})(this);`)
+							}
+							else if (isEventKey(htmlPropKey) && typeof propValue === "function") { // The first condition is here simply to prevent useless searches through the events list.
+								const eventId = idProvider.next()
+								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
+								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
+								/** If the vNode had an event, we add it to the document-wide event. We keep track of every event and its matching element through the eventId: each listener contains one, each DOM element as well */
+								addListener(document, eventNames[htmlPropKey], (e: Event) => {
+									const target = e.target as HTMLElement | null
+									if (target !== document.getRootNode()) { // We don't want to do anything when the document itself is the target
+										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
+										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
+
+										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
+										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
+											|| e.cancelBubble
+
+										if (!shouldNotTrigger && intendedTarget) {
+											// Execute the callback with the context set to the found element
+											// jQuery goes way further, it even has it's own event object
+											(propValue as (e: Event) => unknown).call(intendedTarget, e)
+										}
+									}
+								}, true)
+							}
+							else {
+								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
+							}
 						}
 					}
 					catch (e) {
