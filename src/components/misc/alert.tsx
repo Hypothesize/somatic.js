@@ -9,9 +9,6 @@ type Props = Props.Themed & {
 	/** Will define the general style of the alert: "warning" | "info" | "error" | "form"  */
 	type: AlertType,
 
-	/** Content insdie the Alert */
-	content?: string | Array<string> | JSX.Element,
-
 	/** Title at the header of the alert */
 	title?: string,
 
@@ -108,20 +105,18 @@ export const Alert: Component<Props> = (props) => {
 		}
 	}
 	const getContent = () => {
-		switch (typeof (props.content)) {
+		switch (typeof (props.children)) {
 			case "undefined":
 				return <p>""</p>
 			case "string":
-				return <div>{(props.content as string).split("\n").map((item, i) => {
+				return <div>{(props.children as string).split("\n").map((item, i) => {
 					return <p>{item}</p>
 				})}</div>
 			case "object":
 			default:
-				return props.content as JSX.Element
+				return props.children as JSX.Element[]
 		}
 	}
-
-	const content = getContent()
 
 	const HeaderIcon = fullProps.type === "error"
 		? fullProps.errorIcon
@@ -158,9 +153,9 @@ export const Alert: Component<Props> = (props) => {
 			<span > {fullProps.title || getAlertTitle()} </span>
 		</div>
 		{
-			fullProps.content === undefined
+			fullProps.children === undefined
 				? <div />
-				: content
+				: getContent()
 		}
 	</div>
 }

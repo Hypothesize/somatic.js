@@ -7,10 +7,10 @@ import { HoverBox } from '../boxes/hover-box'
 import { UrlInput } from './url-input'
 
 type InternalProps = {
-	/** Flag to show the url input */
+	/** If enabled it will show the url input */
 	showUrlInput?: boolean
 
-	/** Default uri to show in this input */
+	/** Default uri to show in the url input */
 	uri?: string
 }
 
@@ -21,11 +21,8 @@ type Props = Props.Html & Props.Themed & InternalProps & {
 	/** Title to be show as the drag and drop description */
 	dragTitle?: string,
 
-	/** Option to enable if we want to receive the data as a string or an array of bytes*/
+	/** Option to enable if we want to receive the data as a string or an array of bytes */
 	loadAs?: "array" | "string"
-
-	/** JSX Content to include as part of the file input box */
-	content?: JSX.Element
 
 	/** Style for the label */
 	labelStyle: CSSProperties

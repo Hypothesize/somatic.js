@@ -37,7 +37,6 @@ describe("Somatic", () => {
 					theme={config.theme}
 					labelStyle={{}}
 					loadAs="array"
-					content={<span style={{ fontSize: "1.25em", fontWeight: 900 }}>Get Started</span>}
 					style={{ height: "auto", width: "auto", fontSize: "14px" }}
 					postMsgAsync={async (msg) => { console.log('Message received' + msg.type) }}>
 				</FileInput>

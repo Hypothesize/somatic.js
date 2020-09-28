@@ -15,9 +15,6 @@ type Props = Props.Themed & Props.Html & {
 	/** Title to display on the header of the dialog */
 	title: string
 
-	/** Content of the dialog */
-	content: string | JSX.Element,
-
 	/** Style of the header that contains the title */
 	headerStyle?: CSSProperties
 
@@ -34,19 +31,18 @@ const defaultProps = {
 export const Dialog: Component<Props> = (props) => {
 	const fullProps = mergeProps(defaultProps, props)
 	const getContent = () => {
-		switch (typeof (props.content)) {
+		switch (typeof (props.children)) {
 			case "undefined":
 				return <p>""</p>
 			case "string":
-				return <div>{(props.content as string).split("\n").map((item, i) => {
+				return <div>{(props.children as string).split("\n").map((item, i) => {
 					return <p>{item}</p>
 				})}</div>
 			case "object":
 			default:
-				return props.content
+				return props.children
 		}
 	}
-	const content = getContent()
 	try {
 		const newContent = <StackPanel
 			orientation={Orientation.vertical}
@@ -54,7 +50,7 @@ export const Dialog: Component<Props> = (props) => {
 			itemsAlignH={Alignment.center}
 			itemsAlignV={Alignment.center}>
 
-			{content}
+			{getContent()}
 
 			<StackPanel
 				orientation={Orientation.horizontal}
@@ -112,8 +108,9 @@ export const Dialog: Component<Props> = (props) => {
 			headerStyle={fullProps.headerStyle}
 			type={fullProps.type}
 			title={fullProps.title}
-			content={newContent}
-			theme={fullProps.theme} />
+			theme={fullProps.theme}>
+			{newContent}
+		</Alert>
 	}
 	catch (e) {
 		console.error(`DialogPanel render: ${e}`)

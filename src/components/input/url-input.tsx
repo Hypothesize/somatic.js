@@ -5,16 +5,12 @@ import { Props, Component } from '../../types'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
 
-interface Props extends Props.Themed {
-    content?: JSX.Element
-}
-
 export type Messages = (
     | { type: "DATA_LOADED", data: { data: ArrayBuffer, fileName: string } }
     | { type: "LOADING_ERROR", data: { error: Error } }
 )
 
-export const UrlInput: Component<Props, Messages> = (props) => {
+export const UrlInput: Component<Props.Themed, Messages> = (props) => {
     return <StackPanel
         style={{
             fontSize: "1rem"
