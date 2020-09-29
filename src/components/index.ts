@@ -1,7 +1,7 @@
 export { Alert } from './misc/alert'
 export { StackPanel } from './panels/stack-panel'
 export { FormFieldsPanel } from './panels/form-fields-panel'
-export { TabsPanel } from './panels/tabs-panel'
+export { TabsPanelExtended } from './panels/tabs-panel-extended'
 
 export { CommandBox } from './boxes/command-box'
 export { DisplayToggleBox } from './boxes/display-toggle-box'

@@ -62,7 +62,7 @@ const defaultProps = Object.freeze({
 	selection: undefined,
 })
 
-export const TabsPanel: Component<Props, Messages[keyof Messages]> = (props) => {
+export const TabsPanelExtended: Component<Props, Messages[keyof Messages]> = (props) => {
 	const {
 		children,
 		headerPanel,
