@@ -7,7 +7,7 @@
 import { eventNames } from "./constants"
 import { CSSProperties } from "./types"
 import { deepMerge } from "@sparkwave/standard/collections/object"
-import { Obj, hasValue } from "@sparkwave/standard/utility"
+import { Obj } from "@sparkwave/standard/utility"
 
 
 /** Calculates a lighter or darker color of a base color in Hex representation.

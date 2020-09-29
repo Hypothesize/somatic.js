@@ -1,11 +1,11 @@
 {
-	"name": "@hypothesize/somatic",
-	"version": "0.1.1",
-	"description": "Function, Asynchronous, Component-based UI Library",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
+	"name": "@sparkwave/somatic",
+	"version": "0.1.2",
+	"description": "Functional, Asynchronous, Component-based UI Library that works with JSX",
+	"main": "index.js",
+	"types": "index.d.ts",
 	"files": [
-		"dist/*",
+		"*",
 		"!*.tsbuildinfo"
 	],
 	"scripts": {
@@ -17,14 +17,19 @@
 		"test": "mocha --require ts-node/register test/*.test.*",
 		"test-report": "mocha --require ts-node/register test/*.test.* --reporter mocha-reporter-json-standard >| .test-report.json",
 		"build": "npm run clean && npm run lint && npm run compile && npm run test",
-		"package": "git push --follow-tags && cp package.json README.md dist && cd dist && npm publish --dry-run",
+		"package": "git push --follow-tags && cp package.json LICENSE README.md dist && cd dist && npm publish --dry-run",
 		"pub": "cd dist && npm publish --access public"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/Hypothesize/somatic.js.git"
 	},
-	"keywords": [],
+	"keywords": [
+		"Functional",
+		"JSX",
+		"Component",
+		"UI"
+	],
 	"author": "",
 	"license": "MIT",
 	"bugs": {
@@ -32,7 +37,8 @@
 	},
 	"homepage": "https://github.com/Hypothesize/somatic.js#readme",
 	"dependencies": {
-		"@sparkwave/standard": "^2.3.0",
+		"@sparkwave/standard": "^2.3.1",
+		"cuid": "^2.1.8",
 		"fast-memoize": "^2.5.2",
 		"lodash": "^4.17.4",
 		"morphdom": "^2.6.1"
