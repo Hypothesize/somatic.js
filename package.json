@@ -1,6 +1,6 @@
 {
 	"name": "@sparkwave/somatic",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Functional, Asynchronous, Component-based UI Library that works with JSX",
 	"main": "index.js",
 	"types": "index.d.ts",
@@ -38,6 +38,7 @@
 	"homepage": "https://github.com/Hypothesize/somatic.js#readme",
 	"dependencies": {
 		"@agyemanjp/standard": "^2.3.0",
+		"@sparkwave/standard": "^2.3.1",
 		"cuid": "^2.1.8",
 		"fast-memoize": "^2.5.2",
 		"lodash": "^4.17.4",
