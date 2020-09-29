@@ -2,10 +2,10 @@
 import { createElement } from '../../core'
 import { Component, Props, Orientation } from '../../types'
 
-export interface Props extends Props.Panel, Props.Themed, Props.Html {
+export type Props = Partial<Props.Panel> & Props.Html & {
 }
 
-export const StackPanel: Component<Partial<Props>> = async (props) => {
+export const StackPanel: Component<Props> = async (props) => {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -42,7 +42,6 @@ export const StackPanel: Component<Partial<Props>> = async (props) => {
 			itemsAlignH,
 			itemsAlignV,
 			children,
-			theme,
 			style,
 			...htmlProps
 		} = props

@@ -18,3 +18,5 @@ export { Dialog } from './misc/dialog'
 export { BreadCrumbs } from './misc/bread-crumbs'
 export { Spinners } from './misc/spinners'
 export { TooltipBox } from './boxes/tooltip-box'
+
+export { StackView } from './views/stack-view'
