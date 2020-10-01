@@ -25,12 +25,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-        
-      - name: Cache clearing
-        run: npm cache clean --force
 
       - name: Install
-        run: npm ci --no-audit --prefer-offline && npm install cuid --save
+        run: npm ci --no-audit --prefer-offline
         
       - name: Build
         run: npm run compile --if-present
