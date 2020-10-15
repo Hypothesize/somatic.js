@@ -18,9 +18,14 @@ jsdom({ url: 'http://localhost', skipWindowCheck: true })
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 const internalPropsCache = {
-	storage: {} as Record<string, unknown>,
+	storage: {} as Record<string, any>,
 	get: function (key: string) { return this.storage[key] },
-	set: function (key: string, payload: unknown) { this.storage[key] = payload },
+	set: function (key: string, payload: any) {
+		this.storage[key] = {
+			...this.storage[key],
+			payload
+		}
+	},
 }
 const FileInput = makeFileInput({ internalPropsCache })
 

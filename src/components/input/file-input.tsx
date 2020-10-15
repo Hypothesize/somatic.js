@@ -78,7 +78,11 @@ export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<Inte
 		postMsgAsync
 	} = mergeProps(defaultProps, props)
 
-	const internalProps = args.internalPropsCache.get(key!) as InternalProps
+	const internalProps = {
+		uri: "", // default
+		showUrlInput: false, // default
+		...args.internalPropsCache.get(key!)
+	} as InternalProps
 
 	const loadRaw = (file: File) => {
 		try {
