@@ -22,7 +22,7 @@ export function createElement<P extends Obj = Obj, T extends VNodeType<P> = VNod
 }
 
 /** Render virtual node to DOM node */
-export async function render<P extends Obj = Obj>(vnode?: Primitive | Object | VNode<PropsExtended<P>> | Promise<VNode<PropsExtended<P>>>): Promise<Node> {
+export async function render<P extends Obj = Obj>(vnode?: Primitive | Object | VNode<PropsExtended<P>> | Promise<VNode<PropsExtended<P>>>, parentKey?: string): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -41,13 +41,14 @@ export async function render<P extends Obj = Obj>(vnode?: Primitive | Object | V
 				const _props: PropsExtended<P, Message> = {
 					// eslint-disable-next-line @typescript-eslint/no-empty-function
 					..._vnode.props,
+					key: _vnode.props.key && parentKey ? parentKey + "__" + _vnode.props.key : undefined,
 					children: [...children]
 				}
 				const element = await _vnode.type(_props)
 
 				return element.children === undefined
 					? await memoizedRender(element)
-					: await render(element) // If element has children, we don't use the cache system (yet)
+					: await render(element, _props.key) // If element has children, we don't use the cache system (yet)
 			}
 
 			case "string": {
@@ -58,7 +59,7 @@ export async function render<P extends Obj = Obj>(vnode?: Primitive | Object | V
 
 				// render and append children in order
 				await Promise
-					.all(children.map(c => render(c)))
+					.all(children.map(c => render(c, parentKey)))
 					.then(rendered => rendered.forEach(child => node.appendChild(child)))
 
 				// attach attributes

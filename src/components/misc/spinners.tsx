@@ -4,10 +4,6 @@ import { Component, CSSProperties } from '../../types'
 
 type Props = { style?: CSSProperties }
 
-const defaultProps = {
-
-}
-
 export const create = (svgElement: JSX.Element): Component<Props> => {
 	return async (props) => {
 		const elt = await svgElement
