@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Array } from "@sparkwave/standard/collections"
 import { createElement, mergeProps } from '../../core'
-import { Component, ComponentProps, CSSProperties, Icon, Orientation, Alignment } from '../../types'
+import { Component, HtmlProps, CSSProperties, Icon } from '../../types'
 import { AlertType, Alert } from './alert'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
 import { CommandBox } from '../boxes/command-box'
 
-type Props = ComponentProps.Html & {
+type Props = HtmlProps & {
 	/** Type of the Dialog, using the Alert component types: "warning" | "info" | "error" | "form"  */
 	type?: AlertType
 

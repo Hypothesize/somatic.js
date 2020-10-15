@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as Request from 'request'
 import { createElement } from '../../core'
-import { ComponentProps, Component } from '../../types'
+import { Component } from '../../types'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
 
@@ -13,8 +13,7 @@ export type Messages = (
 )
 
 export const UrlInput: Component<{}, Messages> = (props) => {
-	return <StackPanel
-		style={{ fontSize: "1rem" }}>
+	return <StackPanel style={{ fontSize: "1rem" }}>
 		<textarea
 			name="dataset_url"
 			onClick={ev => { ev.stopPropagation() }}
@@ -29,12 +28,8 @@ export const UrlInput: Component<{}, Messages> = (props) => {
 
 		</textarea>
 
-		<HoverBox
-			// theme={props.theme}
-			hoverStyle={{ backgroundColor: "rgba(0,0,0,0.1)" }}
-			style={{ height: "2rem", marginLeft: "0.5em" }}>
-			<button
-				style={{ height: "2rem", padding: "0 0.5em", width: "60px" }}
+		<HoverBox hoverStyle={{ backgroundColor: "rgba(0,0,0,0.1)" }} style={{ height: "2rem", marginLeft: "0.5em" }}>
+			<button style={{ height: "2rem", padding: "0 0.5em", width: "60px" }}
 				onClick={(ev) => {
 					ev.preventDefault()
 					ev.stopPropagation()
@@ -59,7 +54,6 @@ export const UrlInput: Component<{}, Messages> = (props) => {
 										data: { data: body.buffer, fileName: url }
 									})
 							}
-
 						})
 				}}> Submit
 					</button>

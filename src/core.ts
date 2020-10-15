@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable brace-style */
@@ -8,7 +9,7 @@ import fastMemoize from 'fast-memoize'
 import { VNode, VNodeType, PropsExtended, Message, CSSProperties } from "./types"
 import { setAttribute, isEventKey, camelCaseToDash, encodeHTML, idProvider } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
-import { Obj } from "@sparkwave/standard"
+import { Obj, Primitive } from "@sparkwave/standard/utility"
 import { flatten } from "@sparkwave/standard/collections"
 import { deepMerge } from "@sparkwave/standard/collections/object"
 
@@ -21,7 +22,7 @@ export function createElement<P extends Obj = Obj, T extends VNodeType<P> = VNod
 }
 
 /** Render virtual node to DOM node */
-export async function render<P extends Obj = Obj>(vnode?: { toString(): string } | VNode<P> | Promise<VNode<P>>): Promise<Node> {
+export async function render<P extends Obj = Obj>(vnode?: Primitive | Object | VNode<PropsExtended<P>> | Promise<VNode<PropsExtended<P>>>): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -33,11 +34,15 @@ export async function render<P extends Obj = Obj>(vnode?: { toString(): string }
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = [...flatten(_vnode.children || []) as JSX.Element[]]
+		const children = [...flatten([_vnode.children]) as JSX.Element[]]
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
-				const _props: PropsExtended<P, Message> = { ..._vnode.props, children: [...children] }
+				const _props: PropsExtended<P, Message> = {
+					// eslint-disable-next-line @typescript-eslint/no-empty-function
+					..._vnode.props,
+					children: [...children]
+				}
 				const element = await _vnode.type(_props)
 
 				return element.children === undefined
@@ -227,6 +232,7 @@ const addListener = (node: Node, event: string, handler: (e: Event) => void, cap
 	node.addEventListener(event, handler, capture)
 }
 
+/** Remove all event listeners */
 export const removeAllListeners = (targetNode: Node) => {
 	Object.keys(_eventHandlers).forEach(eventName => {
 		// remove listeners from the matching nodes
@@ -241,7 +247,6 @@ export const removeAllListeners = (targetNode: Node) => {
 		)
 	})
 }
-
 
 /** Converts a css props object literal to a string */
 export function stringifyStyle(style: CSSProperties, important = false) {
