@@ -85,13 +85,13 @@ export const SelectInput: Component<Props, Messages> = async (props) => {
 							</option>)}
 					</optgroup>)
 				})
-				: (props.children && props.children.length > 0 ? props.children : fullProps.options).map((child, index) =>
+				: (fullProps.options).map((option, index) =>
 					<option
 						style={{ color: props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? "gray" : "black" }}
 						disabled={props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? true : undefined}
-						value={child.toString()}
+						value={option}
 						{...index === props.selectedIndex ? { selected: true } : {}}>
-						{props.descriptions !== undefined ? props.descriptions[index] : child.toString()}
+						{props.descriptions !== undefined ? props.descriptions[index] : option}
 					</option>
 				)
 			}

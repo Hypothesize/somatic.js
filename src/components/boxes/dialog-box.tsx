@@ -2,7 +2,7 @@
 import { Array } from "@sparkwave/standard/collections"
 import { createElement, mergeProps } from '../../core'
 import { Component, ComponentProps, CSSProperties, Icon, Orientation, Alignment } from '../../types'
-import { AlertType, Alert } from './alert'
+import { AlertType, Alert } from '../misc/alert'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
 import { CommandBox } from '../boxes/command-box'
@@ -18,13 +18,13 @@ type Props = ComponentProps.Html & {
 	headerStyle?: CSSProperties
 
 	/** Array of button that comes right after the content */
-	buttons?: Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after" }>
+	buttons?: Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }>
 }
 
 const defaultProps = {
 	headerStyle: { padding: "0.5em 1em" },
 	type: "info" as const,
-	buttons: new Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after" }>([])
+	buttons: new Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }>([])
 }
 
 export const Dialog: Component<Props> = (props) => {
@@ -66,7 +66,8 @@ export const Dialog: Component<Props> = (props) => {
 								flex: "0 1 120px",
 								display: "flex",
 								justifyContent: "center",
-								marginLeft: "0.5em"
+								marginLeft: "0.5em",
+								padding: "0.5rem"
 							}}>
 							<CommandBox
 								// theme={fullProps.theme}
@@ -82,9 +83,9 @@ export const Dialog: Component<Props> = (props) => {
 									marginLeft: 0
 								}}
 								style={{
-									padding: "0.5rem",
 									fontWeight: isLastButton ? "bold" : "normal",
-									fontVariant: "all-small-caps"
+									fontVariant: "all-small-caps",
+									...buttonInfo.style
 								}}
 								postMsgAsync={async () => button.action()}>
 								<div

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, mergeProps } from '../../core'
-import { Component, CSSProperties, ComponentProps, Icon } from '../../types'
+import { Component, CSSProperties, Icon } from '../../types'
 
 export type AlertType = "warning" | "info" | "error" | "form"
 
@@ -21,22 +21,20 @@ type Props = {
 	errorIcon?: Icon
 }
 
+const defaultProps = Object.freeze({
+	type: "info" as AlertType,
+	style: {
+		border: "thin solid ",
+		textAlign: "center",
+		margin: "auto",
+
+		borderRadius: "0.15rem",
+		background: `white`,
+		color: `black`
+	}
+})
 
 export const Alert: Component<Props> = (props) => {
-
-	const defaultProps = Object.freeze({
-		type: "info" as AlertType,
-		style: {
-			border: "thin solid ",
-			textAlign: "center",
-			margin: "auto",
-
-			borderRadius: "0.15rem",
-			background: `white`,
-			color: `black`
-		}
-	})
-
 	const {
 		type,
 		errorIcon,
