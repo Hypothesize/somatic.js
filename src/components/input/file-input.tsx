@@ -8,7 +8,6 @@ import { TooltipBox } from '../boxes/tooltip-box'
 import { HoverBox } from '../boxes/hover-box'
 import { UrlInput } from './url-input'
 
-import { ExtractOptional } from "@sparkwave/standard"
 
 type InternalProps = {
 	/** If enabled it will show the url input */
