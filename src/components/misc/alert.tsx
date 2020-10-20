@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, mergeProps } from '../../core'
 import { Component, CSSProperties, Icon } from '../../types'
-import { Obj, Primitive, isString } from "@sparkwave/standard/utility"
 
 export type AlertType = "warning" | "info" | "error" | "form"
 
@@ -106,8 +105,7 @@ export const Alert: Component<Props> = (props) => {
 	}
 
 	const getContent = () => {
-		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-		return children!.map(child => {
+		return children && children.map(child => {
 			switch (typeof child) {
 				case "undefined":
 					return <p>""</p>
