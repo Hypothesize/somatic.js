@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, mergeProps } from '../../core'
 import { Component, CSSProperties, Icon } from '../../types'
+import { Obj, Primitive, isString } from "@sparkwave/standard/utility"
 
 export type AlertType = "warning" | "info" | "error" | "form"
 
@@ -103,18 +104,24 @@ export const Alert: Component<Props> = (props) => {
 				}
 		}
 	}
+
 	const getContent = () => {
-		switch (typeof (props.children)) {
-			case "undefined":
-				return <p>""</p>
-			case "string":
-				return <div>{(props.children as string).split("\n").map((item, i) => {
-					return <p>{item}</p>
-				})}</div>
-			case "object":
-			default:
-				return props.children as JSX.Element[]
-		}
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+		return children!.map(child => {
+			switch (typeof child) {
+				case "undefined":
+					return <p>""</p>
+
+				case "string":
+					return <div>
+						{child.split("\n").map((item, i) => <p>{item}</p>)}
+					</div>
+
+				case "object":
+				default:
+					return child as JSX.Element[]
+			}
+		})
 	}
 
 	const HeaderIcon = (type === "error"

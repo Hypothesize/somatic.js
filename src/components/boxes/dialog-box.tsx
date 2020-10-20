@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Array } from "@sparkwave/standard/collections"
+import { map, first, last } from "@sparkwave/standard/collections"
 import { createElement, mergeProps } from '../../core'
-import { Component, ComponentProps, CSSProperties, Icon, Orientation, Alignment } from '../../types'
 import { AlertType, Alert } from '../misc/alert'
+import { Component, HtmlProps, CSSProperties, Icon } from '../../types'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
 import { CommandBox } from '../boxes/command-box'
 
-type Props = ComponentProps.Html & {
+export type ButtonInfo = { label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }
+
+export type Props = HtmlProps & {
 	/** Type of the Dialog, using the Alert component types: "warning" | "info" | "error" | "form"  */
 	type?: AlertType
 
@@ -17,18 +19,19 @@ type Props = ComponentProps.Html & {
 	/** Style of the header that contains the title */
 	headerStyle?: CSSProperties
 
-	/** Array of button that comes right after the content */
-	buttons?: Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }>
+	/** Array of buttons that comes right after the content */
+	buttons?: Iterable<ButtonInfo>
 }
 
 const defaultProps = {
-	headerStyle: { padding: "0.5em 1em" },
+	headerStyle: { padding: "0.5em 1em" } as Props["headerStyle"],
 	type: "info" as const,
-	buttons: new Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }>([])
+	buttons: [] as ButtonInfo[]
 }
 
-export const DialogBox: Component<Props> = (props) => {
-	const fullProps = mergeProps(defaultProps, props)
+export const DialogBox: Component<Props> = async (props) => {
+	const { buttons, type, headerStyle, style, title, postMsgAsync } = mergeProps(defaultProps, props)
+
 	const getContent = () => {
 		switch (typeof (props.children)) {
 			case "undefined":
@@ -55,13 +58,13 @@ export const DialogBox: Component<Props> = (props) => {
 				orientation={"horizontal"}
 				style={{ marginTop: "1rem" }}>
 				{[
-					...fullProps.buttons.map((buttonInfo, index) => {
+					...map(buttons, (buttonInfo, index) => {
 						const button = buttonInfo
-						const isFirstButton = button === fullProps.buttons.first()
-						const isLastButton = button === fullProps.buttons.last()
+						const isFirstButton = button === first(buttons)
+						const isLastButton = button === last(buttons)
 
 						return <HoverBox
-							// theme={fullProps.theme}
+							// theme={theme}
 							style={{
 								flex: "0 1 120px",
 								display: "flex",
@@ -70,7 +73,7 @@ export const DialogBox: Component<Props> = (props) => {
 								padding: "0.5rem"
 							}}>
 							<CommandBox
-								// theme={fullProps.theme}
+								// theme={theme}
 								iconPlacement={button.placement}
 								icon={button.icon}
 								iconStyle={{
@@ -104,10 +107,10 @@ export const DialogBox: Component<Props> = (props) => {
 		</StackPanel>
 
 		return <Alert
-			style={fullProps.style}
-			headerStyle={fullProps.headerStyle}
-			type={fullProps.type}
-			title={fullProps.title}>
+			style={style}
+			headerStyle={headerStyle}
+			type={type}
+			title={title}>
 			{newContent}
 		</Alert>
 	}
