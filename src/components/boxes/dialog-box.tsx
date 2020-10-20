@@ -27,7 +27,7 @@ const defaultProps = {
 	buttons: new Array<{ label: string, icon?: Icon, action: () => void, placement?: "before" | "after", style?: CSSProperties }>([])
 }
 
-export const Dialog: Component<Props> = (props) => {
+export const DialogBox: Component<Props> = (props) => {
 	const fullProps = mergeProps(defaultProps, props)
 	const getContent = () => {
 		switch (typeof (props.children)) {
