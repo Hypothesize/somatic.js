@@ -1,11 +1,12 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import * as Request from 'request'
+import { getAsync } from '@sparkwave/standard/web'
 import { createElement } from '../../core'
 import { Component } from '../../types'
 import { StackPanel } from '../panels/stack-panel'
 import { HoverBox } from '../boxes/hover-box'
+
 
 export type Messages = (
 	| { type: "DATA_LOADED", data: { data: ArrayBuffer, fileName: string } }
@@ -35,9 +36,15 @@ export const UrlInput: Component<{}, Messages> = (props) => {
 					ev.stopPropagation()
 					const url = (document.querySelector(`textarea[name="dataset_url"]`) as HTMLInputElement).value
 
-					Request.get(
-						{ uri: url, encoding: null },
-						(err: Error, response: Request.Response, body) => {
+					getAsync({ uri: url }, { badHttpCodeAsError: true })
+						.then((response) => {
+							if (props.postMsgAsync)
+								props.postMsgAsync({
+									type: "DATA_LOADED",
+									data: { data: response.body.buffer, fileName: url }
+								})
+						})
+						.catch(err => {
 							if (err) {
 								if (props.postMsgAsync)
 									props.postMsgAsync({
@@ -47,16 +54,10 @@ export const UrlInput: Component<{}, Messages> = (props) => {
 										}
 									})
 							}
-							else {
-								if (props.postMsgAsync)
-									props.postMsgAsync({
-										type: "DATA_LOADED",
-										data: { data: body.buffer, fileName: url }
-									})
-							}
 						})
-				}}> Submit
-					</button>
+				}}>
+				Submit
+			</button>
 		</HoverBox>
 	</StackPanel>
 }
