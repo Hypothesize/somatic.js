@@ -80,7 +80,7 @@ export const makeFileInput: ComponentFactory<Props, InternalProps, Messages> = (
 	const internalProps = mergeProps({
 		uri: "", // default
 		showUrlInput: false, // default
-	}, args.internalPropsCache.get(key!))
+	}, args.internalPropsCache.get(key || "") || {})
 
 	const loadRaw = (file: File) => {
 		try {
