@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 import { createElement, mergeProps } from '../../core'
 import { HtmlProps, Icon, CSSProperties, Component } from '../../types'
-import { InternalPropsCache } from "../types"
+import { InternalPropsCache, ComponentFactory } from "../types"
 import { TooltipBox } from '../boxes/tooltip-box'
 import { HoverBox } from '../boxes/hover-box'
 import { UrlInput } from './url-input'
@@ -61,7 +61,7 @@ const defaultProps = {
 	postMsgAsync: async () => { }
 }
 
-export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<InternalProps> }) => Component<Props, Messages> = (args) => async (props) => {
+export const makeFileInput: ComponentFactory<Props, InternalProps, Messages> = (args) => async (props) => {
 	const {
 		key,
 
@@ -77,11 +77,10 @@ export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<Inte
 		postMsgAsync
 	} = mergeProps(defaultProps, props)
 
-	const internalProps = {
+	const internalProps = mergeProps({
 		uri: "", // default
 		showUrlInput: false, // default
-		...args.internalPropsCache.get(key!)
-	} as InternalProps
+	}, args.internalPropsCache.get(key!))
 
 	const loadRaw = (file: File) => {
 		try {
@@ -140,13 +139,7 @@ export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<Inte
 				const fileInput = (document.querySelector("input#files") as HTMLInputElement)
 				fileInput.click()
 			}}
-			style={{
-				padding: "0.5em",
-				cursor: "pointer",
-				display: "flex",
-				height: "100%",
-				width: "100%"
-			}}
+			style={{ padding: "0.5em", cursor: "pointer", display: "flex", height: "100%", width: "100%" }}
 			onDragOver={(ev) => {
 				ev.preventDefault()
 				ev.stopPropagation();
@@ -203,10 +196,9 @@ export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<Inte
 				</div>
 
 				<div style={{ display: "flex", flexDirection: "row", alignItems: "center", textAlign: "left" }}>
-					{
-						title
-							? <div style={{ fontSize: "1.5em" }}> {title} </div>
-							: null
+					{title
+						? <div style={{ fontSize: "1.5em" }}> {title} </div>
+						: null
 					}
 					<span>
 						<b>{"To upload a "}
@@ -221,20 +213,22 @@ export const makeFileInput: (args: { internalPropsCache: InternalPropsCache<Inte
 				<div /* prompts */ style={{ textAlign: "left", width: "100%" }}>
 					<p>• {`${clickPrompt}, OR`}</p>
 					<p>• {`${dragPrompt}, OR`}</p>
-					<p style={{ marginBottom: "0.5em" }}>• <HoverBox
-						style={{ textDecoration: "underline" }}>
-						<div style={{ display: "inline" }}
-							onMouseEnter={() => { /*console.log("Mouse enter") */ }}
-							onClick={e => {
-								e.preventDefault()
-								e.stopPropagation()
-								// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-								args.internalPropsCache.set(key!, {
-									showUrlInput: !internalProps.showUrlInput
-								})
-							}}>
-							{`${urlPrompt}`}
-						</div></HoverBox>
+					<p style={{ marginBottom: "0.5em" }}>•
+						<HoverBox
+							style={{ textDecoration: "underline" }}>
+							<div style={{ display: "inline" }}
+								onMouseEnter={() => { /*console.log("Mouse enter") */ }}
+								onClick={e => {
+									e.preventDefault()
+									e.stopPropagation()
+									// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+									args.internalPropsCache.set(key!, {
+										showUrlInput: !internalProps.showUrlInput
+									})
+								}}>
+								{`${urlPrompt}`}
+							</div>
+						</HoverBox>
 					</p>
 					{
 						internalProps.showUrlInput
