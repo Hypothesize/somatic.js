@@ -10,15 +10,11 @@ import { idProvider } from '../../utils'
 import { mergeProps } from '../../core'
 
 export type Props = HtmlProps & {
-	/** If defined, this will be the content of the tooltip pop-up, rather than a definition from the "definitions" property */
-	explicitTooltip?: JSX.Element | string | undefined
+	/** The content of the tooltip pop-up, either a text, or a JSX element if a more advance layout is desired */
+	tooltipContent?: JSX.Element | string | undefined
 
 	/** True if we know that only the first element has to be tool-tipped */
 	noRecursion?: boolean
-
-	/** The dimensions of the tooltip pop-up */
-	width?: CSSProperties["width"]
-	height?: CSSProperties["height"]
 
 	/** Dictionary: each key is a string we will search in the DOM and enrich with a tooltip, 
 	 * the corresponding value will be the content of the tooltip. 
@@ -33,10 +29,8 @@ type ReplacementEntry = {
 }
 
 const defaultProps: Props = {
-	explicitTooltip: undefined,
+	tooltipContent: undefined,
 	noRecursion: false,
-	width: "600px",
-	height: "180px",
 	definitions: {}
 }
 
@@ -48,7 +42,7 @@ const defaultProps: Props = {
 const tooltips: Record<string, string> = {}
 
 export const TooltipBox: Component<Props> = async (props) => {
-	const { children, style, explicitTooltip, noRecursion, width, height, definitions } = mergeProps(defaultProps, props)
+	const { children, style, tooltipContent: explicitTooltip, noRecursion, definitions } = mergeProps(defaultProps, props)
 
 	const tooltipId = idProvider.next()
 	// eslint-disable-next-line fp/no-let, init-declarations
@@ -132,8 +126,6 @@ export const TooltipBox: Component<Props> = async (props) => {
 		zIndex: 1,
 		maxWidth: `600px`,
 		maxHeight: `180px`,
-		width: width,
-		height: height,
 		...style
 	}
 
@@ -203,8 +195,6 @@ export const TooltipBox: Component<Props> = async (props) => {
 		const className__ = idProvider.next()
 		const lowerCasedWord = contentReplaced.toLowerCase()
 
-		const isUrl = isKeyOf(lowerCasedWord, definitions || {}) && definitions && definitions[lowerCasedWord] && definitions[lowerCasedWord].slice(0, 4) === "http"
-
 		return <span style={{ position: "relative" }}>
 			<span
 				className={className__}
@@ -220,29 +210,8 @@ export const TooltipBox: Component<Props> = async (props) => {
 				onClick={e => { e.stopPropagation() }}
 				onMouseEnter={() => { clearTimer(hidingTimer) }}
 				onMouseLeave={() => { handleMouseLeave(className__) }}>
-				{
-					isUrl
-						? <div className="tooltip-title" style={{ marginBottom: "0.5em" }}>
-							<span style={{ fontWeight: 700 }}>
-								{new String(contentReplaced).toTitleCase().toString()}
-							</span>
-							<span style={{ float: "right" }}> From Wikipedia
-								<a style={{ marginLeft: "0.5em" }}
-									// eslint-disable-next-line fp/no-mutating-methods
-									target="_blank" href={`https://en.wikipedia.org/wiki/${(definitions || {})[lowerCasedWord].split("=").pop()}`}>
-									{/* {<ExternalLinkIcon style={{ height: "1em", cursor: "pointer" }} />} */}
-								</a>
-							</span>
-						</div>
-						: null
-				}
 				<span className={`tooltip-${lowerCasedWord}-content`} style={{ overflow: "auto", paddingRight: ".5em" }}>
-					{isUrl
-						? "Loading definition..."
-						: explicitTooltip !== undefined
-							? explicitTooltip
-							: (definitions || {})[lowerCasedWord]
-					}
+					{explicitTooltip}
 				</span>
 			</div>
 		</span>
