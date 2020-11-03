@@ -2,24 +2,22 @@
 /* eslint-disable brace-style */
 import { String, Obj, ExtractOptional } from "@sparkwave/standard"
 import { getAsync } from "@sparkwave/standard/web"
-import { keys } from "@sparkwave/standard/collections"
-import { isKeyOf } from "@sparkwave/standard/utility"
 import { createElement, render, stringifyStyle } from '../../core'
 import { Component, HtmlProps, Icon, CSSProperties, MouseEvent } from '../../types'
 import { idProvider } from '../../utils'
 import { mergeProps } from '../../core'
-
+type TooltipContent = JSX.Element | string
 export type Props = HtmlProps & {
 	/** The content of the tooltip pop-up, either a text, or a JSX element if a more advance layout is desired */
-	tooltipContent?: JSX.Element | string | undefined
+	explicitContent?: TooltipContent | undefined
 
 	/** True if we know that only the first element has to be tool-tipped */
 	noRecursion?: boolean
 
 	/** Dictionary: each key is a string we will search in the DOM and enrich with a tooltip, 
-	 * the corresponding value will be the content of the tooltip. 
+	 * the corresponding value will be a function that returns the content of the tooltip
 	 */
-	definitions?: Obj<string, string>
+	definitions?: Record<string, () => Promise<TooltipContent>>
 }
 
 type ReplacementEntry = {
@@ -29,7 +27,7 @@ type ReplacementEntry = {
 }
 
 const defaultProps: Props = {
-	tooltipContent: undefined,
+	explicitContent: undefined,
 	noRecursion: false,
 	definitions: {}
 }
@@ -39,10 +37,10 @@ const defaultProps: Props = {
 /** The content of the tooltips will be stored here, 
  * so that we don't have to query it from a URL every time a tooltip is hovered 
  */
-const tooltips: Record<string, string> = {}
+const tooltips: Record<string, Props["explicitContent"]> = {}
 
 export const TooltipBox: Component<Props> = async (props) => {
-	const { children, style, tooltipContent: explicitTooltip, noRecursion, definitions } = mergeProps(defaultProps, props)
+	const { children, style, explicitContent, noRecursion, definitions } = mergeProps(defaultProps, props) as Required<Props> & { children: JSX.Element[] }
 
 	const tooltipId = idProvider.next()
 	// eslint-disable-next-line fp/no-let, init-declarations
@@ -59,8 +57,8 @@ export const TooltipBox: Component<Props> = async (props) => {
 			if (originalStringElem === null) throw new Error(`A text node didn't have a textContent attribute`)
 
 			// We find the replacements in the children, or in the case of explicit tooltips, the whole string is replaced
-			const replacements = typeof explicitTooltip === "string"
-				? [{ position: 0, length: explicitTooltip.length, node: createToolTip(originalStringElem) }]
+			const replacements = typeof explicitContent === "string"
+				? [{ position: 0, length: explicitContent.length, node: createToolTip(originalStringElem, () => Promise.resolve(explicitContent)) }]
 
 				// eslint-disable-next-line fp/no-mutating-methods
 				: Object.keys(definitions || {})
@@ -71,7 +69,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 							return [...accum, {
 								position: position,
 								length: currTerm.length,
-								node: createToolTip((originalStringElem ?? "").substr(position, currTerm.length))
+								node: createToolTip((originalStringElem ?? "").substr(position, currTerm.length), definitions[currTerm])
 							}]
 						}
 						return accum
@@ -166,32 +164,21 @@ export const TooltipBox: Component<Props> = async (props) => {
 			})
 
 		if (wordToReplace) {
-			const isUrl = (definitions as Obj)[wordToReplace] && (definitions as Obj<string>)[wordToReplace].slice(0, 4) === "http"
-
-			if (tooltips[wordToReplace] === undefined && isUrl) { // We only fetch the tooltip if it's not yet stored, and is a URL
-				await getAsync({ uri: (definitions as Obj<string>)[wordToReplace] }).then(response => {
-					const foundPages = JSON.parse(response.body).query.pages
-					// eslint-disable-next-line fp/no-mutation
-					tooltips[wordToReplace] = foundPages[Object.keys(foundPages)[0]].extract
-				}).catch(err => {
-					// eslint-disable-next-line fp/no-mutation
-					tooltips[wordToReplace] = err
-				})
-
-			}
-
 			// We insert the content, if it's not already present
 			[...document.getElementsByClassName(`tooltip-${wordToReplace}-content`)]
 				.forEach(item => {
+					const existingContent = tooltips[wordToReplace]
 					// eslint-disable-next-line fp/no-mutation
-					item.innerHTML = explicitTooltip
-						? explicitTooltip.toString()
-						: tooltips[wordToReplace]
+					item.innerHTML = existingContent !== undefined
+						? existingContent.toString()
+						: explicitContent !== undefined
+							? explicitContent.toString()
+							: ""
 				})
 		}
 	}
 
-	const createToolTip = (contentReplaced: string) => {
+	const createToolTip = (contentReplaced: string, contentPromise: () => Promise<Props["explicitContent"]>) => {
 		const className__ = idProvider.next()
 		const lowerCasedWord = contentReplaced.toLowerCase()
 
@@ -211,7 +198,10 @@ export const TooltipBox: Component<Props> = async (props) => {
 				onMouseEnter={() => { clearTimer(hidingTimer) }}
 				onMouseLeave={() => { handleMouseLeave(className__) }}>
 				<span className={`tooltip-${lowerCasedWord}-content`} style={{ overflow: "auto", paddingRight: ".5em" }}>
-					{explicitTooltip}
+					Loading...
+					{
+						contentPromise()
+					}
 				</span>
 			</div>
 		</span>
@@ -239,7 +229,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 			<div
 				style={{ ...tooltipBoxStyle, width: "auto", height: "auto" }}
 				className={`tooltipBox ${className__}-tooltip`}>
-				{explicitTooltip}
+				{explicitContent}
 			</div>
 		</span>
 	}
