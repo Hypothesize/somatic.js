@@ -127,7 +127,8 @@ export const TooltipBox: Component<Props> = async (props) => {
 		...style
 	}
 
-	const handleMouseLeave = async (className: string) => {
+	const handleMouseLeave = async (ev: MouseEvent, className: string) => {
+		ev.stopPropagation()
 		// eslint-disable-next-line fp/no-mutation
 		hidingTimer = setTimeout(() => { // We hide the tooltip after half a second
 			[...document.getElementsByClassName(`${className}-tooltip`)]
@@ -136,6 +137,8 @@ export const TooltipBox: Component<Props> = async (props) => {
 	}
 
 	const handleMouseEnter = async (ev: MouseEvent, className: string, wordToReplace?: string) => {
+		ev.stopPropagation()
+
 		// We cancel the hiding timer, if any
 		clearTimer(hidingTimer);
 
@@ -164,17 +167,27 @@ export const TooltipBox: Component<Props> = async (props) => {
 			})
 
 		if (wordToReplace) {
+			if (tooltips[wordToReplace] === undefined) { // We only fetch the tooltip if it's not yet stored
+				const generatedContent = await definitions[wordToReplace]() as TooltipContent
+				// eslint-disable-next-line fp/no-mutation, require-atomic-updates
+				tooltips[wordToReplace] = (await render(generatedContent)) as unknown as JSX.Element
+			}
+
 			// We insert the content, if it's not already present
-			[...document.getElementsByClassName(`tooltip-${wordToReplace}-content`)]
-				.forEach(item => {
-					const existingContent = tooltips[wordToReplace]
-					// eslint-disable-next-line fp/no-mutation
-					item.innerHTML = existingContent !== undefined
-						? existingContent.toString()
-						: explicitContent !== undefined
-							? explicitContent.toString()
-							: ""
-				})
+			const tooltipsMatchingKeyword = [...document.getElementsByClassName(`tooltip-${wordToReplace}-content`)]
+			tooltipsMatchingKeyword.forEach((item, i) => {
+				const possiblyGeneratedContent = tooltips[wordToReplace]
+				const content = explicitContent
+					? explicitContent
+					: possiblyGeneratedContent !== undefined
+						? possiblyGeneratedContent
+						: ""
+
+				// eslint-disable-next-line fp/no-mutation
+				item.innerHTML = typeof (content) === "string"
+					? content
+					: (content as unknown as HTMLElement).outerHTML
+			})
 		}
 	}
 
@@ -187,7 +200,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 				className={className__}
 				style={{ borderBottom: "1px dotted", cursor: "help" }}
 				onMouseEnter={ev => handleMouseEnter(ev, className__, lowerCasedWord)}
-				onMouseLeave={() => handleMouseLeave(className__)}>
+				onMouseLeave={ev => handleMouseLeave(ev, className__)}>
 				{contentReplaced}
 			</span>
 
@@ -196,11 +209,11 @@ export const TooltipBox: Component<Props> = async (props) => {
 				className={`tooltipBox ${className__}-tooltip`}
 				onClick={e => { e.stopPropagation() }}
 				onMouseEnter={() => { clearTimer(hidingTimer) }}
-				onMouseLeave={() => { handleMouseLeave(className__) }}>
+				onMouseLeave={ev => { handleMouseLeave(ev, className__) }}>
 				<span className={`tooltip-${lowerCasedWord}-content`} style={{ overflow: "auto", paddingRight: ".5em" }}>
-					Loading...
-					{
-						contentPromise()
+					{explicitContent !== undefined
+						? explicitContent
+						: "Loading definition..."
 					}
 				</span>
 			</div>
@@ -222,7 +235,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 			style={{ ...style }}
 			onClick={e => e.stopPropagation()}
 			onMouseEnter={ev => { clearTimer(hidingTimer); handleMouseEnter(ev, className__) }}
-			onMouseLeave={ev => handleMouseLeave(className__)}>
+			onMouseLeave={ev => handleMouseLeave(ev, className__)}>
 
 			{children}
 
