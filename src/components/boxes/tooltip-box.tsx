@@ -19,6 +19,7 @@ export type Props = HtmlProps & {
 	 */
 	definitions?: Record<string, () => Promise<TooltipContent>>
 }
+type Definitions = { keys: string[], generatorFunction: (key: string) => TooltipContent }
 
 type ReplacementEntry = {
 	position: number,
