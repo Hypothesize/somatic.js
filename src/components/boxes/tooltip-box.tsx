@@ -16,7 +16,7 @@ export type Props = HtmlProps & {
 	/** Dictionary: each key is a string we will search in the DOM and enrich with a tooltip, 
 	 * the corresponding value will be a function that returns the content of the tooltip
 	 */
-	definitions?: { keys: string[], generatorFunction: (key: string) => Promise<TooltipContent> }
+	definitions?: { entries: string[], generatorFunction: (entry: string) => Promise<TooltipContent> }
 }
 
 type ReplacementEntry = {
@@ -60,7 +60,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 				? [{ position: 0, length: explicitContent.length, node: createToolTip(originalStringElem) }]
 
 				// eslint-disable-next-line fp/no-mutating-methods
-				: Object.keys(definitions || {})
+				: definitions.entries
 					.reduce((accum, currTerm) => {
 						const position = ((originalStringElem ?? "").toLowerCase()).search(currTerm)
 						// We add that term to the replacement, only if it was found, and not part of another replacement ("range" inside of "interquartile range")
