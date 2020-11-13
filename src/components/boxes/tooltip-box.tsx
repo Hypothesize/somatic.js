@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable brace-style */
-import { String, Obj, ExtractOptional } from "@sparkwave/standard"
-import { getAsync } from "@sparkwave/standard/web"
 import { createElement, render, stringifyStyle } from '../../core'
-import { Component, HtmlProps, Icon, CSSProperties, MouseEvent } from '../../types'
+import { Component, HtmlProps, MouseEvent } from '../../types'
 import { idProvider } from '../../utils'
 import { mergeProps } from '../../core'
 type TooltipContent = JSX.Element | string
+
 export type Props = HtmlProps & {
 	/** The content of the tooltip pop-up, either a text, or a JSX element if a more advance layout is desired */
 	explicitContent?: TooltipContent | undefined
@@ -17,9 +16,8 @@ export type Props = HtmlProps & {
 	/** Dictionary: each key is a string we will search in the DOM and enrich with a tooltip, 
 	 * the corresponding value will be a function that returns the content of the tooltip
 	 */
-	definitions?: Record<string, () => Promise<TooltipContent>>
+	definitions?: { keys: string[], generatorFunction: (key: string) => Promise<TooltipContent> }
 }
-type Definitions = { keys: string[], generatorFunction: (key: string) => TooltipContent }
 
 type ReplacementEntry = {
 	position: number,
@@ -30,7 +28,7 @@ type ReplacementEntry = {
 const defaultProps: Props = {
 	explicitContent: undefined,
 	noRecursion: false,
-	definitions: {}
+	definitions: undefined
 }
 
 // const ExternalLinkIcon: Icon = () => <svg />
@@ -59,7 +57,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 
 			// We find the replacements in the children, or in the case of explicit tooltips, the whole string is replaced
 			const replacements = typeof explicitContent === "string"
-				? [{ position: 0, length: explicitContent.length, node: createToolTip(originalStringElem, () => Promise.resolve(explicitContent)) }]
+				? [{ position: 0, length: explicitContent.length, node: createToolTip(originalStringElem) }]
 
 				// eslint-disable-next-line fp/no-mutating-methods
 				: Object.keys(definitions || {})
@@ -70,7 +68,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 							return [...accum, {
 								position: position,
 								length: currTerm.length,
-								node: createToolTip((originalStringElem ?? "").substr(position, currTerm.length), definitions[currTerm])
+								node: createToolTip((originalStringElem ?? "").substr(position, currTerm.length))
 							}]
 						}
 						return accum
@@ -169,7 +167,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 
 		if (wordToReplace) {
 			if (tooltips[wordToReplace] === undefined) { // We only fetch the tooltip if it's not yet stored
-				const generatedContent = await definitions[wordToReplace]() as TooltipContent
+				const generatedContent = await definitions.generatorFunction(wordToReplace) as TooltipContent
 				// eslint-disable-next-line fp/no-mutation, require-atomic-updates
 				tooltips[wordToReplace] = (await render(generatedContent)) as unknown as JSX.Element
 			}
@@ -192,7 +190,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 		}
 	}
 
-	const createToolTip = (contentReplaced: string, contentPromise: () => Promise<Props["explicitContent"]>) => {
+	const createToolTip = (contentReplaced: string) => {
 		const className__ = idProvider.next()
 		const lowerCasedWord = contentReplaced.toLowerCase()
 
