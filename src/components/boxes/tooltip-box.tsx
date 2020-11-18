@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable brace-style */
 import { createElement, render, stringifyStyle } from '../../core'
-import { Component, HtmlProps, MouseEvent } from '../../types'
+import { Component, HtmlProps, MouseEvent, PropsExtended } from '../../types'
 import { idProvider } from '../../utils'
 import { mergeProps } from '../../core'
-type TooltipContent = JSX.Element | string
 
-export type Props = HtmlProps & {
+export type Props<T = string> = HtmlProps & {
 	/** The content of the tooltip pop-up, either a text, or a JSX element if a more advance layout is desired */
-	explicitContent?: TooltipContent | undefined
+	explicitContent?: JSX.Element | string | undefined
 
 	/** True if we know that only the first element has to be tool-tipped */
 	noRecursion?: boolean
@@ -16,19 +15,13 @@ export type Props = HtmlProps & {
 	/** Dictionary: each key is a string we will search in the DOM and enrich with a tooltip, 
 	 * the corresponding value will be a function that returns the content of the tooltip
 	 */
-	definitions?: { entries: string[], generatorFunction: (entry: string) => Promise<TooltipContent> }
+	dictionary?: { entries: { key: string, definition: T }[], contentGenerator: (entry: T) => Promise<JSX.Element | string> }
 }
 
 type ReplacementEntry = {
 	position: number,
 	length: number,
 	node: JSX.Element
-}
-
-const defaultProps: Props = {
-	explicitContent: undefined,
-	noRecursion: false,
-	definitions: undefined
 }
 
 // const ExternalLinkIcon: Icon = () => <svg />
@@ -38,8 +31,15 @@ const defaultProps: Props = {
  */
 const tooltips: Record<string, Props["explicitContent"]> = {}
 
-export const TooltipBox: Component<Props> = async (props) => {
-	const { children, style, explicitContent, noRecursion, definitions } = mergeProps(defaultProps, props) as Required<Props> & { children: JSX.Element[] }
+export async function TooltipBox<T>(props: PropsExtended<Props<T>>): JSX.Element {
+
+	const defaultProps: Props<T> = {
+		explicitContent: undefined,
+		noRecursion: false,
+		dictionary: undefined
+	}
+
+	const { children, style, explicitContent, noRecursion, dictionary: definitions } = mergeProps(defaultProps, props) as Required<Props<T>> & { children: JSX.Element[] }
 
 	const tooltipId = idProvider.next()
 	// eslint-disable-next-line fp/no-let, init-declarations
@@ -61,14 +61,14 @@ export const TooltipBox: Component<Props> = async (props) => {
 
 				// eslint-disable-next-line fp/no-mutating-methods
 				: definitions.entries
-					.reduce((accum, currTerm) => {
-						const position = ((originalStringElem ?? "").toLowerCase()).search(currTerm)
+					.reduce((accum, currEntry) => {
+						const position = ((originalStringElem ?? "").toLowerCase()).search(currEntry.key.toLowerCase())
 						// We add that term to the replacement, only if it was found, and not part of another replacement ("range" inside of "interquartile range")
 						if (position > -1 && !partOfAnotherTerm(position, accum)) {
 							return [...accum, {
 								position: position,
-								length: currTerm.length,
-								node: createToolTip((originalStringElem ?? "").substr(position, currTerm.length))
+								length: currEntry.key.length,
+								node: createToolTip((originalStringElem ?? "").substr(position, currEntry.key.length))
 							}]
 						}
 						return accum
@@ -139,8 +139,8 @@ export const TooltipBox: Component<Props> = async (props) => {
 		ev.stopPropagation()
 
 		// We cancel the hiding timer, if any
-		clearTimer(hidingTimer);
-
+		clearTimer(hidingTimer)
+		const keyWord = wordToReplace?.toLowerCase();
 		// We immediately hide all tooltip boxes (we'll re-show that one immediately)
 		[...document.getElementsByClassName("tooltipBox")]
 			.forEach(item => item.setAttribute("style", stringifyStyle({ display: "none" })));
@@ -165,17 +165,20 @@ export const TooltipBox: Component<Props> = async (props) => {
 				}))
 			})
 
-		if (wordToReplace) {
-			if (tooltips[wordToReplace] === undefined) { // We only fetch the tooltip if it's not yet stored
-				const generatedContent = await definitions.generatorFunction(wordToReplace) as TooltipContent
+		if (keyWord) {
+			if (tooltips[keyWord] === undefined) { // We only fetch the tooltip if it's not yet stored
+				const entry = props.dictionary?.entries.find(e => e.key.toLowerCase() === keyWord)
+				if (entry === undefined) { throw new Error(`No tooltip definition found for keyword '${wordToReplace}'`) }
+
+				const generatedContent = await definitions.contentGenerator(entry.definition) as JSX.Element | string
 				// eslint-disable-next-line fp/no-mutation, require-atomic-updates
-				tooltips[wordToReplace] = (await render(generatedContent)) as unknown as JSX.Element
+				tooltips[keyWord] = (await render(generatedContent)) as unknown as JSX.Element
 			}
 
 			// We insert the content, if it's not already present
-			const tooltipsMatchingKeyword = [...document.getElementsByClassName(`tooltip-${wordToReplace}-content`)]
+			const tooltipsMatchingKeyword = [...document.getElementsByClassName(`tooltip-${keyWord}-content`)]
 			tooltipsMatchingKeyword.forEach((item, i) => {
-				const possiblyGeneratedContent = tooltips[wordToReplace]
+				const possiblyGeneratedContent = tooltips[keyWord]
 				const content = explicitContent
 					? explicitContent
 					: possiblyGeneratedContent !== undefined
@@ -190,17 +193,16 @@ export const TooltipBox: Component<Props> = async (props) => {
 		}
 	}
 
-	const createToolTip = (contentReplaced: string) => {
+	const createToolTip = (wordReplaced: string) => {
 		const className__ = idProvider.next()
-		const lowerCasedWord = contentReplaced.toLowerCase()
 
 		return <span style={{ position: "relative" }}>
 			<span
 				className={className__}
 				style={{ borderBottom: "1px dotted", cursor: "help" }}
-				onMouseEnter={ev => handleMouseEnter(ev, className__, lowerCasedWord)}
+				onMouseEnter={ev => handleMouseEnter(ev, className__, wordReplaced)}
 				onMouseLeave={ev => handleMouseLeave(ev, className__)}>
-				{contentReplaced}
+				{wordReplaced}
 			</span>
 
 			<div
@@ -209,7 +211,7 @@ export const TooltipBox: Component<Props> = async (props) => {
 				onClick={e => { e.stopPropagation() }}
 				onMouseEnter={() => { clearTimer(hidingTimer) }}
 				onMouseLeave={ev => { handleMouseLeave(ev, className__) }}>
-				<span className={`tooltip-${lowerCasedWord}-content`} style={{ overflow: "auto", paddingRight: ".5em" }}>
+				<span className={`tooltip-${wordReplaced.toLowerCase()}-content`} style={{ overflow: "auto", paddingRight: ".5em" }}>
 					{explicitContent !== undefined
 						? explicitContent
 						: "Loading definition..."
