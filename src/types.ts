@@ -35,16 +35,22 @@ export type MergedPropsExt<P, M extends Message, DP extends Partial<P>> = (
 
 /** Async function that defines a regular component */
 export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S = {}> = (
-	| ((props: PropsExtended<P, M>) => JSX.Element) // Regular component
+	| ((props: PropsExtended<P, M>) => JSX.Element) & // Regular component
+	{
+		hashProps?: (props: P) => string
+	}
 )
 /** Async function that defines a component with defaults */
-export type ComponentWithDefaults<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
+export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
 	((
 		props: PropsExtended<P, M>,
 		mergedProps: MergedPropsExt<P, M, DP>,
 		stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
 	) => JSX.Element) &
-	{ defaultProps: () => DP; defaultState: (props?: P) => DS }
+	{
+		defaultProps: () => DP;
+		defaultState: (props?: P) => DS
+	}
 )
 
 // /** Async function that defines a stateless component */
@@ -56,7 +62,7 @@ export type ComponentWithDefaults<P extends Obj, M extends Message, S, DP extend
 
 export type Component<P extends Obj = Obj, M extends Message = Message, S = {}, DP extends Partial<P> = Partial<P>, DS extends Partial<S> = Partial<S>> = (
 	| ComponentRegular<P, M, S>
-	| ComponentWithDefaults<P, M, S, DP, DS>
+	| ComponentExtended<P, M, S, DP, DS>
 )
 
 /** Virtual node type, either a component or an intrinsic element */

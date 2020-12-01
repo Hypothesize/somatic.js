@@ -7,6 +7,7 @@
 
 import morphdom from 'morphdom'
 import fastMemoize from 'fast-memoize'
+import * as objectHash from 'object-hash'
 import { VNode, VNodeType, PropsExtended, Message, MergedPropsExt, CSSProperties } from "./types"
 import { setAttribute, isEventKey, camelCaseToDash, encodeHTML, idProvider } from "./utils"
 import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
@@ -39,12 +40,15 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 		switch (typeof _vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
+				const vnodeType = _vnode.type
+
 				const _props: PropsExtended<Props, Message> = {
 					..._vnode.props,
-					key: `${parentKey ?? ""}_${(vnode as any).props?.key ?? ""}`,
+					key: `${parentKey ?? ""}_${(vnode as any).props?.key ?? ""} ${"hashProps" in vnodeType && vnodeType.hashProps
+						? vnodeType.hashProps(_vnode.props)
+						: objectHash.sha1(_vnode.props)}`,
 					children: [...children]
 				}
-				const vnodeType = _vnode.type
 
 				const fullProps = mergeProps("defaultProps" in vnodeType && vnodeType.defaultProps
 					? vnodeType.defaultProps()
