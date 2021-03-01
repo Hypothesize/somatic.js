@@ -262,7 +262,7 @@ export function hydrate(element: HTMLElement): void {
  * @param rootElement An HTML element that will be updated
  * @param node A node obtained by rendering a VNode
  */
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
+export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
 
 /** Global dictionary of events indexed by their names e.g., onmouseenter */
 const _eventHandlers: Obj<{ node: Node, handler: (e: Event) => void, capture: boolean }[]> = {}
