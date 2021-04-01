@@ -64,7 +64,8 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 				(fullProps as Obj).key = `${parentKey ?? ""}_${_props?.key ?? ""}_${propsHash ?? ""}`
 
 
-				const processVNode = async (vNode: VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>) => {
+				/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
+				const getIntrinsicEltFromComponent = async (vNode: VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>) => {
 					const fullState = mergeProps("defaultState" in vnodeType && vnodeType.defaultState
 						? vnodeType.defaultState(fullProps)
 						: {},
@@ -80,7 +81,7 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 							}
 
 							// We re-render the element
-							const newElem = await processVNode(vNode)
+							const newElem = await getIntrinsicEltFromComponent(vNode)
 							const renderedElem = await render(newElem, _props.key) // If element has children, we don't use the cache system (yet)
 							const el = document.querySelector(`[key="${_props.key}"]`)
 							if (el !== null) {
@@ -97,11 +98,11 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 					})
 				}
 
-				const element = await processVNode(_vnode as VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>)
+				const intrinsicNode = await getIntrinsicEltFromComponent(_vnode as VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>)
 
-				return element.children === undefined
-					? await memoizedRender(element)
-					: await render(element, _props.key) // If element has children, we don't use the cache system (yet)
+				return intrinsicNode.children === undefined
+					? await memoizedRender(intrinsicNode)
+					: await render(intrinsicNode, _props.key) // If element has children, we don't use the cache system (yet)
 			}
 
 			case "string": {
