@@ -42,14 +42,7 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`)
 				const vnodeType = _vnode.type
-
-				const _props: PropsExtended<Props, Message> = {
-					..._vnode.props,
-					children: [...children]
-				}
-
-				// if ("defaultProps" in vnodeType && hasValue(vnodeType.defaultProps))
-				// 	console.log(`vnodeType.defaultProps = ${vnodeType.defaultProps}, type=${typeof vnodeType.defaultProps}`)
+				const _props: PropsExtended<Props, Message> = { ..._vnode.props, children: [...children] }
 
 				const fullProps = mergeProps("defaultProps" in vnodeType && vnodeType.defaultProps && typeof vnodeType.defaultProps === "function"
 					? vnodeType.defaultProps()

@@ -57,10 +57,16 @@ export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Pa
 )
 
 
-export type Component<P extends Obj = Obj, M extends Message = Message, S = {}, DP extends Partial<P> = Partial<P>, DS extends Partial<S> = Partial<S>> = (
-	| ComponentRegular<P, M, S>
-	| ComponentExtended<P, M, S, DP, DS>
-)
+export type Component<
+	P extends Obj = Obj,
+	M extends Message = Message,
+	S = {},
+	DefaultProps extends Partial<P> = Partial<P>,
+	DefaultState extends Partial<S> = Partial<S>
+	> = (
+		| ComponentRegular<P, M, S>
+		| ComponentExtended<P, M, S, DefaultProps, DefaultState>
+	)
 
 /** Virtual node type, either a component or an intrinsic element */
 export type VNodeType<P extends Obj> = | Component<P> | string /* Intrinsic element */
