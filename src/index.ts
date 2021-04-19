@@ -10,7 +10,15 @@ declare global {
 		type Element = Promise<Somatic.VNode>
 
 		interface IntrinsicElements {
-			html: Somatic.HtmlHTMLAttributes<HTMLHeadingElement>,
+			html: Somatic.HtmlHTMLAttributes<HTMLHtmlElement>,
+			head: Somatic.HtmlHTMLAttributes<HTMLHeadElement>,
+			body: Somatic.HtmlHTMLAttributes<HTMLBodyElement>,
+			meta: Somatic.HtmlHTMLAttributes<HTMLMetaElement>,
+			style: Somatic.HtmlHTMLAttributes<HTMLStyleElement>,
+			title: Somatic.HtmlHTMLAttributes<HTMLTitleElement>,
+			link: Somatic.HtmlHTMLAttributes<HTMLLinkElement>,
+			script: Somatic.HtmlHTMLAttributes<HTMLScriptElement>,
+			noscript: Somatic.HtmlHTMLAttributes<HTMLElement>,
 			form: Somatic.FormHTMLAttributes<HTMLFormElement>;
 			div: Somatic.HTMLAttributes<HTMLDivElement>;
 			h1: Somatic.HTMLAttributes<HTMLHeadingElement>,
@@ -34,8 +42,7 @@ declare global {
 			span: Somatic.HTMLAttributes<HTMLSpanElement>;
 			optgroup: Somatic.OptgroupHTMLAttributes<HTMLOptGroupElement>,
 			option: Somatic.OptionHTMLAttributes<HTMLOptionElement>;
-			style: Somatic.StyleHTMLAttributes<HTMLStyleElement>;
-			textarea: Somatic.TextareaHTMLAttributes<HTMLInputElement>;
+			textarea: Somatic.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 			/* svg */
 			svg: Somatic.SVGAttributes<SVGSVGElement>,
@@ -48,17 +55,16 @@ declare global {
 			polyline: Somatic.SVGAttributes<SVGPolylineElement>,
 			path: Somatic.SVGAttributes<SVGPathElement>,
 			polygon: Somatic.SVGAttributes<SVGPolygonElement>,
-			title: Somatic.SVGAttributes<SVGTitleElement>,
 			switch: Somatic.SVGAttributes<SVGSwitchElement>,
 			desc: Somatic.SVGAttributes<SVGDescElement>,
 			foreignObject: Somatic.SVGAttributes<SVGForeignObjectElement>,
 			text: Somatic.SVGAttributes<SVGTextElement>,
-			defs: Somatic.SVGAttributes<SVGSVGElement>,
-			linearGradient: Somatic.SVGAttributes<SVGSVGElement>,
-			stop: Somatic.SVGAttributes<SVGSVGElement>,
-			filter: Somatic.SVGAttributes<SVGSVGElement>,
-			clipPath: Somatic.SVGAttributes<SVGSVGElement>,
-			use: Somatic.SVGAttributes<SVGSVGElement>,
+			defs: Somatic.SVGAttributes<SVGDefsElement>,
+			linearGradient: Somatic.SVGAttributes<SVGLinearGradientElement>,
+			stop: Somatic.SVGAttributes<SVGStopElement>,
+			filter: Somatic.SVGAttributes<SVGFilterElement>,
+			clipPath: Somatic.SVGAttributes<SVGClipPathElement>,
+			use: Somatic.SVGAttributes<SVGUseElement>,
 		}
 	}
 }
