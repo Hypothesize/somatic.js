@@ -13,11 +13,11 @@ declare global {
 			html: Somatic.HtmlHTMLAttributes<HTMLHtmlElement>,
 			head: Somatic.HtmlHTMLAttributes<HTMLHeadElement>,
 			body: Somatic.HtmlHTMLAttributes<HTMLBodyElement>,
-			meta: Somatic.HtmlHTMLAttributes<HTMLMetaElement>,
-			style: Somatic.HtmlHTMLAttributes<HTMLStyleElement>,
+			meta: Somatic.MetaHTMLAttributes<HTMLMetaElement>,
+			style: Somatic.StyleHTMLAttributes<HTMLStyleElement>,
 			title: Somatic.HtmlHTMLAttributes<HTMLTitleElement>,
-			link: Somatic.HtmlHTMLAttributes<HTMLLinkElement>,
-			script: Somatic.HtmlHTMLAttributes<HTMLScriptElement>,
+			link: Somatic.LinkHTMLAttributes<HTMLLinkElement>,
+			script: Somatic.ScriptHTMLAttributes<HTMLScriptElement>,
 			noscript: Somatic.HtmlHTMLAttributes<HTMLElement>,
 			form: Somatic.FormHTMLAttributes<HTMLFormElement>;
 			div: Somatic.HTMLAttributes<HTMLDivElement>;
