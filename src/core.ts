@@ -239,7 +239,7 @@ const addListener = (node: Node, event: string, handler: (e: Event) => void, cap
 }
 
 /** Remove all event listeners */
-export const removeAllListeners = (targetNode: Node) => {
+export const removeListeners = (targetNode: Node) => {
 	Object.keys(_eventHandlers).forEach(eventName => {
 		// remove listeners from the matching nodes
 		_eventHandlers[eventName]
@@ -357,7 +357,10 @@ const getIntrinsicEltFromComponent = async <Props extends Obj, State extends Obj
 	const intrinsicNode = await component(_props, fullProps, {
 		...fullState,
 		setState: async (delta: Partial<State>) => {
-			if (fullProps.key) {
+			if (fullProps.key === undefined) {
+				console.error("Cannot change the state of a component without a key")
+			}
+			else {
 				// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
 				_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
 			}
@@ -365,16 +368,21 @@ const getIntrinsicEltFromComponent = async <Props extends Obj, State extends Obj
 			// We re-render the element
 			const newElem = await getIntrinsicEltFromComponent<Props, State>(_vnode)
 			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
-			const el = document.querySelector(`[key="${_props.key}"]`)
-			if (el !== null) {
-				updateDOM(el, renderedElem)
+			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
+			if (elements.length > 1) {
+				console.error(`More than 1 component have the key '${_props.key}'`)
+			} else {
+				if (elements[0] !== undefined) {
+					updateDOM(elements[0], renderedElem)
+				}
+				else {
+					console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
+				}
 			}
-			else {
-				console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
-			}
+
 		}
 	})
-	if (intrinsicNode.props) {
+	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
 		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
 	}
 	return intrinsicNode
