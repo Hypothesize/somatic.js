@@ -25,7 +25,7 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 const _stateCache: Obj<Obj> = (global as any).__SOMATIC_CACHE__ = {}
 
 /** Render virtual node to DOM node */
-export async function render<Props extends Obj, State>(vnode?: Primitive | Object | VNode<PropsExtended<Props, Message>> | Promise<VNode<PropsExtended<Props, Message>>>, parentKey?: string): Promise<Node> {
+export async function render<Props extends Obj, State extends Obj>(vnode?: Primitive | Object | VNode<PropsExtended<Props, Message>> | Promise<VNode<PropsExtended<Props, Message>>>): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -37,68 +37,18 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
 		// console.log(`vNode is object with 'type' and 'props' properties`)
 
-		const children = [...flatten([_vnode.children]) as JSX.Element[]]
 		switch (typeof _vnode.type) {
 			case "function": {
-				// console.log(`vNode type is function, rendering as custom component`)
-				const vnodeType = _vnode.type
-				const _props: PropsExtended<Props, Message> = { ..._vnode.props, children: [...children] }
-
-				const fullProps = mergeProps("defaultProps" in vnodeType && vnodeType.defaultProps && typeof vnodeType.defaultProps === "function"
-					? vnodeType.defaultProps()
-					: {},
-					_props
-				)
-				const propsHash = ("hashProps" in vnodeType && vnodeType.hashProps)
-					? vnodeType.hashProps(fullProps)
-					: undefined; //hash(fullProps);
-				// console.log(`propsHash for ${JSON.stringify(_vnode.props, undefined, 2)} is ${propsHash}`)
-
-				(fullProps as Obj).key = `${parentKey ?? ""}_${_props?.key ?? ""}_${propsHash ?? ""}`
-
-
-				/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-				const getIntrinsicEltFromComponent = async (vNode: VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>) => {
-					const fullState = mergeProps("defaultState" in vnodeType && vnodeType.defaultState
-						? vnodeType.defaultState(fullProps)
-						: {},
-						_stateCache[fullProps.key ?? ""] ?? {}
-					)
-
-					return await (vNode).type(_props, fullProps, {
-						...fullState,
-						setState: async (delta: Partial<State>) => {
-							if (fullProps.key) {
-								// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
-								_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
-							}
-
-							// We re-render the element
-							const newElem = await getIntrinsicEltFromComponent(vNode)
-							const renderedElem = await render(newElem, _props.key) // If element has children, we don't use the cache system (yet)
-							const el = document.querySelector(`[key="${_props.key}"]`)
-							if (el !== null) {
-								updateDOM(el, renderedElem)
-							}
-							else {
-								console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
-							}
-
-							if ("stateChangeCallback" in vnodeType && vnodeType.stateChangeCallback !== undefined && typeof vnodeType.stateChangeCallback === "function") {
-								vnodeType.stateChangeCallback(delta)
-							}
-						}
-					})
-				}
-
-				const intrinsicNode = await getIntrinsicEltFromComponent(_vnode as VNode<PropsExtended<Props, Message>, Component<PropsExtended<Props, Message>>>)
+				const intrinsicNode = await getIntrinsicEltFromComponent(_vnode as VNode)
 
 				return intrinsicNode.children === undefined
 					? await memoizedRender(intrinsicNode)
-					: await render(intrinsicNode, _props.key) // If element has children, we don't use the cache system (yet)
+					: await render(intrinsicNode) // If element has children, we don't use the cache system (yet)
 			}
 
 			case "string": {
+				const children = [...flatten([_vnode.children]) as JSX.Element[]]
+
 				// console.log(`vNode type is string, rendering as intrinsic component`)
 				const node = svgTags.includes(_vnode.type)
 					? document.createElementNS('http://www.w3.org/2000/svg', _vnode.type)
@@ -106,7 +56,7 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 
 				// render and append children in order
 				await Promise
-					.all(children.map((c, i) => render(c, `${i}_${parentKey ?? ""}`)))
+					.all(children.map((c, i) => render(c)))
 					.then(rendered => rendered.forEach(child => node.appendChild(child)))
 
 				// attach attributes
@@ -154,8 +104,8 @@ export async function render<Props extends Obj, State>(vnode?: Primitive | Objec
 						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
 					}
 				})
-				if (parentKey) {
-					setAttribute(node, "key", parentKey)
+				if (_vnode.props && _vnode.props.key) {
+					setAttribute(node, "key", _vnode.props.key)
 				}
 				return node
 			}
@@ -385,3 +335,47 @@ export function makeComponent1<P extends Obj, M extends Message = Message, S = u
 	}
 }
 
+/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
+const getIntrinsicEltFromComponent = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
+	const children = [...flatten([_vnode.children]) as JSX.Element[]]
+
+	const component = _vnode.type as Component<Props>
+	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
+
+	const fullProps = mergeProps("defaultProps" in component && component.defaultProps && typeof component.defaultProps === "function"
+		? component.defaultProps() as PropsExtended<Props, Message>
+		: {} as PropsExtended<Props, Message>,
+		_props
+	)
+
+	const fullState = mergeProps("defaultState" in component && component.defaultState
+		? component.defaultState(fullProps)
+		: {},
+		_stateCache[fullProps.key ?? ""] ?? {}
+	)
+
+	const intrinsicNode = await component(_props, fullProps, {
+		...fullState,
+		setState: async (delta: Partial<State>) => {
+			if (fullProps.key) {
+				// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
+				_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
+			}
+
+			// We re-render the element
+			const newElem = await getIntrinsicEltFromComponent<Props, State>(_vnode)
+			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
+			const el = document.querySelector(`[key="${_props.key}"]`)
+			if (el !== null) {
+				updateDOM(el, renderedElem)
+			}
+			else {
+				console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
+			}
+		}
+	})
+	if (intrinsicNode.props) {
+		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
+	}
+	return intrinsicNode
+}
