@@ -25,7 +25,7 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 const _stateCache: Obj<Obj> = (global as any).__SOMATIC_CACHE__ = {}
 
 /** Render virtual node to DOM node */
-export async function render<Props extends Obj, State extends Obj>(vnode?: Primitive | Object | VNode<PropsExtended<Props, Message>> | Promise<VNode<PropsExtended<Props, Message>>>): Promise<Node> {
+export async function render<Props extends Obj>(vnode?: Primitive | Object | VNode<PropsExtended<Props>> | Promise<VNode<PropsExtended<Props>>>): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -39,7 +39,7 @@ export async function render<Props extends Obj, State extends Obj>(vnode?: Primi
 
 		switch (typeof _vnode.type) {
 			case "function": {
-				const intrinsicNode = await getIntrinsicEltFromComponent(_vnode as VNode)
+				const intrinsicNode = await getIntrinsicFromComponentElement(_vnode as VNode)
 
 				return intrinsicNode.children === undefined
 					? await memoizedRender(intrinsicNode)
@@ -56,7 +56,7 @@ export async function render<Props extends Obj, State extends Obj>(vnode?: Primi
 
 				// render and append children in order
 				await Promise
-					.all(children.map((c, i) => render(c)))
+					.all(children.map((c) => render(c)))
 					.then(rendered => rendered.forEach(child => node.appendChild(child)))
 
 				// attach attributes
@@ -336,7 +336,7 @@ export function makeComponent1<P extends Obj, M extends Message = Message, S = u
 }
 
 /** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-const getIntrinsicEltFromComponent = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
+const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
 	const children = [...flatten([_vnode.children]) as JSX.Element[]]
 
 	const component = _vnode.type as Component<Props>
@@ -366,7 +366,7 @@ const getIntrinsicEltFromComponent = async <Props extends Obj, State extends Obj
 			}
 
 			// We re-render the element
-			const newElem = await getIntrinsicEltFromComponent<Props, State>(_vnode)
+			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
 			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
 			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
 			if (elements.length > 1) {
