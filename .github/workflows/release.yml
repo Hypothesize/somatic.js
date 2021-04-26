@@ -23,7 +23,7 @@
          if: ${{ steps.release.outputs.release_created }}
        - run: npm ci
          if: ${{ steps.release.outputs.release_created }}
-       - run: npm publish
+       - run: npm run build && cp package.json LICENSE README.md dist && cd dist && npm publish
          env:
            NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
          if: ${{ steps.release.outputs.release_created }} 
