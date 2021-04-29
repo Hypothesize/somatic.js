@@ -5,6 +5,7 @@
 /* eslint-disable init-declarations */
 
 import * as assert from "assert"
+
 import { Component, createElement, render } from '../dist/index.js'
 import { PanelProps, CSSProperties } from '../dist/types.js'
 import { StackPanel, DialogBox, StackView, ToggleInput, CommandBox } from '../dist/components/index.js'
@@ -57,43 +58,94 @@ describe("Components", () => {
 		container = null
 	})
 
-	/*describe("StackPanel", () => {
-		it("should render the element and its children with the default props", async () => {
-			const node = <StackPanel>{`test`}</StackPanel>
-			const renderedNode = await render(node)
+	describe("Generator component", () => {
+		it("should render a component and its children", async () => {
 
-			// Attach the element to the dom container
-			container?.appendChild(renderedNode)
+			function* Timer() {
+				const seconds = 15
+				yield <div>Seconds: {seconds}</div>
+			}
 
-			assert.equal(container?.children[0].textContent, 'test')
+			const renderedNode = await render(Timer)
+			const renderedHtml = getHtmlFromNode(renderedNode)
+
+			const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: initial; align-items: initial;">test</div>'
+
+			assert.strictEqual(renderedHtml, expectedHtml)
 		})
+	})
 
-		it("should set flex direction attribute as column when passing orientation props", async () => {
-			const node = <StackPanel orientation={"vertical"}>{`test`}</StackPanel>
-			const renderedNode = await render(node)
+	// describe("StackPanel", () => {
+	// 	it("should render the element and its children with the default props", async () => {
+	// 		const jsx = <StackPanel>{`test`}</StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
 
-			// Attach the element to the dom container
-			container?.appendChild(renderedNode)
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: initial; align-items: initial;">test</div>'
 
-			const elt = container?.children[0]
-			if (elt && 'style' in elt)
-				assert.equal(elt["style"]["flex-direction"], 'column')
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
 
-		})
+	// 	it("should set flex direction attribute as column when passing orientation props", async () => {
+	// 		const jsx = <StackPanel orientation={"vertical"}>{`test`}</StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
 
-		it("should set justify content attribute as centered when passing items align props", async () => {
-			const node = <StackPanel itemsAlignH={"center"}>{`test`}</StackPanel>
-			const renderedNode = await render(node)
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: column; justify-content: initial; align-items: initial;">test</div>'
 
-			// Attach the element to the dom container
-			container?.appendChild(renderedNode)
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
 
-			const elt = container?.children[0]
-			if (elt && 'style' in elt)
-				assert.equal(elt["style"]["justify-content"], 'center')
+	// 	it("should set justify content attribute as centered when passing items align H props", async () => {
+	// 		const jsx = <StackPanel itemsAlignH={"center"}>{`test`}</StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
 
-		})
-	})*/
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: center; align-items: initial;">test</div>'
+
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
+
+	// 	it("should set item align attribute as centered when centering itemAlignV", async () => {
+	// 		const jsx = <StackPanel itemsAlignV={"center"}>{`test`}</StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
+
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: initial; align-items: center;">test</div>'
+
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
+
+	// 	it("should give the background color passed in the 'style' props to the main div", async () => {
+	// 		const jsx = <StackPanel style={{ background: "rgb(255, 0, 0)" }}>{`test`}</StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
+
+	// 		const expectedHtml = '<div style="display: flex; background: rgb(255, 0, 0); flex-direction: row; justify-content: initial; align-items: initial;">test</div>'
+
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
+
+	// 	it("should return an empty div when it has no children", async () => {
+	// 		const jsx = <StackPanel></StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
+
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: initial; align-items: initial;"></div>'
+
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
+
+	// 	it("should include each passed child inside the main div", async () => {
+	// 		const jsx = <StackPanel><span>the span</span><div>the div</div><input name="the_input" /></StackPanel>
+	// 		const renderedNode = await render(jsx)
+	// 		const renderedHtml = getHtmlFromNode(renderedNode)
+
+	// 		const expectedHtml = '<div style="display: flex; flex-direction: row; justify-content: initial; align-items: initial;"><span>the span</span><div>the div</div><input name="the_input"></div>'
+
+	// 		assert.strictEqual(renderedHtml, expectedHtml)
+	// 	})
+	// })
 
 	/*describe("StackView", () => {
 		it("should render the element and its children with the default props", async () => {
@@ -156,3 +208,9 @@ describe("Components", () => {
 		})
 	})*/
 })
+
+function getHtmlFromNode(node: Node): string {
+	const expectedWrap = document.createElement('div')
+	expectedWrap.appendChild(node.cloneNode(true))
+	return expectedWrap.innerHTML
+}
