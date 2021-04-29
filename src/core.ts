@@ -41,7 +41,7 @@ export async function render<Props extends Obj>(vnode?: Primitive | Object | VNo
 			case "function": {
 				const intrinsicNode = await getIntrinsicFromComponentElement(_vnode as VNode)
 
-				return intrinsicNode.children === undefined
+				return (await intrinsicNode.value).children === undefined
 					? await memoizedRender(intrinsicNode)
 					: await render(intrinsicNode) // If element has children, we don't use the cache system (yet)
 			}
@@ -314,26 +314,26 @@ export const makeComponent = <DP, DS>(args:
 	}
 }
 
-export function makeComponent1<P extends Obj, M extends Message = Message, S = unknown>() {
-	return <DP extends Partial<P>, DS extends Partial<S>>(
-		comp: (
-			_: PropsExtended<P, M>,
-			props: MergedPropsExt<P, M, DP>,
-			state: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		) => JSX.Element,
+// export function makeComponent1<P extends Obj, M extends Message = Message, S = unknown>() {
+// 	return <DP extends Partial<P>, DS extends Partial<S>>(
+// 		comp: (
+// 			_: PropsExtended<P, M>,
+// 			props: MergedPropsExt<P, M, DP>,
+// 			state: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
+// 		) => JSX.Element,
 
-		opts: {
-			defaultProps: () => DP,
-			defaultState: (props?: P) => DS,
-			hashProps?: (props: P) => string,
-			stateChangeCallback?: (delta: Partial<S>) => Promise<void>
+// 		opts: {
+// 			defaultProps: () => DP,
+// 			defaultState: (props?: P) => DS,
+// 			hashProps?: (props: P) => string,
+// 			stateChangeCallback?: (delta: Partial<S>) => Promise<void>
 
-		}) => {
+// 		}) => {
 
-		const r: ComponentExtended<P, M, S, DP, DS> = Object.assign(comp, { ...opts })
-		return r
-	}
-}
+// 		const r: ComponentExtended<P, M, S, DP, DS> = Object.assign(comp, { ...opts })
+// 		return r
+// 	}
+// }
 
 /** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
 const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
@@ -354,36 +354,40 @@ const getIntrinsicFromComponentElement = async <Props extends Obj, State extends
 		_stateCache[fullProps.key ?? ""] ?? {}
 	)
 
-	const intrinsicNode = await component(_props, fullProps, {
-		...fullState,
-		setState: async (delta: Partial<State>) => {
-			if (fullProps.key === undefined) {
-				console.error("Cannot change the state of a component without a key")
-			}
-			else {
-				// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
-				_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
-			}
-
-			// We re-render the element
-			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
-			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
-			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
-			if (elements.length > 1) {
-				console.error(`More than 1 component have the key '${_props.key}'`)
-			} else {
-				if (elements[0] !== undefined) {
-					updateDOM(elements[0], renderedElem)
+	const intrinsicNode = await component.next({
+		props: _props,
+		mergedProps: fullProps,
+		stateCache: {
+			...fullState,
+			setState: async (delta: Partial<State>) => {
+				if (fullProps.key === undefined) {
+					console.error("Cannot change the state of a component without a key")
 				}
 				else {
-					console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
+					// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
+					_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
 				}
-			}
 
+				// We re-render the element
+				const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
+				const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
+				const elements = document.querySelectorAll(`[key="${_props.key}"]`)
+				if (elements.length > 1) {
+					console.error(`More than 1 component have the key '${_props.key}'`)
+				} else {
+					if (elements[0] !== undefined) {
+						updateDOM(elements[0], renderedElem)
+					}
+					else {
+						console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
+					}
+				}
+
+			}
 		}
-	})
-	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
-		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
-	}
+	} as any)
+	// if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
+	// 	intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
+	// }
 	return intrinsicNode
 }

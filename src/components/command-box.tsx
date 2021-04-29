@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, mergeProps, makeComponent, makeComponent1 } from '../core'
+import { createElement, mergeProps, makeComponent } from '../core'
 import { Component, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 

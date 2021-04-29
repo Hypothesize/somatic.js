@@ -35,7 +35,7 @@ export type MergedPropsExt<P, M extends Message, DP extends Partial<P>> = (
 
 /** Async function that defines a regular component */
 export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S = {}> = (
-	| ((props: PropsExtended<P, M>) => JSX.Element) & // Regular component
+	| (AsyncIterator<JSX.Element, JSX.Element, PropsExtended<P, M>>) & // Regular component
 	{
 		hashProps?: (props: P) => string,
 		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
@@ -43,11 +43,14 @@ export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S
 )
 /** Async function that defines a component with defaults */
 export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
-	((
-		props: PropsExtended<P, M>,
-		mergedProps: MergedPropsExt<P, M, DP>,
-		stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-	) => JSX.Element) &
+	(AsyncIterator<
+		JSX.Element,
+		JSX.Element,
+		{
+			props: PropsExtended<P, M>,
+			mergedProps: MergedPropsExt<P, M, DP>,
+			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
+		}>) &
 	{
 		defaultProps: () => DP;
 		defaultState: (props?: P) => DS,
