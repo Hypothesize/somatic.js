@@ -4,7 +4,7 @@
 
 import { createElement, makeComponent, mergeProps } from '../core'
 import { Component, StyleProps } from '../types'
-import { makeIcon } from './utils'
+// import { makeIcon } from './utils'
 
 type Messages = ({ type: "TOGGLE", data: { toggleState: "on" | "off" } })
 
