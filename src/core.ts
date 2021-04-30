@@ -368,7 +368,7 @@ const getIntrinsicFromComponentElement = async <Props extends Obj, State extends
 			// We re-render the element
 			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
 			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
-			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
+			const elements = document.querySelectorAll(`[key="${_props.key?.replace(/"/g, '\\"')}"]`) // We escape possible double-quotes in the key
 			if (elements.length > 1) {
 				console.error(`More than 1 component have the key '${_props.key}'`)
 			} else {
@@ -383,6 +383,7 @@ const getIntrinsicFromComponentElement = async <Props extends Obj, State extends
 		}
 	})
 	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
+		// We set the vNode's key as the intrinsic element's "key" prop, which later will appear as an HTML attribute.
 		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
 	}
 	return intrinsicNode
