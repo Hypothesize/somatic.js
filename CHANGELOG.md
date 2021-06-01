@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.0.1...v2.0.2) (2021-06-01)
+
+
+### Bug Fixes
+
+* ([#75](https://www.github.com/Hypothesize/somatic.js/issues/75)) Fix glob pattern in the lint npm script ([c7f70b0](https://www.github.com/Hypothesize/somatic.js/commit/c7f70b0ba33bc5afee20e783515a80539590eb76))
+
 ### [2.0.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.0.0...v2.0.1) (2021-04-26)
 
 
