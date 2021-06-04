@@ -2,7 +2,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, makeComponent, mergeProps } from '../core'
+import { createElement, makeComponent1 } from '../core'
 import { Component, StyleProps } from '../types'
 // import { makeIcon } from './utils'
 
@@ -14,7 +14,7 @@ export type State = { toggleState: "on" | "off" }
 
 const getDefaultState = (props: Props) => Object.freeze({ toggleState: props.toggleState })
 
-export const ToggleInput = makeComponent({
+export const ToggleInput = makeComponent1({
 	defaultProps: () => Object.freeze({
 		toggleState: "off" as NonNullable<Props["toggleState"]>,
 

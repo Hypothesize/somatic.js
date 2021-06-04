@@ -1,0 +1,28 @@
+<script src="./dist/utils.js"></script>
+<script src="./dist/types.js"></script>
+<script src="./dist/index.js"></script>
+<script src="./dist/core.js"></script>
+<script>
+	let currentScript
+	if (typeof document !== "undefined") {
+		require('style-scoped')
+		currentScript = document.currentScript
+		document.addEventListener("DOMContentLoaded", async (event) => {
+			document.title = `Hypothesize - ${title}`
+
+			await renderAsync()
+		})
+	}
+
+	export async function renderAsync() {
+		const Component = makeComponent()
+		const vNode = <div id={"root-div"}><Component></Component></div>
+		const node = await render(vNode)
+
+		updateDOM(document.getElementById("root-div"), node)
+	}
+</script>
+
+<div id="root-div">
+	<h1>TEST PAGE</h1>
+</div>

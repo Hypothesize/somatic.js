@@ -8,7 +8,7 @@
 /* eslint-disable init-declarations */
 
 import * as assert from "assert"
-import { createElement, render, renderToString, hydrate } from '../dist/index.js'
+import { createElement, render, renderToString } from '../dist/index.js'
 import { ToggleInput } from '../dist/components'
 import { idProvider } from '../dist/utils'
 import { constructElement, normalizeHTML } from './utils'
@@ -19,27 +19,27 @@ jsdom({ url: 'http://localhost', skipWindowCheck: true })
 describe("Somatic", () => {
 	describe("render", () => {
 		it("should return element with same html as renderToString", async () => {
-			try {
-				//console.log(`Starting 'should return element with same html as renderToString' test`)
-				const vNode = <ToggleInput
-					icons={{ on: <span>On</span>, off: <span>Off</span> }}
-					style={{ height: "auto", width: "auto", fontSize: "14px" }}
-					postMsgAsync={async (msg) => { console.log('Message received' + msg.type) }}>
-				</ToggleInput>
+			// try {
+			// 	//console.log(`Starting 'should return element with same html as renderToString' test`)
+			// 	const vNode = <ToggleInput
+			// 		icons={{ on: <span>On</span>, off: <span>Off</span> }}
+			// 		style={{ height: "auto", width: "auto", fontSize: "14px" }}
+			// 		postMsgAsync={async (msg) => { console.log('Message received' + msg.type) }}>
+			// 	</ToggleInput>
 
-				const renderedHTML = (await render(vNode) as Element).outerHTML
-				//console.log(`renderedNodeHTML: ${renderedHTML}`)
+			// 	const renderedHTML = (await render(vNode) as Element).outerHTML
+			// 	//console.log(`renderedNodeHTML: ${renderedHTML}`)
 
-				idProvider.reset()
-				const renderedString = await renderToString(vNode)
-				//console.log(`renderedString: ${renderedString}`)
+			// 	idProvider.reset()
+			// 	const renderedString = await renderToString(vNode)
+			// 	//console.log(`renderedString: ${renderedString}`)
 
-				assert.equal(normalizeHTML(renderedHTML), normalizeHTML(renderedString))
+			// 	assert.equal(normalizeHTML(renderedHTML), normalizeHTML(renderedString))
 
-			}
-			catch (e) {
-				console.error(e)
-			}
+			// }
+			// catch (e) {
+			// 	console.error(e)
+			// }
 		})
 
 		/*it("should render element with the same text content", async () => {

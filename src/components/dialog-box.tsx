@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { map, first, last } from "@sparkwave/standard/collections"
-import { createElement, mergeProps, makeComponent } from '../core'
+import { createElement, mergeProps, makeComponent1 } from '../core'
 import { Component, StyleProps, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 import { HoverBox } from './hover-box'
@@ -18,7 +18,7 @@ const defaultProps = {
 	buttons: [] as Iterable<ButtonInfo>
 }
 
-export const DialogBox = makeComponent({})<Props>(async (props) => {
+export const DialogBox = makeComponent1({})<Props>(async (props) => {
 	const { buttons, style, header, buttonTemplate } = mergeProps(defaultProps, props)
 
 	const mainContent = () => {

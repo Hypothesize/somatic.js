@@ -1,31 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable fp/no-mutation */
-/* eslint-disable fp/no-mutating-assign */
 /* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable fp/no-rest-parameters */
+/* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable brace-style */
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import morphdom from 'morphdom'
-import fastMemoize from 'fast-memoize'
-import { VNode, VNodeType, PropsExtended, Message, MergedPropsExt, CSSProperties, ComponentExtended, Component } from "./types"
-import { setAttribute, isEventKey, camelCaseToDash, encodeHTML, idProvider } from "./utils"
-import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
-import { Obj, Primitive, flatten, deepMerge } from "@sparkwave/standard"
+import { Obj, String, flatten, deepMerge } from "@sparkwave/standard"
+import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, Message, MergedPropsExt, PropsExtended } from "./types"
+// import * as cuid from "cuid"
 
-// export const Fragment = (async () => ({})) as Renderer
-export const fnStore: ((evt: Event) => unknown)[] = []
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/** JSX is transformed into calls of this function */
 export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: any[]): VNode<P, T> {
 	return { type, props, children }
 }
 
-const _stateCache: Obj<Obj> = (global as any).__SOMATIC_CACHE__ = {}
-
 /** Render virtual node to DOM node */
-export async function render<Props extends Obj>(vnode?: Primitive | Object | VNode<PropsExtended<Props>> | Promise<VNode<PropsExtended<Props>>>): Promise<Node> {
+export async function render(vnode: undefined | null | string | VNode): Promise<Node & { producer?: Component }> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -33,70 +22,40 @@ export async function render<Props extends Obj>(vnode?: Primitive | Object | VNo
 		return document.createTextNode("")
 	}
 
-	const _vnode = await vnode
-	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
-		// console.log(`vNode is object with 'type' and 'props' properties`)
-
-		switch (typeof _vnode.type) {
+	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
+		const childVNodes = [...flatten([vnode.children]) as VNode[]]
+		switch (typeof vnode.type) {
 			case "function": {
-				const intrinsicNode = await getIntrinsicFromComponentElement(_vnode as VNode)
+				// console.log(`vNode type is function "${vnode.type.name}", rendering as custom component`)
+				const generator = vnode.type({ ...vnode.props, children: [...childVNodes] })
+				const node = render((await generator.next()).value)
 
-				return (await intrinsicNode.value).children === undefined
-					? await memoizedRender(intrinsicNode)
-					: await render(intrinsicNode) // If element has children, we don't use the cache system (yet)
+				// console.log(`Generator ${generator} being assigned as producer of node ${node} for vnode type function "${vnode.type.name}"`)
+				return Object.assign(node, { producer: generator })
 			}
 
 			case "string": {
-				const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
 				// console.log(`vNode type is string, rendering as intrinsic component`)
-				const node = svgTags.includes(_vnode.type)
-					? document.createElementNS('http://www.w3.org/2000/svg', _vnode.type)
-					: document.createElement(_vnode.type)
+				const node = svgTags.includes(vnode.type)
+					? document.createElementNS('http://www.w3.org/2000/svg', vnode.type)
+					: document.createElement(vnode.type)
 
 				// render and append children in order
 				await Promise
-					.all(children.map((c) => render(c)))
-					.then(rendered => rendered.forEach(child => node.appendChild(child)))
+					.all(childVNodes.map(render))
+					.then(childDomNodes => childDomNodes.forEach(node.appendChild))
 
 				// attach attributes
-				const nodeProps = _vnode.props || {}
+				const nodeProps = vnode.props || {}
 				Object.keys(nodeProps).forEach(propKey => {
 					try {
 						const propValue = nodeProps[propKey]
 						if (propValue !== undefined) {
-							const htmlPropKey = propKey.toUpperCase()
-							if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-								// The first condition above is to prevent useless searches through the events list.
-								const eventId = idProvider.next()
-								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
-								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
-
-								// If the vNode had an event, we add it to the document-wide event. 
-								// We keep track of every event and its matching element through the eventId:
-								// each listener contains one, each DOM element as well
-								addListener(document, eventNames[htmlPropKey], (e: Event) => {
-									const target = e.target as HTMLElement | null
-									if (target !== document.getRootNode()) {
-										// We don't want to do anything when the document itself is the target
-										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
-										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
-
-										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
-										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
-										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
-											|| e.cancelBubble
-
-										if (!shouldNotTrigger && intendedTarget) {
-											// Execute the callback with the context set to the found element
-											// jQuery goes way further, it even has it's own event object
-											(propValue as (e: Event) => unknown).call(intendedTarget, e)
-										}
-									}
-								}, true)
+							if (isEventKey(propKey.toUpperCase()) && typeof propValue === "function") {
+								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
 							}
 							else {
-								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
+								setAttribute(node, propKey, globalThis.String(propValue))
 							}
 						}
 					}
@@ -104,61 +63,49 @@ export async function render<Props extends Obj>(vnode?: Primitive | Object | VNo
 						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
 					}
 				})
-				if (_vnode.props && _vnode.props.key) {
-					setAttribute(node, "key", _vnode.props.key)
-				}
+
 				return node
 			}
 
 			default: {
-				console.error(`Somatic render(): invalid vnode "${JSON.stringify(_vnode)}" of type "${typeof _vnode}"; `)
-				return document.createTextNode(String(_vnode))
+				console.error(`Somatic render(): invalid vnode "${JSON.stringify(vnode)}" of type "${typeof vnode}"; `)
+				return document.createTextNode(globalThis.String(vnode))
 			}
 		}
 	}
 	else {
-		return document.createTextNode(String(_vnode))
+		return document.createTextNode(globalThis.String(vnode))
 	}
 }
-const memoizedRender = fastMemoize(render, {})
 
-/** Render virtual node to HTML string */
-export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): string } | VNode<P> | Promise<VNode<P>>): Promise<string> {
-	const elt = (await render(vnode)) as Node | Element
-	const result = ('outerHTML' in elt)
-		? elt.outerHTML
-		: (elt.textContent ?? elt.nodeValue ?? "")
+export async function renderToString(vnode: undefined | null | string | VNode): Promise<string> {
+	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
-	// console.log(`renderToString output: ${result}`)
-	return result
-
-	/*if (vnode === null || vnode === undefined) {
-		return ""
+	if (vnode === null || vnode === undefined) {
+		// console.log(`VNode is null or undefined, returning empty text node`)
+		return ("")
 	}
-	const _vnode = await vnode
 
-	if (typeof _vnode === 'object' && 'type' in _vnode) {
-		const children = new Array(flatten(_vnode.children || [])) as Array<JSX.Element>
-		switch (typeof _vnode.type) {
+	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
+		const childVNodes = [...flatten([vnode.children]) as VNode[]]
+		const vNodeType = vnode.type
+		switch (typeof vNodeType) {
 			case "function": {
-				const _props: PropsExtended<P, Message> = { ..._vnode.props, children: [...children || []] }
-
-				const resolvedVNode = await _vnode.type(_props)
-				return typeof resolvedVNode.type === "function" && children.length === 0
-					? await memoizedRenderToString(resolvedVNode)
-					: await renderToString(resolvedVNode) // If elem have children, we don't use the cache system (yet).
+				// console.log(`vNode type is function, rendering as custom component`
+				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] })
+				return renderToString((await generator.next()).value)
 			}
 
 			case "string": {
-				const notSelfClosing = !selfClosingTags.includes(_vnode.type.toLocaleLowerCase())
-				const childrenHtml = (notSelfClosing && _vnode.children && _vnode.children.length > 0)
-					? (await Promise.all(children.map(child => {
-						return renderToString(child)
-					}))).join("")
+				// console.log(`vNode type is string, rendering as intrinsic component`)
+
+				const notSelfClosing = !selfClosingTags.includes(vNodeType.toLocaleLowerCase())
+				const childrenHtml = (notSelfClosing && childVNodes && childVNodes.length > 0)
+					? (await Promise.all(childVNodes.map(renderToString))).join("")
 					: ""
 
-				const nodeProps = _vnode.props || {}
-				const attributesHtml = new SuperString(Object.keys(nodeProps)
+				const nodeProps = vnode.props || {}
+				const attributesHtml = new String(Object.keys(nodeProps)
 					.map(propName => {
 						const propValue = nodeProps[propName]
 						switch (propName) {
@@ -169,7 +116,7 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 								return typeof propValue === "string"
 									? `${propName}="${encodeHTML(propValue)}"`
 									: typeof propValue === "function"
-										? `${propName.toLowerCase()}="(${escape(propValue.toString())})(this);"`
+										? `${propName.toLowerCase()}="(${encodeHTML(propValue.toString())})(this);"`
 										: ""
 						}
 					})
@@ -178,81 +125,249 @@ export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): 
 				).prependSpaceIfNotEmpty().toString()
 
 				return notSelfClosing
-					? `<${_vnode.type}${attributesHtml}>${childrenHtml}</${_vnode.type}>`
-					: `<${_vnode.type}${attributesHtml}>`
-
+					? `<${vNodeType}${attributesHtml}>${childrenHtml}</${vNodeType}>`
+					: `<${vNodeType}${attributesHtml}>`
 			}
 
-			default:
-				console.error(`\nrender(): invalid vnode type "${typeof _vnode}"; `)
-				return String(_vnode)
+			default: {
+				console.error(`Somatic render(): invalid vnode "${JSON.stringify(vnode)}" of type "${typeof vnode}"; `)
+				return globalThis.String(vnode)
+			}
 		}
 	}
 	else {
-		return String(_vnode)
-	}*/
-}
-
-/** Attach event listeners from element to corresponding nodes in container */
-export function hydrate(element: HTMLElement): void {
-	[...element.attributes].forEach(attr => {
-		// Event attributes will give place to an event listener and be removed.
-		if (isEventKey(attr.name)) {
-			const callback: (evt: Event) => void = fnStore[parseInt(attr.value)]
-			setAttribute(element, attr.name, callback)
-			element.addEventListener(eventNames[attr.name], { handleEvent: callback })
-			element.removeAttribute(attr.name)
-		}
-		else if (attr.name === "htmlfor") { // the innerHTML that we are hydrating might have turned the htmlFor to lowercase in some browsers
-			setAttribute(element, "htmlFor", attr.value)
-			element.removeAttribute(attr.name)
-		}
-		else if (attr.name === "classname") { // the innerHTML that we are hydrating might have turned the className to lowercase in some browsers
-			setAttribute(element, "className", attr.value)
-			element.removeAttribute(attr.name)
-		}
-		else {
-			setAttribute(element, attr.name, attr.value)
-		}
-	});[...element["children"]].forEach(child => {
-		hydrate(child as HTMLElement)
-	})
-}
-
-/** Compares an HTML element with a node, and updates only the parts of the HTML element that are different
- * @param rootElement An HTML element that will be updated
- * @param node A node obtained by rendering a VNode
- */
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
-
-/** Global dictionary of events indexed by their names e.g., onmouseenter */
-const _eventHandlers: Obj<{ node: Node, handler: (e: Event) => void, capture: boolean }[]> = {}
-const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
-	if (_eventHandlers[event] === undefined) {
-		// eslint-disable-next-line fp/no-mutation
-		_eventHandlers[event] = []
+		return globalThis.String(vnode)
 	}
-	// Here we track the events and their nodes (note that we cannot use node as Object keys, as they'd get coerced into a string)
-	// eslint-disable-next-line fp/no-mutating-methods
-	_eventHandlers[event].push({ node: node, handler: handler, capture: capture })
-	node.addEventListener(event, handler, capture)
 }
 
-/** Remove all event listeners */
-export const removeListeners = (targetNode: Node) => {
-	Object.keys(_eventHandlers).forEach(eventName => {
-		// remove listeners from the matching nodes
-		_eventHandlers[eventName]
-			.filter(({ node }) => node === targetNode)
-			.forEach(({ node, handler, capture }) => node.removeEventListener(eventName, handler, capture))
+type PendingUpdate = { elementId: string } // | "global"
+export const pendingUpdates = [] as PendingUpdate[]
 
-		// update _eventHandlers global
-		// eslint-disable-next-line fp/no-mutation
-		_eventHandlers[eventName] = _eventHandlers[eventName].filter(
-			({ node }) => node !== targetNode,
-		)
-	})
+// while (true) {
+// 	pendingUpdates.forEach(async update => {
+// 		const node = document.getElementById(update.elementId) as unknown as Node & { producer: AsyncGenerator<VNode> }
+// 		if (node.parentNode) {
+// 			while (node.parentNode.hasChildNodes) { node.removeChild(node.firstChild!) }
+// 			node.appendChild(await render((await node.producer.next()).value))
+// 		}
+// 	})
+// }
+
+
+
+export const makeComponent1 = <DP, DS>(args:
+	{
+		defaultProps?: () => DP,
+		defaultState?: (props: DP) => DS
+	}) => {
+	return <P extends Obj = Obj, M extends Message = Message, S = {}>(
+		comp: (
+			props: PropsExtended<P, M>,
+			mergedProps: MergedPropsExt<P, M, DP>,
+			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
+		) => JSX.Element) => {
+
+		return Object.assign(comp, { ...args })
+	}
 }
+
+export function makeComponent<P extends Obj = Obj>(core: (props: P & { key?: string, children?: VNode[] }) => AsyncGenerator<VNode>, options?: ComponentOptions): Component<P> {
+	return Object.assign(core, options)
+}
+
+/** Merge default props with actual props of renderer */
+export function mergeProps<P extends Obj, D extends Partial<P>>(defaults: D, props: P): D & P & Partial<P> {
+	return deepMerge(defaults, props) as D & P & Partial<P>
+}
+
+/** Special attributes that map to DOM events. */
+export const eventNames = {
+	ONABORT: "abort",
+	ONANIMATIONSTART: "animationstart",
+	ONANIMATIONITERATION: "animationiteration",
+	ONANIMATIONEND: "animationend",
+	ONBLUR: "blur",
+	ONCANPLAY: "canplay",
+	ONCANPLAYTHROUGH: "canplaythrough",
+	ONCHANGE: "change",
+	ONCLICK: "click",
+	ONCONTEXTMENU: "contextmenu",
+	ONCOPY: "copy",
+	ONCUT: "cut",
+	ONDOUBLECLICK: "dblclick",
+	ONDRAG: "drag",
+	ONDRAGEND: "dragend",
+	ONDRAGENTER: "dragenter",
+	ONDRAGEXIT: "dragexit",
+	ONDRAGLEAVE: "dragleave",
+	ONDRAGOVER: "dragover",
+	ONDRAGSTART: "dragstart",
+	ONDROP: "drop",
+	ONDURATIONCHANGE: "durationchange",
+	ONEMPTIED: "emptied",
+	ONENCRYPTED: "encrypted",
+	ONENDED: "ended",
+	ONERROR: "error",
+	ONFOCUS: "focus",
+	ONINPUT: "input",
+	ONINVALID: "invalid",
+	ONKEYDOWN: "keydown",
+	ONKEYPRESS: "keypress",
+	ONKEYUP: "keyup",
+	ONLOAD: "load",
+	ONLOADEDDATA: "loadeddata",
+	ONLOADEDMETADATA: "loadedmetadata",
+	ONLOADSTART: "loadstart",
+	ONPAUSE: "pause",
+	ONPLAY: "play",
+	ONPLAYING: "playing",
+	ONPROGRESS: "progress",
+	ONMOUSEDOWN: "mousedown",
+	ONMOUSEENTER: "mouseenter",
+	ONMOUSELEAVE: "mouseleave",
+	ONMOUSEMOVE: "mousemove",
+	ONMOUSEOUT: "mouseout",
+	ONMOUSEOVER: "mouseover",
+	ONMOUSEUP: "mouseup",
+	ONPASTE: "paste",
+	ONRATECHANGE: "ratechange",
+	ONRESET: "reset",
+	ONSCROLL: "scroll",
+	ONSEEKED: "seeked",
+	ONSEEKING: "seeking",
+	ONSUBMIT: "submit",
+	ONSTALLED: "stalled",
+	ONSUSPEND: "suspend",
+	ONTIMEUPDATE: "timeupdate",
+	ONTRANSITIONEND: "transitionend",
+	ONTOUCHCANCEL: "touchcancel",
+	ONTOUCHEND: "touchend",
+	ONTOUCHMOVE: "touchmove",
+	ONTOUCHSTART: "touchstart",
+	ONVOLUMECHANGE: "volumechange",
+	ONWAITING: "waiting",
+	ONWHEEL: "wheel"
+}
+
+/** Mouse event names */
+export const mouseMvmntEventNames = [
+	"ONMOUSEENTER",
+	"ONMOUSELEAVE",
+	"ONMOUSEMOVE",
+	"ONMOUSEOUT",
+	"ONMOUSEOVER",
+	"ONMOUSEUP"
+]
+
+export const svgTags = [
+	"animate",
+	"animateMotion",
+	"animateTransform",
+
+	"circle",
+	"clipPath",
+	"color-profile",
+
+	"defs",
+	"desc",
+	"discard",
+
+	"ellipse",
+
+	"feBlend",
+	"feColorMatrix",
+	"feComponentTransfer",
+	"feComposite",
+	"feConvolveMatrix",
+	"feDiffuseLighting",
+	"feDisplacementMap",
+	"feDistantLight",
+	"feDropShadow",
+	"feFlood",
+	"feFuncA",
+	"feFuncB",
+	"feFuncG",
+	"feFuncR",
+	"feGaussianBlur",
+	"feImage",
+	"feMerge",
+	"feMergeNode",
+	"feMorphology",
+	"feOffset",
+	"fePointLight",
+	"feSpecularLighting",
+	"feSpotLight",
+	"feTile",
+	"feTurbulence",
+	"filter",
+	"foreignObject",
+
+	"g",
+
+	"hatch",
+	"hatchpath",
+
+	"image",
+
+	"line",
+	"linearGradient",
+
+	"marker",
+	"mask",
+	"mesh",
+	"meshgradient",
+	"meshpatch",
+	"meshrow",
+	"metadata",
+	"mpath",
+
+	"path",
+	"pattern",
+	"polygon",
+	"polyline",
+
+	"radialGradient",
+	"rect",
+
+	//"script",
+	"set",
+	"solidcolor",
+	"stop",
+	//"style",
+	"svg",
+	"switch",
+	"symbol",
+
+	"text",
+	"textPath",
+	//"title",
+	"tspan",
+
+	"unknown",
+	"use",
+
+	"view"
+]
+
+export const selfClosingTags = [
+	"area",
+	"base",
+	"br",
+	"col",
+	"command",
+	"embed",
+	"hr",
+	"img",
+	"input",
+	"keygen",
+	"link",
+	"meta",
+	"param",
+	"source",
+	"track",
+	"wbr"
+]
+
 
 /** Converts a css props object literal to a string */
 export function stringifyStyle(style: CSSProperties, important = false) {
@@ -276,7 +391,7 @@ export function stringifyAttribs(props: Obj) {
 				case name === "style":
 					return (`style="${encodeHTML(stringifyStyle(value as CSSProperties))}"`)
 				case typeof value === "string":
-					return (`${encodeHTML(name)}="${encodeHTML(String(value))}"`)
+					return (`${encodeHTML(name)}="${encodeHTML(globalThis.String(value))}"`)
 				case typeof value === "number":
 					return (`${encodeHTML(name)}="${value}"`)
 				// case typeof value === "function":
@@ -292,102 +407,87 @@ export function stringifyAttribs(props: Obj) {
 		.join(" ")
 }
 
-/** Merge default props with actual props of renderer */
-export function mergeProps<P extends Obj, D extends Partial<P>>(defaults: D, props: P): D & P & Partial<P> {
-	return deepMerge(defaults, props) as D & P & Partial<P>
+export function camelCaseToDash(str: string) {
+	return str
+		.replace(/[^a-zA-Z0-9]+/g, '-')
+		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+		.replace(/([a-z])([A-Z])/g, '$1-$2')
+		.replace(/([0-9])([^0-9])/g, '$1-$2')
+		.replace(/([^0-9])([0-9])/g, '$1-$2')
+		.replace(/-+/g, '-')
+		.toLowerCase()
 }
 
+export function encodeHTML(str: string) {
+	return str.replace(/[&<>"']/g, (match) => {
+		switch (match) {
+			case "&":
+				return "&amp;"
+			case "<":
+				return "&lt;"
+			case ">":
+				return "&gt;"
+			case '"':
+				return "&quot;"
+			case "'":
+				return "&#039;"
+			default:
+				return ""
+		}
+	})
+}
 
-export const makeComponent = <DP, DS>(args:
-	{
-		defaultProps?: () => DP,
-		defaultState?: (props: DP) => DS
-	}) => {
-	return <P extends Obj = Obj, M extends Message = Message, S = {}>(
-		comp: (
-			props: PropsExtended<P, M>,
-			mergedProps: MergedPropsExt<P, M, DP>,
-			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		) => JSX.Element) => {
+/** Checks if a string corresponds to one of the (uppercase) event names keys */
+export function isEventKey(key: string): key is keyof typeof eventNames {
+	const keyUpper = key.toUpperCase()
+	return keyUpper.startsWith("ON") // this condition is simply to prevent useless searches through the events list.
+		&& Object.keys(eventNames).includes(keyUpper)
+}
 
-		return Object.assign(comp, { ...args })
+export function setAttribute(element: HTMLElement | SVGElement, key: string, value: string | ((e: Event) => unknown)) {
+	// if (typeof value === "function") {
+	// 	if (key === "ref") {
+	// 		value(dom)
+	// 	}
+	// }
+	// else
+	if (['checked', 'value', 'htmlFor'].includes(key)) {
+		(element as any)[key] = value
+	}
+	else if (key === 'className') { // We turn the 'className' property into the HTML class attribute
+		const classes = (value as string).split(/\s/)
+		classes.forEach(cl => {
+			element.classList.add(cl)
+		})
+	}
+	else if (key == 'style' && typeof value == 'object') {
+		// console.log(`Somatic set ${key} attribute to value: ${JSON.stringify(value)}`)
+		Object.assign(element.style, value)
+		//dom.innerHTML
+	}
+	else if (typeof value !== 'object' && typeof value !== 'function') {
+		element.setAttribute(key, value)
 	}
 }
 
-// export function makeComponent1<P extends Obj, M extends Message = Message, S = unknown>() {
-// 	return <DP extends Partial<P>, DS extends Partial<S>>(
-// 		comp: (
-// 			_: PropsExtended<P, M>,
-// 			props: MergedPropsExt<P, M, DP>,
-// 			state: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-// 		) => JSX.Element,
 
-// 		opts: {
-// 			defaultProps: () => DP,
-// 			defaultState: (props?: P) => DS,
-// 			hashProps?: (props: P) => string,
-// 			stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-
-// 		}) => {
-
-// 		const r: ComponentExtended<P, M, S, DP, DS> = Object.assign(comp, { ...opts })
-// 		return r
-// 	}
-// }
-
-/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
-	const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
-	const component = _vnode.type as Component<Props>
-	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
-
-	const fullProps = mergeProps("defaultProps" in component && component.defaultProps && typeof component.defaultProps === "function"
-		? component.defaultProps() as PropsExtended<Props, Message>
-		: {} as PropsExtended<Props, Message>,
-		_props
-	)
-
-	const fullState = mergeProps("defaultState" in component && component.defaultState
-		? component.defaultState(fullProps)
-		: {},
-		_stateCache[fullProps.key ?? ""] ?? {}
-	)
-
-	const intrinsicNode = await component.next({
-		props: _props,
-		mergedProps: fullProps,
-		stateCache: {
-			...fullState,
-			setState: async (delta: Partial<State>) => {
-				if (fullProps.key === undefined) {
-					console.error("Cannot change the state of a component without a key")
-				}
-				else {
-					// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
-					_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
-				}
-
-				// We re-render the element
-				const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
-				const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
-				const elements = document.querySelectorAll(`[key="${_props.key}"]`)
-				if (elements.length > 1) {
-					console.error(`More than 1 component have the key '${_props.key}'`)
-				} else {
-					if (elements[0] !== undefined) {
-						updateDOM(elements[0], renderedElem)
-					}
-					else {
-						console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
-					}
-				}
-
-			}
+/*class IdProvider {
+	private cache: string[]
+	private pointer: number
+	constructor() {
+		this.cache = []
+		this.pointer = 0
+	}
+	next() {
+		if (this.pointer >= this.cache.length) {
+			// console.log(`pushing to id provider cache`)
+			this.cache.push(cuid.default())
 		}
-	} as any)
-	// if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
-	// 	intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
-	// }
-	return intrinsicNode
+		return this.cache[this.pointer++]
+	}
+	reset() {
+		this.pointer = 0
+	}
 }
+export const idProvider = new IdProvider()
+*/

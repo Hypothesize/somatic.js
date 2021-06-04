@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, mergeProps, makeComponent } from '../core'
+import { createElement, mergeProps, makeComponent1 } from '../core'
 import { Component, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 
@@ -31,7 +31,7 @@ type State = {}
 interface Messages { type: "CLICKED" }
 
 
-export const CommandBox = makeComponent({
+export const CommandBox = makeComponent1({
 	defaultProps: () => ({
 		orientation: "horizontal" as const,
 		hoverEffect: "invert" as const,

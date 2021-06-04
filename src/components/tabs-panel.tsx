@@ -5,7 +5,7 @@ import { deepMerge, } from '@sparkwave/standard/collections/object'
 import { StackView, Props as StackViewProps } from './stack-view'
 import { StackPanel, Props as StackPanelProps } from './stack-panel'
 import { Component, CSSProperties, HtmlProps, ViewProps } from '../types'
-import { createElement, makeComponent } from '../core'
+import { createElement, makeComponent1 } from '../core'
 
 
 export type Messages = (
@@ -18,7 +18,7 @@ export type Props = HtmlProps & {
 	selectedItemStyle: CSSProperties
 }
 
-export const TabsPanel = makeComponent({})<Props>(async (props) => {
+export const TabsPanel = makeComponent1({})<Props>(async (props) => {
 
 	const defaultProps/*: RecursivePartial<Props>*/ = {
 		selectedIndex: 0,
