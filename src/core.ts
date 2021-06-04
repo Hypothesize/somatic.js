@@ -7,6 +7,8 @@
 import { Obj, String, flatten, deepMerge } from "@sparkwave/standard"
 import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, Message, MergedPropsExt, PropsExtended } from "./types"
 // import * as cuid from "cuid"
+import morphdom from "morphdom"
+import { idProvider } from './utils'
 
 /** JSX is transformed into calls of this function */
 export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: any[]): VNode<P, T> {
@@ -43,7 +45,9 @@ export async function render(vnode: undefined | null | string | VNode): Promise<
 				// render and append children in order
 				await Promise
 					.all(childVNodes.map(render))
-					.then(childDomNodes => childDomNodes.forEach(node.appendChild))
+					.then(childDomNodes => childDomNodes.forEach(childDomNode => {
+						node.appendChild(childDomNode)
+					}))
 
 				// attach attributes
 				const nodeProps = vnode.props || {}
@@ -51,11 +55,38 @@ export async function render(vnode: undefined | null | string | VNode): Promise<
 					try {
 						const propValue = nodeProps[propKey]
 						if (propValue !== undefined) {
-							if (isEventKey(propKey.toUpperCase()) && typeof propValue === "function") {
-								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
+							const htmlPropKey = propKey.toUpperCase()
+							if (isEventKey(htmlPropKey) && typeof propValue === "function") {
+								// The first condition above is to prevent useless searches through the events list.
+								const eventId = idProvider.next()
+								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
+								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
+
+								// If the vNode had an event, we add it to the document-wide event. 
+								// We keep track of every event and its matching element through the eventId:
+								// each listener contains one, each DOM element as well
+								addListener(document, eventNames[htmlPropKey], (e: Event) => {
+									const target = e.target as HTMLElement | null
+									if (target !== document.getRootNode()) {
+										// We don't want to do anything when the document itself is the target
+										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
+										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
+
+										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
+										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
+											|| e.cancelBubble
+
+										if (!shouldNotTrigger && intendedTarget) {
+											// Execute the callback with the context set to the found element
+											// jQuery goes way further, it even has it's own event object
+											(propValue as (e: Event) => unknown).call(intendedTarget, e)
+										}
+									}
+								}, true)
 							}
 							else {
-								setAttribute(node, propKey, globalThis.String(propValue))
+								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
 							}
 						}
 					}
@@ -63,6 +94,9 @@ export async function render(vnode: undefined | null | string | VNode): Promise<
 						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
 					}
 				})
+				if (vnode.props && vnode.props.key) {
+					setAttribute(node, "key", vnode.props["key"] as string)
+				}
 
 				return node
 			}
@@ -138,6 +172,10 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 	else {
 		return globalThis.String(vnode)
 	}
+}
+
+export function updateDOM(rootElement: Element, node: Node) {
+	morphdom(rootElement, node, { getNodeKey: () => undefined })
 }
 
 type PendingUpdate = { elementId: string } // | "global"
@@ -470,6 +508,18 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 	}
 }
 
+/** Global dictionary of events indexed by their names e.g., onmouseenter */
+const _eventHandlers: Obj<{ node: Node, handler: (e: Event) => void, capture: boolean }[]> = {}
+const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
+	if (_eventHandlers[event] === undefined) {
+		// eslint-disable-next-line fp/no-mutation
+		_eventHandlers[event] = []
+	}
+	// Here we track the events and their nodes (note that we cannot use node as Object keys, as they'd get coerced into a string)
+	// eslint-disable-next-line fp/no-mutating-methods
+	_eventHandlers[event].push({ node: node, handler: handler, capture: capture })
+	node.addEventListener(event, handler, capture)
+}
 
 /*class IdProvider {
 	private cache: string[]

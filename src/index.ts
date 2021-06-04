@@ -1,10 +1,31 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import * as core from './core'
+
 export * from './types'
 export * from './core'
 export * from './components'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Somatic from "./types"
+import { TestComponent } from "./components/test-component"
+
+if (typeof document !== "undefined") {
+	document.addEventListener("DOMContentLoaded", async (event) => {
+		document.title = `Somatic generators `
+
+		await renderAsync()
+	})
+}
+
+async function renderAsync() {
+	const test = TestComponent({ text: "Hehe" }).next()
+	const test2 = await test
+	const node = await core.render(test2.value)
+
+	core.updateDOM(document.getElementById("root-div")!, node)
+}
+
+
 declare global {
 	namespace JSX {
 		type Element = Promise<Somatic.VNode>

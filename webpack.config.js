@@ -1,12 +1,17 @@
 module.exports = {
 	context: __dirname,
-	entry: './dist/test.js',
+	entry: './dist/index.js',
 	output: {
 		path: __dirname + '/dist',
-		filename: 'test.bundle.js'
+		filename: 'index.bundle.js'
 	},
 	resolve: {
 		extensions: ['.js', '.jsx']
+	},
+	node: {
+		fs: 'empty',
+		net: 'empty',
+		tls: 'empty',
 	},
 	target: 'web'
 }
