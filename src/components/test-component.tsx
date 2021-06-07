@@ -16,10 +16,10 @@ export const TestComponent = makeComponent<PropsExtended<Props>>(async function*
 		<h1>SUCCESS</h1>
 		<p>Text props: {text}</p>
 		<p>Color props: {color}</p>
-
+		<p>Internal number: {internalNumber}</p>
 		<button onClick={ev => {
 			// eslint-disable-next-line fp/no-mutation
-			console.log(`State number: ${internalNumber++}`)
+			internalNumber++
 		}}>TRY</button>
 	</div>
 }, {
