@@ -3,20 +3,25 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as cuid from 'cuid'
 
-import { Obj, String, flatten, deepMerge } from "@sparkwave/standard"
+import { Obj, String, flatten, hasValue, deepMerge } from "@sparkwave/standard"
 import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, Message, MergedPropsExt, PropsExtended } from "./types"
-// import * as cuid from "cuid"
+import { svgTags, selfClosingTags } from "./constants"
+
 import morphdom from "morphdom"
-import { idProvider } from './utils'
 
 /** JSX is transformed into calls of this function */
 export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: any[]): VNode<P, T> {
-	return { type, props, children }
+	return {
+		type: type,
+		props: props,
+		children: children
+	}
 }
 
 /** Render virtual node to DOM node */
-export async function render(vnode: undefined | null | string | VNode): Promise<Node & { producer?: Component }> {
+export async function render(vnode: undefined | null | string | VNode, producer?: AsyncGenerator<VNode, VNodeType<Obj>>): Promise<Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> }> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -29,75 +34,52 @@ export async function render(vnode: undefined | null | string | VNode): Promise<
 		switch (typeof vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function "${vnode.type.name}", rendering as custom component`)
-				const generator = vnode.type({ ...vnode.props, children: [...childVNodes] })
-				const node = render((await generator.next()).value)
+				const vNodeType = vnode.type as Component
+				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] }, async (key: string) => {
+					// eslint-disable-next-line fp/no-mutating-methods
+					pendingUpdates.push({ elementKey: key })
+				})
+				const nextRender = await generator.next()
+				const nextElem = nextRender.value
+				if (vnode.props && vnode.props.key) {
+					// eslint-disable-next-line fp/no-mutation
+					nextElem["props"] = nextElem["props"] ? nextElem["props"] : {}
+					// eslint-disable-next-line fp/no-mutation
+					nextElem["props"].key = vnode.props ? vnode.props.key : undefined
+				}
 
-				// console.log(`Generator ${generator} being assigned as producer of node ${node} for vnode type function "${vnode.type.name}"`)
-				return Object.assign(node, { producer: generator })
+				return await render(nextElem, generator)
 			}
 
 			case "string": {
-				// console.log(`vNode type is string, rendering as intrinsic component`)
+				// console.log(`Rendering "${vnode.type}" as intrinsic component`)
 				const node = svgTags.includes(vnode.type)
 					? document.createElementNS('http://www.w3.org/2000/svg', vnode.type)
 					: document.createElement(vnode.type)
+				// console.log(`Created node ${node} for "${vnode.type}"; its appendChild is "${node.appendChild}"`)
 
+				// console.log(`Rendering and appending children ${childVNodes} in order for "${vnode.type}"`)
 				// render and append children in order
-				await Promise
-					.all(childVNodes.map(render))
-					.then(childDomNodes => childDomNodes.forEach(childDomNode => {
-						node.appendChild(childDomNode)
-					}))
-
-				// attach attributes
-				const nodeProps = vnode.props || {}
-				Object.keys(nodeProps).forEach(propKey => {
-					try {
-						const propValue = nodeProps[propKey]
-						if (propValue !== undefined) {
-							const htmlPropKey = propKey.toUpperCase()
-							if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-								// The first condition above is to prevent useless searches through the events list.
-								const eventId = idProvider.next()
-								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
-								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
-
-								// If the vNode had an event, we add it to the document-wide event. 
-								// We keep track of every event and its matching element through the eventId:
-								// each listener contains one, each DOM element as well
-								addListener(document, eventNames[htmlPropKey], (e: Event) => {
-									const target = e.target as HTMLElement | null
-									if (target !== document.getRootNode()) {
-										// We don't want to do anything when the document itself is the target
-										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
-										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
-
-										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
-										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
-										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
-											|| e.cancelBubble
-
-										if (!shouldNotTrigger && intendedTarget) {
-											// Execute the callback with the context set to the found element
-											// jQuery goes way further, it even has it's own event object
-											(propValue as (e: Event) => unknown).call(intendedTarget, e)
-										}
-									}
-								}, true)
-							}
-							else {
-								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
-							}
-						}
-					}
-					catch (e) {
-						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
-					}
-				})
-				if (vnode.props && vnode.props.key) {
-					setAttribute(node, "key", vnode.props["key"] as string)
+				try {
+					await Promise
+						.all(childVNodes.map(c => {
+							return render(c)
+						}))
+						.then(childDomNodes => childDomNodes.forEach(
+							/* dont use node.appendChild drectly here */
+							c => node.appendChild(c)
+						))
+				}
+				catch (e) {
+					throw new Error(`Error appending children ${childVNodes} for "${vnode.type}"`)
 				}
 
+				// attach attributes
+				console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
+				const nodeProps = vnode.props ?? {}
+				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]));
+				// eslint-disable-next-line fp/no-mutation
+				(node as (HTMLElement | SVGElement) & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> })["producer"] = producer
 				return node
 			}
 
@@ -126,7 +108,10 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 		switch (typeof vNodeType) {
 			case "function": {
 				// console.log(`vNode type is function, rendering as custom component`
-				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] })
+				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] }, async key => {
+					// eslint-disable-next-line fp/no-mutating-methods
+					pendingUpdates.push({ elementKey: key })
+				})
 				return renderToString((await generator.next()).value)
 			}
 
@@ -178,44 +163,14 @@ export function updateDOM(rootElement: Element, node: Node) {
 	morphdom(rootElement, node, { getNodeKey: () => undefined })
 }
 
-type PendingUpdate = { elementId: string } // | "global"
+type PendingUpdate = { elementKey: string } // | "global"
 export const pendingUpdates = [] as PendingUpdate[]
 
-// while (true) {
-// 	pendingUpdates.forEach(async update => {
-// 		const node = document.getElementById(update.elementId) as unknown as Node & { producer: AsyncGenerator<VNode> }
-// 		if (node.parentNode) {
-// 			while (node.parentNode.hasChildNodes) { node.removeChild(node.firstChild!) }
-// 			node.appendChild(await render((await node.producer.next()).value))
-// 		}
-// 	})
-// }
+//#region types
 
-
-
-export const makeComponent1 = <DP, DS>(args:
-	{
-		defaultProps?: () => DP,
-		defaultState?: (props: DP) => DS
-	}) => {
-	return <P extends Obj = Obj, M extends Message = Message, S = {}>(
-		comp: (
-			props: PropsExtended<P, M>,
-			mergedProps: MergedPropsExt<P, M, DP>,
-			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		) => JSX.Element) => {
-
-		return Object.assign(comp, { ...args })
-	}
-}
-
-export function makeComponent<P extends Obj = Obj>(core: (props: P & { key?: string, children?: VNode[] }) => AsyncGenerator<VNode>, options?: ComponentOptions): Component<P> {
+export function makeComponent<P extends Obj = Obj, S extends Obj = Obj>(core: (props: P & { key?: string, children?: VNode[] }, reRender: (key: string) => void) => AsyncGenerator<VNode<P>>, options?: ComponentOptions): Component<P> {
+	// eslint-disable-next-line fp/no-mutating-assign
 	return Object.assign(core, options)
-}
-
-/** Merge default props with actual props of renderer */
-export function mergeProps<P extends Obj, D extends Partial<P>>(defaults: D, props: P): D & P & Partial<P> {
-	return deepMerge(defaults, props) as D & P & Partial<P>
 }
 
 /** Special attributes that map to DOM events. */
@@ -297,116 +252,6 @@ export const mouseMvmntEventNames = [
 	"ONMOUSEUP"
 ]
 
-export const svgTags = [
-	"animate",
-	"animateMotion",
-	"animateTransform",
-
-	"circle",
-	"clipPath",
-	"color-profile",
-
-	"defs",
-	"desc",
-	"discard",
-
-	"ellipse",
-
-	"feBlend",
-	"feColorMatrix",
-	"feComponentTransfer",
-	"feComposite",
-	"feConvolveMatrix",
-	"feDiffuseLighting",
-	"feDisplacementMap",
-	"feDistantLight",
-	"feDropShadow",
-	"feFlood",
-	"feFuncA",
-	"feFuncB",
-	"feFuncG",
-	"feFuncR",
-	"feGaussianBlur",
-	"feImage",
-	"feMerge",
-	"feMergeNode",
-	"feMorphology",
-	"feOffset",
-	"fePointLight",
-	"feSpecularLighting",
-	"feSpotLight",
-	"feTile",
-	"feTurbulence",
-	"filter",
-	"foreignObject",
-
-	"g",
-
-	"hatch",
-	"hatchpath",
-
-	"image",
-
-	"line",
-	"linearGradient",
-
-	"marker",
-	"mask",
-	"mesh",
-	"meshgradient",
-	"meshpatch",
-	"meshrow",
-	"metadata",
-	"mpath",
-
-	"path",
-	"pattern",
-	"polygon",
-	"polyline",
-
-	"radialGradient",
-	"rect",
-
-	//"script",
-	"set",
-	"solidcolor",
-	"stop",
-	//"style",
-	"svg",
-	"switch",
-	"symbol",
-
-	"text",
-	"textPath",
-	//"title",
-	"tspan",
-
-	"unknown",
-	"use",
-
-	"view"
-]
-
-export const selfClosingTags = [
-	"area",
-	"base",
-	"br",
-	"col",
-	"command",
-	"embed",
-	"hr",
-	"img",
-	"input",
-	"keygen",
-	"link",
-	"meta",
-	"param",
-	"source",
-	"track",
-	"wbr"
-]
-
-
 /** Converts a css props object literal to a string */
 export function stringifyStyle(style: CSSProperties, important = false) {
 	if (typeof style === "object") {
@@ -482,44 +327,110 @@ export function isEventKey(key: string): key is keyof typeof eventNames {
 		&& Object.keys(eventNames).includes(keyUpper)
 }
 
-export function setAttribute(element: HTMLElement | SVGElement, key: string, value: string | ((e: Event) => unknown)) {
-	// if (typeof value === "function") {
-	// 	if (key === "ref") {
-	// 		value(dom)
-	// 	}
-	// }
-	// else
-	if (['checked', 'value', 'htmlFor'].includes(key)) {
-		(element as any)[key] = value
-	}
-	else if (key === 'className') { // We turn the 'className' property into the HTML class attribute
-		const classes = (value as string).split(/\s/)
-		classes.forEach(cl => {
-			element.classList.add(cl)
-		})
-	}
-	else if (key == 'style' && typeof value == 'object') {
-		// console.log(`Somatic set ${key} attribute to value: ${JSON.stringify(value)}`)
-		Object.assign(element.style, value)
-		//dom.innerHTML
-	}
-	else if (typeof value !== 'object' && typeof value !== 'function') {
-		element.setAttribute(key, value)
-	}
-}
-
 /** Global dictionary of events indexed by their names e.g., onmouseenter */
 const _eventHandlers: Obj<{ node: Node, handler: (e: Event) => void, capture: boolean }[]> = {}
 const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
 	if (_eventHandlers[event] === undefined) {
-		// eslint-disable-next-line fp/no-mutation
 		_eventHandlers[event] = []
 	}
 	// Here we track the events and their nodes (note that we cannot use node as Object keys, as they'd get coerced into a string)
-	// eslint-disable-next-line fp/no-mutating-methods
 	_eventHandlers[event].push({ node: node, handler: handler, capture: capture })
 	node.addEventListener(event, handler, capture)
 }
+
+/** Remove all event listeners */
+export const removeListeners = (targetNode: Node) => {
+	Object.keys(_eventHandlers).forEach(eventName => {
+		// remove listeners from the matching nodes
+		_eventHandlers[eventName]
+			.filter(({ node }) => node === targetNode)
+			.forEach(({ node, handler, capture }) => node.removeEventListener(eventName, handler, capture))
+
+		// update _eventHandlers global
+		_eventHandlers[eventName] = _eventHandlers[eventName].filter(
+			({ node }) => node !== targetNode,
+		)
+	})
+}
+
+export function setAttribute(element: HTMLElement | SVGElement, key: string, value?: any) {
+	if (!hasValue(value)) return
+
+	try {
+		// if (isEventKey(key.toUpperCase()) && typeof value === "function") {
+		// 	setAttribute(node, key, (value as (e: Event) => unknown))
+		// }
+		// else {
+		// 	setAttribute(node, propKey, globalThis.String(propValue))
+		// }
+
+		// if (typeof value === "function") {
+		// 	if (key === "ref") {
+		// 		value(dom)
+		// 	}
+		// }
+		// else
+
+		if (['checked', 'value', 'htmlFor'].includes(key.toLocaleLowerCase())) {
+			(element as any)[key] = value
+		}
+		else if (key.toLocaleLowerCase() === 'className') { // We turn the 'className' property into the HTML class attribute
+			const classes = (value as string).split(/\s/)
+			classes.forEach(cl => {
+				element.classList.add(cl)
+			})
+		}
+		else if (key.toLocaleLowerCase() == 'style' && typeof value == 'object') {
+			// console.log(`Somatic set ${key} attribute to value: ${JSON.stringify(value)}`)
+			Object.assign(element.style, value)
+			//dom.innerHTML
+		}
+		else if (typeof value === 'function') {
+			console.log(`Setting attribute "${key}" to function "${value.toString()}" on "${element.tagName}"`)
+
+			const htmlPropKey = key.toUpperCase()
+			if (isEventKey(htmlPropKey)) {
+
+				const eventId = cuid.default()
+				// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
+				element.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
+
+				// If the vNode had an event, we add it to the document-wide event. 
+				// We keep track of every event and its matching element through the eventId:
+				// each listener contains one, each DOM element as well
+				addListener(document, eventNames[htmlPropKey], (e: Event) => {
+					const target = e.target as HTMLElement | null
+					if (target !== document.getRootNode()) {
+						// We don't want to do anything when the document itself is the target
+						// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
+						const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
+
+						// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
+						// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
+						const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
+							|| e.cancelBubble
+
+						if (!shouldNotTrigger && intendedTarget) {
+							// Execute the callback with the context set to the found element
+							// jQuery goes way further, it even has it's own event object
+							(value as (ev: Event) => unknown).call(intendedTarget, e)
+						}
+					}
+				}, true)
+			}
+			else {
+				setAttribute(element, key, (value as (ev: Event) => unknown))
+			}
+		}
+		else {
+			element.setAttribute(key, value)
+		}
+	}
+	catch (e) {
+		console.error(`Error setting dom attribute "${key}" to value "${JSON.stringify(value)}:\n${e}`)
+	}
+}
+
 
 /*class IdProvider {
 	private cache: string[]
@@ -541,3 +452,82 @@ const addListener = (node: Node, event: string, handler: (e: Event) => void, cap
 }
 export const idProvider = new IdProvider()
 */
+
+/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
+// const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
+// 	const children = [...flatten([_vnode.children]) as JSX.Element[]]
+
+// 	const component = _vnode.type as Component<Props, State>
+// 	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
+
+// 	const fullProps = deepMerge("defaultProps" in component && component.defaultProps && typeof component.defaultProps === "function"
+// 		? component.defaultProps as PropsExtended<Props, Message>
+// 		: {} as PropsExtended<Props, Message>,
+// 		_props
+// 	)
+
+// 	const intrinsicNode = await component(_props,
+// 		async () => {
+// 			if (fullProps.key === undefined) {
+// 				console.error("Cannot change the state of a component without a key")
+// 			}
+// 			else {
+// 				console.log(`Re-rendering`)
+// 			}
+
+// 			// We re-render the element
+// 			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
+// 			const newElem2 = createElement(_vnode, fullProps)
+// 			const renderedElem = await render(newElem2) // If element has children, we don't use the cache system (yet)
+// 			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
+// 			if (elements.length > 1) {
+// 				console.error(`More than 1 component have the key '${_props.key}'`)
+// 			}
+// 			else {
+// 				if (elements[0] !== undefined) {
+// 					updateDOM(elements[0], renderedElem)
+// 				}
+// 				else {
+// 					console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
+// 				}
+// 			}
+
+// 		}
+// 	)
+// 	// if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
+// 	// 	intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
+// 	// }
+// 	return intrinsicNode
+// }
+
+(function refresh() {
+	pendingUpdates.forEach(async update => {
+		const elements = document.querySelectorAll(`[key="${update.elementKey}"]`)
+		if (elements.length > 1) {
+			console.error(`More than 1 component have the key '${update.elementKey}'`)
+		}
+		else {
+			const node = elements[0] as Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> } | undefined
+			if (node !== undefined && node.producer) {
+
+				// eslint-disable-next-line fp/no-loops
+				while (node.firstChild !== null) {
+					node.removeChild(node.firstChild!)
+				}
+
+				const nextIteration = await node.producer!.next()
+				const nextElem = nextIteration.value as any
+				const renderedElem = await render(nextElem, node.producer)
+
+				node.appendChild(renderedElem)
+			}
+			else {
+				console.error(`Cannot update an element after setState: key '${update.elementKey}' not found in the document`)
+			}
+		}
+
+		// eslint-disable-next-line fp/no-mutating-methods
+		pendingUpdates.pop()
+	})
+	setTimeout(refresh, 50)
+})()

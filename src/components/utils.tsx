@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent1 } from "../core"
+import { createElement } from "../core"
 import { ComponentRegular, IconProps } from "../types"
 
 

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent1 } from '../core'
+import { createElement, makeComponent } from '../core'
 import { Component, PanelProps, HtmlProps } from '../types'
 
 export type Props = PanelProps & HtmlProps & {
 }
 
-export const GridPanel = makeComponent1({})<Props>(async (props) => {
+export const GridPanel = makeComponent<Props>(async function* (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -46,21 +46,20 @@ export const GridPanel = makeComponent1({})<Props>(async (props) => {
 			...htmlProps
 		} = props
 
-		return (
-			<div
-				{...htmlProps}
+		yield <div
+			{...htmlProps}
 
-				style={{
-					display: "grid",
-					...style,
-					flexDirection: orientation === "vertical" ? "column" : "row",
-					justifyContent: justifyContent(),
-					alignItems: alignItems()
-				}}>
+			style={{
+				display: "grid",
+				...style,
+				flexDirection: orientation === "vertical" ? "column" : "row",
+				justifyContent: justifyContent(),
+				alignItems: alignItems()
+			}}>
 
-				{children}
+			{children}
 
-			</div>)
+		</div>
 	}
 	catch (e) {
 		console.error(`GridPanel render: ${e}`)

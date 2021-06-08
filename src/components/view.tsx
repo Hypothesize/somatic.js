@@ -5,7 +5,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { deepMerge, noop, promisify } from '@sparkwave/standard'
 
-import { createElement, mergeProps } from '../core'
+import { createElement } from '../core'
 import { Component, CSSProperties, PropsExtended, MergedPropsExt, PanelProps, StyleProps, ViewProps } from '../types'
 
 export type Messages = (

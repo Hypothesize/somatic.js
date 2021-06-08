@@ -9,7 +9,6 @@
 
 import * as assert from "assert"
 import { createElement, render, renderToString } from '../dist/index.js'
-import { ToggleInput } from '../dist/components'
 import { idProvider } from '../dist/utils'
 import { constructElement, normalizeHTML } from './utils'
 const jsdom = require('mocha-jsdom')

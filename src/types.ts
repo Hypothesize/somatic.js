@@ -18,7 +18,7 @@ export interface Message {
 }
 
 /** Full props exposed to component consumers */
-export type PropsExtended<Props, Msg extends Message = Message> = Props & {
+export type PropsExtended<Props, Msg extends Message = Message, S = {}> = Props & {
 	/** Child content of the renderer */
 	children?: any[],
 
@@ -64,7 +64,7 @@ export interface ComponentOptions {
 	isPure?: boolean
 	defaultProps?: Obj
 }
-export type Component<P extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }) => AsyncGenerator<VNode>) & ComponentOptions
+export type Component<P extends Obj = Obj, S extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }, reRender: (key: string) => void) => AsyncGenerator<VNode<P>>) & ComponentOptions
 
 
 /** Virtual node type, either a component or an intrinsic element */
