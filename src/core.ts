@@ -161,13 +161,8 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 
 export function updateDOM(rootElement: Element, node: Node) {
 	morphdom(rootElement, node, {
-		getNodeKey: comparedNode => {
-			return comparedNode.nodeType === 1 // If the node is an element, we compare it through attribute "key"
-				? (comparedNode as HTMLElement).getAttribute("key")
-				: undefined
-		},
 		onBeforeElUpdated: function (fromEl, toEl) {
-			return false
+			return toEl.getAttribute("key") === null
 		}
 	})
 }
@@ -522,21 +517,20 @@ export const idProvider = new IdProvider()
 				const nextIteration = await node.producer.next()
 				const nextElem = nextIteration.value as any
 
-				// eslint-disable-next-line fp/no-mutation
-				nextElem.props = nextElem.props || {}
 
-				// eslint-disable-next-line fp/no-mutation
-				nextElem.props["key"] = update.elementKey
 
 				const renderedElem = await render(nextElem, node.producer)
 
+
+
+				updateDOM(node as HTMLElement, renderedElem);
 				// eslint-disable-next-line fp/no-loops
 				// while (node.firstChild !== null) {
 				// 	node.removeChild(node.firstChild!)
 				// }
 				// node.appendChild(renderedElem)
 
-				updateDOM(node as HTMLElement, renderedElem)
+				(node as HTMLElement).setAttribute("key", update.elementKey)
 			}
 			else {
 				console.error(`Cannot update an element after setState: key '${update.elementKey}' not found in the document`)
