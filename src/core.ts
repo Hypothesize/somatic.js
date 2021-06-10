@@ -21,7 +21,7 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 }
 
 /** Render virtual node to DOM node */
-export async function render(vnode: undefined | null | string | VNode, producer?: AsyncGenerator<VNode, VNodeType<Obj>>): Promise<Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> }> {
+export async function render(vnode: undefined | null | string | VNode | JSX.Element, producer?: AsyncGenerator<VNode, VNodeType<Obj>>): Promise<Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> }> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -160,7 +160,16 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 }
 
 export function updateDOM(rootElement: Element, node: Node) {
-	morphdom(rootElement, node, { getNodeKey: () => undefined })
+	morphdom(rootElement, node, {
+		getNodeKey: comparedNode => {
+			return comparedNode.nodeType === 1 // If the node is an element, we compare it through attribute "key"
+				? (comparedNode as HTMLElement).getAttribute("key")
+				: undefined
+		},
+		onBeforeElUpdated: function (fromEl, toEl) {
+			return false
+		}
+	})
 }
 
 type PendingUpdate = { elementKey: string } // | "global"
@@ -510,16 +519,24 @@ export const idProvider = new IdProvider()
 			const node = elements[0] as Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> } | undefined
 			if (node !== undefined && node.producer) {
 
-				// eslint-disable-next-line fp/no-loops
-				while (node.firstChild !== null) {
-					node.removeChild(node.firstChild!)
-				}
-
-				const nextIteration = await node.producer!.next()
+				const nextIteration = await node.producer.next()
 				const nextElem = nextIteration.value as any
+
+				// eslint-disable-next-line fp/no-mutation
+				nextElem.props = nextElem.props || {}
+
+				// eslint-disable-next-line fp/no-mutation
+				nextElem.props["key"] = update.elementKey
+
 				const renderedElem = await render(nextElem, node.producer)
 
-				node.appendChild(renderedElem)
+				// eslint-disable-next-line fp/no-loops
+				// while (node.firstChild !== null) {
+				// 	node.removeChild(node.firstChild!)
+				// }
+				// node.appendChild(renderedElem)
+
+				updateDOM(node as HTMLElement, renderedElem)
 			}
 			else {
 				console.error(`Cannot update an element after setState: key '${update.elementKey}' not found in the document`)
