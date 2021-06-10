@@ -517,11 +517,8 @@ export const idProvider = new IdProvider()
 				const nextIteration = await node.producer.next()
 				const nextElem = nextIteration.value as any
 
-
-
+				// The rendered element won't have a key attribute
 				const renderedElem = await render(nextElem, node.producer)
-
-
 
 				updateDOM(node as HTMLElement, renderedElem);
 				// eslint-disable-next-line fp/no-loops
@@ -530,6 +527,7 @@ export const idProvider = new IdProvider()
 				// }
 				// node.appendChild(renderedElem)
 
+				// We put back the key on the node
 				(node as HTMLElement).setAttribute("key", update.elementKey)
 			}
 			else {
