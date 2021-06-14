@@ -15,6 +15,7 @@
 			"esnext.asynciterable"
 		],
 		"jsx": "react",
+		"keyofStringsOnly": true,
 		"jsxFactory": "createElement",
 		"allowJs": false,
 		"preserveConstEnums": true,

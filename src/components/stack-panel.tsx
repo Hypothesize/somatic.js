@@ -5,7 +5,7 @@ import { Component, PanelProps, HtmlProps } from '../types'
 export type Props = PanelProps & HtmlProps & {
 }
 
-export const StackPanel: Component<Props> = async function* (props) {
+export const StackPanel: Component<Props> = makeComponent<Props>(async function* (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -55,5 +55,5 @@ export const StackPanel: Component<Props> = async function* (props) {
 			{children}
 		</div>
 	}
-}
+})
 StackPanel.isPure = true

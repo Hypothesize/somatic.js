@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, makeComponent, updateDOM } from '../core'
-import { PropsExtended, OptionalPropertyOf, Component, PanelProps, HtmlProps } from '../types'
+import { PropsExtended, Component, PanelProps, HtmlProps } from '../types'
 import { TestComponent } from '../components/test-component'
 
 export type Props = {
 
 }
 
-export const TestRepeater = async function* (props: PropsExtended<Props>, reRender: (key: string) => void) {
+export const TestRepeater = makeComponent<Props>(async function* (props) {
 	const state = {
 		internalTestComponents: [true],
 	}
@@ -18,7 +18,7 @@ export const TestRepeater = async function* (props: PropsExtended<Props>, reRend
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.internalTestComponents.push(true)
-				reRender(props.key || "")
+				props.requireUpdate(props.key || "")
 			}}>Add a test component</button>
 			{
 				state.internalTestComponents.map((v, i) => {
@@ -27,4 +27,6 @@ export const TestRepeater = async function* (props: PropsExtended<Props>, reRend
 			}
 		</div>
 	}
-} as unknown as (props: PropsExtended<Props>) => JSX.Element
+}, {
+
+})

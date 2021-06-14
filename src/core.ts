@@ -6,7 +6,7 @@
 import * as cuid from 'cuid'
 
 import { Obj, String, flatten, hasValue, deepMerge } from "@sparkwave/standard"
-import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, Message, MergedPropsExt, PropsExtended } from "./types"
+import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, MergedPropsExt } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
 
 import morphdom from "morphdom"
@@ -35,9 +35,9 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 			case "function": {
 				// console.log(`vNode type is function "${vnode.type.name}", rendering as custom component`)
 				const vNodeType = vnode.type as Component
-				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] }, async (key: string) => {
-					// eslint-disable-next-line fp/no-mutating-methods
-					pendingUpdates.push({ elementKey: key })
+				const generator = vNodeType({
+					...vnode.props,
+					children: [...childVNodes]
 				})
 				const nextRender = await generator.next()
 				const nextElem = nextRender.value
@@ -104,13 +104,13 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
 		const childVNodes = [...flatten([vnode.children]) as VNode[]]
-		const vNodeType = vnode.type
-		switch (typeof vNodeType) {
+		switch (typeof vnode.type) {
 			case "function": {
+				const vNodeType = vnode.type as Component
 				// console.log(`vNode type is function, rendering as custom component`
-				const generator = vNodeType({ ...vnode.props, children: [...childVNodes] }, async key => {
-					// eslint-disable-next-line fp/no-mutating-methods
-					pendingUpdates.push({ elementKey: key })
+				const generator = vNodeType({
+					...vnode.props,
+					children: [...childVNodes]
 				})
 				return renderToString((await generator.next()).value)
 			}
@@ -118,7 +118,7 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 			case "string": {
 				// console.log(`vNode type is string, rendering as intrinsic component`)
 
-				const notSelfClosing = !selfClosingTags.includes(vNodeType.toLocaleLowerCase())
+				const notSelfClosing = !selfClosingTags.includes(vnode.type.toLocaleLowerCase())
 				const childrenHtml = (notSelfClosing && childVNodes && childVNodes.length > 0)
 					? (await Promise.all(childVNodes.map(renderToString))).join("")
 					: ""
@@ -144,8 +144,8 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 				).prependSpaceIfNotEmpty().toString()
 
 				return notSelfClosing
-					? `<${vNodeType}${attributesHtml}>${childrenHtml}</${vNodeType}>`
-					: `<${vNodeType}${attributesHtml}>`
+					? `<${vnode.type}${attributesHtml}>${childrenHtml}</${vnode.type}>`
+					: `<${vnode.type}${attributesHtml}>`
 			}
 
 			default: {
@@ -172,9 +172,31 @@ export const pendingUpdates = [] as PendingUpdate[]
 
 //#region types
 
-export function makeComponent<P extends Obj = Obj, S extends Obj = Obj>(core: (props: P & { key?: string, children?: VNode[] }, reRender: (key: string) => void) => AsyncGenerator<VNode<P>>, options?: ComponentOptions): Component<P> {
+/** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { key?: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<VNode<P>>, defaultProps?: D, options?: ComponentOptions): Component<P> {
+	const _core = (args: P) => {
+		return core.call({}, {
+			...args,
+			...defaultProps as Required<D>,
+			requireUpdate: async (key: string) => {
+				// eslint-disable-next-line fp/no-mutating-methods
+				pendingUpdates.push({ elementKey: key })
+			}
+		})
+	}
 	// eslint-disable-next-line fp/no-mutating-assign
-	return Object.assign(core, options)
+	return Object.assign(_core, options)
+}
+
+export const makeFunctionComponent = <P extends Obj = Obj, D extends Partial<ExtractOptional<P>> = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { children?: VNode[] }) => JSX.Element, defaultProps?: D, options?: ComponentOptions): FunctionComponent<P> => {
+	const _core = (args: P) => {
+		return core.call({}, {
+			...args,
+			...defaultProps as Required<D>
+		})
+	}
+	// eslint-disable-next-line fp/no-mutating-assign
+	return Object.assign(_core, options)
 }
 
 /** Special attributes that map to DOM events. */
@@ -504,7 +526,7 @@ export const idProvider = new IdProvider()
 // 	return intrinsicNode
 // }
 
-(function refresh() {
+setInterval(() => {
 	pendingUpdates.forEach(async update => {
 		const elements = document.querySelectorAll(`[key="${update.elementKey}"]`)
 		if (elements.length > 1) {
@@ -521,11 +543,6 @@ export const idProvider = new IdProvider()
 				const renderedElem = await render(nextElem, node.producer)
 
 				updateDOM(node as HTMLElement, renderedElem);
-				// eslint-disable-next-line fp/no-loops
-				// while (node.firstChild !== null) {
-				// 	node.removeChild(node.firstChild!)
-				// }
-				// node.appendChild(renderedElem)
 
 				// We put back the key on the node
 				(node as HTMLElement).setAttribute("key", update.elementKey)
@@ -538,5 +555,4 @@ export const idProvider = new IdProvider()
 		// eslint-disable-next-line fp/no-mutating-methods
 		pendingUpdates.pop()
 	})
-	setTimeout(refresh, 50)
-})()
+}, 50)

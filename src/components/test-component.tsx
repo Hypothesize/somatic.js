@@ -1,21 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, makeComponent, updateDOM } from '../core'
-import { PropsExtended, OptionalPropertyOf, Component, PanelProps, HtmlProps } from '../types'
 
 export type Props = {
 	color?: string,
 	text: string
 }
 
-const defaultProps: Pick<Props, OptionalPropertyOf<Props>> = {
-	color: "Green"
-}
-
-export const TestComponent = async function* (props: PropsExtended<Props>, reRender: (key: string) => void) {
-	const { text, color } = { ...defaultProps, ...props }
+export const TestComponent = makeComponent<Props>(async function* (props) {
+	console.log(props.color)
+	const { text, color } = props
 	const state = {
 		internalNumber: 0,
-		color: defaultProps.color
+		color: props.color
 	}
 
 	// eslint-disable-next-line fp/no-loops
@@ -28,14 +24,16 @@ export const TestComponent = async function* (props: PropsExtended<Props>, reRen
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.internalNumber++
-				reRender(props.key || "")
+				props.requireUpdate(props.key || "")
 			}}>TRY</button>
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.color = "Red"
-				reRender(props.key || "")
+				props.requireUpdate(props.key || "")
 			}}>Assign state color to red</button>
 			<p>State color: {state.color}</p>
 		</div>
 	}
-} as unknown as (props: PropsExtended<Props>) => JSX.Element
+}, {
+	color: "Green"
+})
