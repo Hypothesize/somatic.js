@@ -24,7 +24,7 @@ type Props = HtmlProps & {
 
 type Messages = { type: "SELECTION", data: number }
 
-export const SelectInput = makeFunctionComponent<PropsExtended<Props>>(async (props) => {
+export const SelectInput = makeFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
 	const { options, selectedIndex, style, children } = props
 	const getCurrentValue = () => {
 		if (options.length > 0 && typeof options[0] !== "string") {
