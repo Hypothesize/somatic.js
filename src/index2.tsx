@@ -20,10 +20,8 @@ if (typeof document !== "undefined") {
 }
 
 async function renderApp() {
-	const Test = <div>
-		<TestRepeater key="container">
-		</TestRepeater>
-	</div>
+	const Test = <TestRepeater key="container">
+	</TestRepeater>
 
 	const node = await core.render(Test)
 

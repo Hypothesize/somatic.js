@@ -37,7 +37,7 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				const vNodeType = vnode.type as Component | FunctionComponent
 				const generator = vNodeType({
 					...vnode.props,
-					children: [...childVNodes]
+					children: childVNodes
 				})
 				const nextElem = generator.next ?
 					(await generator.next()).value
@@ -79,7 +79,7 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				// attach attributes
 				console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
 				const nodeProps = vnode.props ?? {}
-				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]));
+				Object.keys(nodeProps).filter(k => typeof nodeProps[k] !== "function").forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]));
 				// eslint-disable-next-line fp/no-mutation
 				(node as (HTMLElement | SVGElement) & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> })["producer"] = producer
 				return node

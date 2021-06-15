@@ -2,6 +2,7 @@
 import { createElement, makeComponent, updateDOM } from '../core'
 import { PropsExtended, Component, PanelProps, HtmlProps } from '../types'
 import { TestComponent } from '../components/test-component'
+import { FunctionComponent } from '../components/function_component'
 
 export type Props = {
 
@@ -15,7 +16,7 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 	// eslint-disable-next-line fp/no-loops
 	while (true) {
 		yield <div>
-			<button onClick={ev => {
+			{/* <button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.internalTestComponents.push(true)
 				props.requireUpdate(props.key || "")
@@ -24,7 +25,10 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 				state.internalTestComponents.map((v, i) => {
 					return <TestComponent text={"Hohoho"} key={`test_${i}`} />
 				})
-			}
+			} */}
+			<FunctionComponent>
+
+			</FunctionComponent>
 		</div>
 	}
 }, {

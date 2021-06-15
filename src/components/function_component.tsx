@@ -21,7 +21,7 @@ type Props = {
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 
-export const CommandBox = makeAsyncFunctionComponent<Props>(async function (props) {
+export const FunctionComponent = makeAsyncFunctionComponent<Props>(async function (props) {
 	const {
 		orientation,
 	} = props
@@ -31,6 +31,7 @@ export const CommandBox = makeAsyncFunctionComponent<Props>(async function (prop
 		: <div />
 
 	const mainContent = <StackPanel key="main-content">
+		<h1>Function component</h1>
 	</StackPanel>
 
 	return <div>{mainContent}</div>
