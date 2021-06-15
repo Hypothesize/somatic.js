@@ -7,12 +7,12 @@
 
 import { Obj } from "@sparkwave/standard/utility"
 
-type OptionalKeys<T extends object> = Exclude<{
+export type OptionalKeys<T extends object> = Exclude<{
 	[K in keyof T]: T extends Record<K, T[K]>
 	? never
 	: K
 }[keyof T], undefined>
-export type ExtractOptional<T extends Obj, K extends OptionalKeys<T> = OptionalKeys<T>> = Obj<T[K], K>
+export type ExtractOptional<T extends object> = Pick<T, OptionalKeys<T>>
 
 export interface Message {
 	type: string,

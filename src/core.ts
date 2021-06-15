@@ -6,7 +6,7 @@
 import * as cuid from 'cuid'
 
 import { Obj, String, flatten, hasValue, deepMerge } from "@sparkwave/standard"
-import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, MergedPropsExt } from "./types"
+import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
 
 import morphdom from "morphdom"
@@ -28,19 +28,21 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 		// console.log(`VNode is null or undefined, returning empty text node`)
 		return document.createTextNode("")
 	}
-
+	console.log("1 render")
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
 		const childVNodes = [...flatten([vnode.children]) as VNode[]]
 		switch (typeof vnode.type) {
 			case "function": {
 				// console.log(`vNode type is function "${vnode.type.name}", rendering as custom component`)
-				const vNodeType = vnode.type as Component
+				const vNodeType = vnode.type as Component | FunctionComponent
 				const generator = vNodeType({
 					...vnode.props,
 					children: [...childVNodes]
 				})
-				const nextRender = await generator.next()
-				const nextElem = nextRender.value
+				const nextElem = generator.next ?
+					(await generator.next()).value
+					: await generator
+
 				if (vnode.props && vnode.props.key) {
 					// eslint-disable-next-line fp/no-mutation
 					nextElem["props"] = nextElem["props"] ? nextElem["props"] : {}
@@ -188,7 +190,7 @@ export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P
 	return Object.assign(_core, options)
 }
 
-export const makeFunctionComponent = <P extends Obj = Obj, D extends Partial<ExtractOptional<P>> = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { children?: VNode[] }) => JSX.Element, defaultProps?: D, options?: ComponentOptions): FunctionComponent<P> => {
+export const makeAsyncFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { children?: VNode[] }) => JSX.Element, defaultProps?: D, options?: ComponentOptions): FunctionComponent<P> => {
 	const _core = (args: P) => {
 		return core.call({}, {
 			...args,
@@ -556,3 +558,17 @@ setInterval(() => {
 		pendingUpdates.pop()
 	})
 }, 50)
+
+/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
+const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
+	const children = [...flatten([_vnode.children]) as JSX.Element[]]
+
+	const component = _vnode.type as FunctionComponent<Props>
+	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
+
+	const intrinsicNode = await component(_props)
+	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
+		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
+	}
+	return intrinsicNode
+}

@@ -1,11 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable brace-style */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { deepMerge } from '@sparkwave/standard/collections/object'
-
-import { createElement, makeFunctionComponent } from '../core'
+import { createElement, makeAsyncFunctionComponent } from '../core'
 import { CSSProperties, PropsExtended, PanelProps, ViewProps } from '../types'
 import { StackPanel } from './index'
 
@@ -19,7 +12,7 @@ export type Props<T = unknown> = PanelProps & ViewProps<T> & {
 	style?: CSSProperties
 }
 
-export const StackView = makeFunctionComponent<PropsExtended<Props<unknown>, Messages>>(function (props) {
+export const StackView = makeAsyncFunctionComponent<PropsExtended<Props<any>, Messages>>(function (props) {
 	try {
 		const {
 			sourceData,
@@ -28,9 +21,8 @@ export const StackView = makeFunctionComponent<PropsExtended<Props<unknown>, Mes
 			itemStyle,
 			selectedItemStyle,
 			postMsgAsync,
-			children,
 			...restOfProps
-		} = props as PropsExtended<Props<unknown>>
+		} = props
 
 		return <StackPanel {...restOfProps} >
 

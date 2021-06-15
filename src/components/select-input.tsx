@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeFunctionComponent } from '../core'
-import { PropsExtended, HtmlProps } from '../types'
+import { createElement, makeAsyncFunctionComponent } from '../core'
+import { PropsExtended, HtmlProps, VNode } from '../types'
 
 /** Type that defines the struct we need to send when we want to pass groups of options to this component. */
 export interface OptionsGrouped { label: string, options: (string | number)[] }
@@ -24,7 +24,7 @@ type Props = HtmlProps & {
 
 type Messages = { type: "SELECTION", data: number }
 
-export const SelectInput = makeFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
+export const SelectInput = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
 	const { options, selectedIndex, style, children } = props
 	const getCurrentValue = () => {
 		if (options.length > 0 && typeof options[0] !== "string") {
@@ -74,7 +74,7 @@ export const SelectInput = makeFunctionComponent<PropsExtended<Props, Messages>>
 							</option>)}
 					</optgroup>)
 				})
-				: (children && Array.isArray(children) && children.length > 0 ? children : options).map((child, index) =>
+				: (children.length > 0 ? children : []).map((child, index) =>
 					<option
 						style={{ color: props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? "gray" : "black" }}
 						disabled={props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? true : undefined}
@@ -90,8 +90,5 @@ export const SelectInput = makeFunctionComponent<PropsExtended<Props, Messages>>
 	style: {
 		backgroundColor: "white !important",
 		background: "white !important"
-	},
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	postMsgAsync: async () => { }
-}
-)
+	}
+})

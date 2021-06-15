@@ -8,7 +8,10 @@ export type Props = {
 
 export const TestComponent = makeComponent<Props>(async function* (props) {
 	console.log(props.color)
-	const { text, color } = props
+	const {
+		text,
+		color
+	} = props
 	const state = {
 		internalNumber: 0,
 		color: props.color

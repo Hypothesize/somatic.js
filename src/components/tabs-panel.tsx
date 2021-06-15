@@ -5,31 +5,20 @@ import { deepMerge, } from '@sparkwave/standard/collections/object'
 import { StackView } from './stack-view'
 import { StackPanel } from './stack-panel'
 import { PropsExtended, CSSProperties, HtmlProps, ViewProps } from '../types'
-import { createElement, makeFunctionComponent } from '../core'
+import { createElement, makeAsyncFunctionComponent } from '../core'
 
 
 export type Messages = (
 	{ type: "selection", data: string }
 )
 
-export type Props = HtmlProps & {
+export type Props = {
 	headers: ViewProps<string>
 	selectedIndex?: number
-	selectedItemStyle: CSSProperties
+	selectedItemStyle?: CSSProperties
 }
 
-export const TabsPanel = makeFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
-
-	const defaultProps/*: RecursivePartial<Props>*/ = {
-		selectedIndex: 0,
-		selectedItemStyle: {
-			fontWeight: "bold"
-		},
-		headers: {
-			itemTemplate: (headerInfo: { item: unknown, index: number }) => <div>{headerInfo.item}</div>
-		},
-		postMsgAsync: async (msg: Messages) => ""
-	}
+export const TabsPanel = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
 
 	const {
 		headers,
@@ -37,10 +26,8 @@ export const TabsPanel = makeFunctionComponent<PropsExtended<Props, Messages>>(a
 		selectedItemStyle,
 
 		children,
-		postMsgAsync,
-		style,
-		...htmlProps
-	} = deepMerge(defaultProps, props)
+		postMsgAsync
+	} = props
 
 
 	return <StackPanel orientation={"vertical"}>
@@ -64,4 +51,10 @@ export const TabsPanel = makeFunctionComponent<PropsExtended<Props, Messages>>(a
 			{(children ?? [])[selectedIndex]}
 		</div>
 	</StackPanel>
+}, {
+	selectedIndex: 0,
+	selectedItemStyle: {
+		fontWeight: "bold"
+	},
+	postMsgAsync: async (msg: Messages) => ""
 })
