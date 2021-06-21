@@ -66,11 +66,8 @@ export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Pa
 	}
 )
 
-export interface ComponentOptions {
-	isPure?: boolean
-}
-export type Component<P extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }) => AsyncGenerator<VNode<P>>) & ComponentOptions
-export type FunctionComponent<P extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }) => JSX.Element) & ComponentOptions
+export type Component<P extends Obj = Obj> = (props: P & { key: string, children?: VNode[] }) => AsyncGenerator<VNode<P>>
+export type FunctionComponent<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
 
 /** Virtual node type, either a component or an intrinsic element */
 export type VNodeType<P extends Obj> = | Component<P> | string /* Intrinsic element */
@@ -79,7 +76,7 @@ export type VNodeType<P extends Obj> = | Component<P> | string /* Intrinsic elem
 export interface VNode<P extends Obj = Obj, T extends VNodeType<P> = VNodeType<P>> {
 	type: T
 	props: P
-	children?: any[] //({ toString(): string } | VNode<any>)[]
+	children?: VNode[] //({ toString(): string } | VNode<any>)[]
 }
 
 export interface CSSProperties {

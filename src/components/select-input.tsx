@@ -74,7 +74,7 @@ export const SelectInput = makeAsyncFunctionComponent<PropsExtended<Props, Messa
 							</option>)}
 					</optgroup>)
 				})
-				: (children.length > 0 ? children : []).map((child, index) =>
+				: (children && children.length > 0 ? children : []).map((child, index) =>
 					<option
 						style={{ color: props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? "gray" : "black" }}
 						disabled={props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? true : undefined}

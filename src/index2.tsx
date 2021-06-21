@@ -6,10 +6,8 @@ export * from './core'
 export * from './components'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { VNodeType, PropsExtended } from "./types"
-import { TestComponent } from "./components/test-component"
-import { StackPanel } from "./components/stack-panel"
-import { TestRepeater } from "./components/test-container"
+import { TestRepeater } from "./components/test-repeater"
+import { FixedOrderComp } from "./components/fixed-order"
 
 if (typeof document !== "undefined") {
 	document.addEventListener("DOMContentLoaded", async () => {
@@ -20,10 +18,15 @@ if (typeof document !== "undefined") {
 }
 
 async function renderApp() {
-	const Test = <TestRepeater key="container">
-	</TestRepeater>
+	//
+	const Test = <div>
+		<h1>Basic {"<h1>"}</h1>
+		<TestRepeater key="repeater">
+		</TestRepeater>
+		<FixedOrderComp key="orderComp" />
+	</div>
 
-	const node = await core.render(Test)
+	const node = await core.render(Test, "")
 
 	const rootNode = document.getElementById("root-div")
 	if (rootNode) {

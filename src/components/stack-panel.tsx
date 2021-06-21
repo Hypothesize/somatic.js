@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent } from '../core'
-import { Component, PanelProps, HtmlProps } from '../types'
+import { createElement, makeAsyncFunctionComponent } from '../core'
+import { PanelProps, HtmlProps } from '../types'
 
 export type Props = PanelProps & HtmlProps & {
 }
 
-export const StackPanel: Component<Props> = makeComponent<Props>(async function* (props) {
+export const StackPanel = makeAsyncFunctionComponent<Props>(async function (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -42,18 +42,17 @@ export const StackPanel: Component<Props> = makeComponent<Props>(async function*
 		style,
 		...htmlProps
 	} = props
-	while (true) {
-		yield <div
-			{...htmlProps}
-			style={{
-				display: "flex",
-				...style,
-				flexDirection: orientation === "vertical" ? "column" : "row",
-				justifyContent: justifyContent(),
-				alignItems: alignItems()
-			}}>
-			{children}
-		</div>
-	}
+	// eslint-disable-next-line fp/no-loops
+	return <div
+		{...htmlProps}
+		style={{
+			display: "flex",
+			...style,
+			flexDirection: orientation === "vertical" ? "column" : "row",
+			justifyContent: justifyContent(),
+			alignItems: alignItems()
+		}}>
+		{children}
+	</div >
+
 })
-StackPanel.isPure = true

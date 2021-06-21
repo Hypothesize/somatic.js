@@ -52,16 +52,14 @@ export const CommandBox = makeAsyncFunctionComponent<PropsExtended<Props, Messag
 
 	return <button
 		{...htmlProps}
-		onClick={(e) => { postMsgAsync({ type: "CLICKED" }) }}
 		style={{
 			...htmlProps.disabled !== undefined
 				? { color: 'gray', borderColor: `gray` }
 				: {},
-
 			...style
 		}}>
 
-		<StackPanel key="container"
+		<StackPanel
 			itemsAlignV={"center"}
 			orientation={orientation}>
 			{iconPlacement === "before" ? [iconContent, mainContent] : [mainContent, iconContent]}

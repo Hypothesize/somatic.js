@@ -38,17 +38,19 @@ export const TabsPanel = makeAsyncFunctionComponent<PropsExtended<Props, Message
 			selectedItemStyle={selectedItemStyle}
 			itemTemplate={headers.itemTemplate}
 			postMsgAsync={async msg => {
-				postMsgAsync({
-					type: "selection",
-					data: [...headers.sourceData][msg.data]
-				})
+				return postMsgAsync
+					? postMsgAsync({
+						type: "selection",
+						data: [...headers.sourceData][msg.data]
+					})
+					: undefined
 			}}
-			selectedItemIndex={selectedIndex}>
+			selectedItemIndex={selectedIndex || 0}>
 
 		</StackView>
 
 		<div>
-			{(children ?? [])[selectedIndex]}
+			{(children ?? [])[selectedIndex || 0]}
 		</div>
 	</StackPanel>
 }, {

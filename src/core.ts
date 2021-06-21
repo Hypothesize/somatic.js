@@ -1,3 +1,4 @@
+/* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
@@ -5,14 +6,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as cuid from 'cuid'
 
-import { Obj, String, flatten, hasValue, deepMerge } from "@sparkwave/standard"
-import { Component, ComponentOptions, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
+import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
+import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
-
+import { default as hash } from "hash-sum"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
-export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: any[]): VNode<P, T> {
+export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: VNode[]): VNode<P, T> {
 	return {
 		type: type,
 		props: props,
@@ -20,52 +21,67 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 	}
 }
 
+/** Cache of component invocations, indexed by the 'key' property passed */
+const cache = {} as Obj<{
+	/** Hash of properties passed to component invocation */
+	hash: string,
+	/** Result of component invocation */
+	payload: Component | FunctionComponent
+}>
+
 /** Render virtual node to DOM node */
-export async function render(vnode: undefined | null | string | VNode | JSX.Element, producer?: AsyncGenerator<VNode, VNodeType<Obj>>): Promise<Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> }> {
+export async function render(vnode: undefined | null | string | VNode, parentKey: string): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
 		// console.log(`VNode is null or undefined, returning empty text node`)
 		return document.createTextNode("")
 	}
-	console.log("1 render")
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
 		const childVNodes = [...flatten([vnode.children]) as VNode[]]
-		switch (typeof vnode.type) {
-			case "function": {
-				// console.log(`vNode type is function "${vnode.type.name}", rendering as custom component`)
-				const vNodeType = vnode.type as Component | FunctionComponent
-				const generator = vNodeType({
-					...vnode.props,
-					children: childVNodes
-				})
-				const nextElem = generator.next ?
-					(await generator.next()).value
-					: await generator
+		const vNodeType = vnode.type as string | Component | FunctionComponent
 
-				if (vnode.props && vnode.props.key) {
+		switch (typeof vNodeType) {
+			case "function": {
+				console.log(`Rendering vnode "${vNodeType}", a component`)
+				const key = vnode.props && vnode.props.key ? vnode.props.key as string : `${parentKey}-component`
+				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children]))
+				// If entry doesn't exist in the cache, we add it
+				if (!cache[key] || cache[key].hash !== propsChildrenHash) {
+					cache[key] = {
+						hash: propsChildrenHash,
+						payload: vNodeType({ ...vnode.props, key: key, children: vnode.children })
+					}
+				}
+				const entry = cache[key]
+				// We pick the content from the component
+				const elt = isAsyncIterable(entry.payload)
+					? (await (entry.payload as unknown as AsyncGenerator).next()).value
+					: await entry.payload
+
+				if (vnode.props && key) {
 					// eslint-disable-next-line fp/no-mutation
-					nextElem["props"] = nextElem["props"] ? nextElem["props"] : {}
+					elt["props"] = elt["props"] ? elt["props"] : {}
 					// eslint-disable-next-line fp/no-mutation
-					nextElem["props"].key = vnode.props ? vnode.props.key : undefined
+					elt["props"].key = vnode.props ? key : undefined
 				}
 
-				return await render(nextElem, generator)
+				return await render(elt, key)
 			}
 
 			case "string": {
-				// console.log(`Rendering "${vnode.type}" as intrinsic component`)
-				const node = svgTags.includes(vnode.type)
-					? document.createElementNS('http://www.w3.org/2000/svg', vnode.type)
-					: document.createElement(vnode.type)
+				console.log(`Rendering "${vNodeType}", intrinsic component`)
+				const node = svgTags.includes(vNodeType)
+					? document.createElementNS('http://www.w3.org/2000/svg', vNodeType)
+					: document.createElement(vNodeType)
 				// console.log(`Created node ${node} for "${vnode.type}"; its appendChild is "${node.appendChild}"`)
 
 				// console.log(`Rendering and appending children ${childVNodes} in order for "${vnode.type}"`)
 				// render and append children in order
 				try {
 					await Promise
-						.all(childVNodes.map(c => {
-							return render(c)
+						.all(childVNodes.map((c, i) => {
+							return render(c, `${parentKey}-${vNodeType}_${i}`)
 						}))
 						.then(childDomNodes => childDomNodes.forEach(
 							/* dont use node.appendChild drectly here */
@@ -77,11 +93,10 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				}
 
 				// attach attributes
-				console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
+				// console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
 				const nodeProps = vnode.props ?? {}
-				Object.keys(nodeProps).filter(k => typeof nodeProps[k] !== "function").forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]));
+				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
 				// eslint-disable-next-line fp/no-mutation
-				(node as (HTMLElement | SVGElement) & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> })["producer"] = producer
 				return node
 			}
 
@@ -112,7 +127,8 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 				// console.log(`vNode type is function, rendering as custom component`
 				const generator = vNodeType({
 					...vnode.props,
-					children: [...childVNodes]
+					children: [...childVNodes],
+					key: vnode.props.key as string || ""
 				})
 				return renderToString((await generator.next()).value)
 			}
@@ -162,11 +178,7 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 }
 
 export function updateDOM(rootElement: Element, node: Node) {
-	morphdom(rootElement, node, {
-		onBeforeElUpdated: function (fromEl, toEl) {
-			return toEl.getAttribute("key") === null
-		}
-	})
+	morphdom(rootElement, node)
 }
 
 type PendingUpdate = { elementKey: string } // | "global"
@@ -175,30 +187,23 @@ export const pendingUpdates = [] as PendingUpdate[]
 //#region types
 
 /** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { key?: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<VNode<P>>, defaultProps?: D, options?: ComponentOptions): Component<P> {
-	const _core = (args: P) => {
-		return core.call({}, {
-			...args,
-			...defaultProps as Required<D>,
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<VNode<P>>, defaultProps?: D): Component<P> {
+	return (args: P & { key: string }) => {
+		const completeProps = deepMerge(defaultProps, args, {
+			key: args.key,
 			requireUpdate: async (key: string) => {
 				// eslint-disable-next-line fp/no-mutating-methods
 				pendingUpdates.push({ elementKey: key })
 			}
-		})
+		}) as P & D & { key: string, requireUpdate: (key: string) => void }
+		return core.call({}, completeProps)
 	}
-	// eslint-disable-next-line fp/no-mutating-assign
-	return Object.assign(_core, options)
 }
 
-export const makeAsyncFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & Required<D> & { children?: VNode[] }) => JSX.Element, defaultProps?: D, options?: ComponentOptions): FunctionComponent<P> => {
-	const _core = (args: P) => {
-		return core.call({}, {
-			...args,
-			...defaultProps as Required<D>
-		})
+export const makeAsyncFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { children?: VNode[] }) => JSX.Element, defaultProps?: D): FunctionComponent<P> => {
+	return (args: P) => {
+		return core.call({}, deepMerge(defaultProps, args) as P & D)
 	}
-	// eslint-disable-next-line fp/no-mutating-assign
-	return Object.assign(_core, options)
 }
 
 /** Special attributes that map to DOM events. */
@@ -402,7 +407,7 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 		if (['checked', 'value', 'htmlFor'].includes(key.toLocaleLowerCase())) {
 			(element as any)[key] = value
 		}
-		else if (key.toLocaleLowerCase() === 'className') { // We turn the 'className' property into the HTML class attribute
+		else if (key.toLocaleLowerCase() === 'classname') { // We turn the 'className' property into the HTML class attribute
 			const classes = (value as string).split(/\s/)
 			classes.forEach(cl => {
 				element.classList.add(cl)
@@ -414,7 +419,7 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 			//dom.innerHTML
 		}
 		else if (typeof value === 'function') {
-			console.log(`Setting attribute "${key}" to function "${value.toString()}" on "${element.tagName}"`)
+			// console.log(`Setting attribute "${key}" to function "${value.toString()}" on "${element.tagName}"`)
 
 			const htmlPropKey = key.toUpperCase()
 			if (isEventKey(htmlPropKey)) {
@@ -447,7 +452,7 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 				}, true)
 			}
 			else {
-				setAttribute(element, key, (value as (ev: Event) => unknown))
+				// setAttribute(element, key, (value as (ev: Event) => unknown))
 			}
 		}
 		else {
@@ -459,90 +464,25 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 	}
 }
 
-
-/*class IdProvider {
-	private cache: string[]
-	private pointer: number
-	constructor() {
-		this.cache = []
-		this.pointer = 0
-	}
-	next() {
-		if (this.pointer >= this.cache.length) {
-			// console.log(`pushing to id provider cache`)
-			this.cache.push(cuid.default())
-		}
-		return this.cache[this.pointer++]
-	}
-	reset() {
-		this.pointer = 0
-	}
-}
-export const idProvider = new IdProvider()
-*/
-
-/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-// const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
-// 	const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
-// 	const component = _vnode.type as Component<Props, State>
-// 	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
-
-// 	const fullProps = deepMerge("defaultProps" in component && component.defaultProps && typeof component.defaultProps === "function"
-// 		? component.defaultProps as PropsExtended<Props, Message>
-// 		: {} as PropsExtended<Props, Message>,
-// 		_props
-// 	)
-
-// 	const intrinsicNode = await component(_props,
-// 		async () => {
-// 			if (fullProps.key === undefined) {
-// 				console.error("Cannot change the state of a component without a key")
-// 			}
-// 			else {
-// 				console.log(`Re-rendering`)
-// 			}
-
-// 			// We re-render the element
-// 			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
-// 			const newElem2 = createElement(_vnode, fullProps)
-// 			const renderedElem = await render(newElem2) // If element has children, we don't use the cache system (yet)
-// 			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
-// 			if (elements.length > 1) {
-// 				console.error(`More than 1 component have the key '${_props.key}'`)
-// 			}
-// 			else {
-// 				if (elements[0] !== undefined) {
-// 					updateDOM(elements[0], renderedElem)
-// 				}
-// 				else {
-// 					console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
-// 				}
-// 			}
-
-// 		}
-// 	)
-// 	// if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
-// 	// 	intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
-// 	// }
-// 	return intrinsicNode
-// }
-
 setInterval(() => {
 	pendingUpdates.forEach(async update => {
+		// We remove the update from the pending list
+		// eslint-disable-next-line fp/no-mutating-methods
+		pendingUpdates.pop()
+
 		const elements = document.querySelectorAll(`[key="${update.elementKey}"]`)
 		if (elements.length > 1) {
 			console.error(`More than 1 component have the key '${update.elementKey}'`)
 		}
 		else {
-			const node = elements[0] as Node & { producer?: AsyncGenerator<VNode, VNodeType<Obj>> } | undefined
-			if (node !== undefined && node.producer) {
-
-				const nextIteration = await node.producer.next()
+			const node = elements[0] as HTMLElement | undefined
+			if (node !== undefined) {
+				const cachedGenerator = cache[update.elementKey]
+				const nextIteration = await (cachedGenerator.payload as unknown as AsyncGenerator).next()
 				const nextElem = nextIteration.value as any
 
 				// The rendered element won't have a key attribute
-				const renderedElem = await render(nextElem, node.producer)
+				const renderedElem = await render(nextElem, update.elementKey)
 
 				updateDOM(node as HTMLElement, renderedElem);
 
@@ -553,22 +493,5 @@ setInterval(() => {
 				console.error(`Cannot update an element after setState: key '${update.elementKey}' not found in the document`)
 			}
 		}
-
-		// eslint-disable-next-line fp/no-mutating-methods
-		pendingUpdates.pop()
 	})
 }, 50)
-
-/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
-	const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
-	const component = _vnode.type as FunctionComponent<Props>
-	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
-
-	const intrinsicNode = await component(_props)
-	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
-		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
-	}
-	return intrinsicNode
-}

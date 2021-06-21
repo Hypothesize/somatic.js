@@ -3,14 +3,16 @@ import { createElement, makeComponent, updateDOM } from '../core'
 
 export type Props = {
 	color?: string,
-	text: string
+	text?: string,
+	title?: string
 }
 
 export const TestComponent = makeComponent<Props>(async function* (props) {
 	console.log(props.color)
 	const {
 		text,
-		color
+		color,
+		title
 	} = props
 	const state = {
 		internalNumber: 0,
@@ -19,8 +21,8 @@ export const TestComponent = makeComponent<Props>(async function* (props) {
 
 	// eslint-disable-next-line fp/no-loops
 	while (true) {
-		yield <div>
-			<h1>SUCCESS</h1>
+		yield <div style={{ margin: "1em", background: "#ede" }}>
+			<h3>{title}</h3>
 			<p>Text props: {text}</p>
 			<p>Color props: {color}</p>
 			<p>Internal number: {state.internalNumber}</p>
@@ -38,5 +40,6 @@ export const TestComponent = makeComponent<Props>(async function* (props) {
 		</div>
 	}
 }, {
-	color: "Green"
+	color: "Green",
+	title: "Test component"
 })
