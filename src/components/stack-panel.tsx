@@ -3,6 +3,7 @@ import { createElement, makeAsyncFunctionComponent } from '../core'
 import { PanelProps, HtmlProps } from '../types'
 
 export type Props = PanelProps & HtmlProps & {
+	key?: string
 }
 
 export const StackPanel = makeAsyncFunctionComponent<Props>(async function (props) {
@@ -40,6 +41,7 @@ export const StackPanel = makeAsyncFunctionComponent<Props>(async function (prop
 		itemsAlignV,
 		children,
 		style,
+		key,
 		...htmlProps
 	} = props
 	// eslint-disable-next-line fp/no-loops

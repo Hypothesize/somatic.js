@@ -8,6 +8,7 @@ export * from './components'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TestRepeater } from "./components/test-repeater"
 import { FixedOrderComp } from "./components/fixed-order"
+import { TypedComponent } from "./components/typed-component"
 
 if (typeof document !== "undefined") {
 	document.addEventListener("DOMContentLoaded", async () => {
@@ -24,6 +25,7 @@ async function renderApp() {
 		<TestRepeater key="repeater">
 		</TestRepeater>
 		<FixedOrderComp key="orderComp" />
+		<TypedComponent key="TypedComp" model={56} list={[45, 67]} />
 	</div>
 
 	const node = await core.render(Test, "")

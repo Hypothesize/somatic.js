@@ -1,5 +1,5 @@
 import { createElement, makeAsyncFunctionComponent } from '../core'
-import { CSSProperties, PropsExtended, PanelProps, ViewProps } from '../types'
+import { CSSProperties, PropsExtended, PanelProps, ViewProps, FunctionComponent } from '../types'
 import { StackPanel } from './index'
 
 export type Messages = (
@@ -11,47 +11,47 @@ export type Props<T = unknown> = PanelProps & ViewProps<T> & {
 	selectedItemStyle?: CSSProperties,
 	style?: CSSProperties
 }
+export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T>, Messages>): FunctionComponent<Props<T>> => {
+	return makeAsyncFunctionComponent<PropsExtended<Props<T>, Messages>>(async function (props) {
+		try {
+			const {
+				sourceData,
+				selectedItemIndex,
+				itemTemplate,
+				itemStyle,
+				selectedItemStyle,
+				postMsgAsync,
+				...restOfProps
+			} = props
 
-export const StackView = makeAsyncFunctionComponent<PropsExtended<Props<any>, Messages>>(function (props) {
-	try {
-		const {
-			sourceData,
-			selectedItemIndex,
-			itemTemplate,
-			itemStyle,
-			selectedItemStyle,
-			postMsgAsync,
-			...restOfProps
-		} = props
+			return <StackPanel {...restOfProps}>
+				{
+					[...sourceData]
+						.map((item, index) =>
+							<div
+								style={{ ...itemStyle, ...index === selectedItemIndex ? selectedItemStyle : {} }}
+								onClick={(e) => {
+									return postMsgAsync
+										? postMsgAsync({ type: "selection", data: index })
+										: undefined
+								}}>
 
-		return <StackPanel {...restOfProps} >
+								{itemTemplate
+									? itemTemplate({ item, index })
+									: item
+								}
+							</div>
+						)
+				}
 
-			{
-				[...sourceData]
-					.map((item, index) =>
-						<div
-							style={{ ...itemStyle, ...index === selectedItemIndex ? selectedItemStyle : {} }}
-							onClick={(e) => {
-								return postMsgAsync
-									? postMsgAsync({ type: "selection", data: index })
-									: undefined
-							}}>
-
-							{itemTemplate
-								? itemTemplate({ item, index })
-								: item
-							}
-						</div>
-					)
-			}
-
-		</StackPanel >
-	}
-	catch (e) {
-		console.error(`StackView render: ${e}`)
-		throw e
-	}
-}, {
-	selectedItemStyle: {} as CSSProperties,
-	itemStyle: {}
-})
+			</StackPanel >
+		}
+		catch (e) {
+			console.error(`StackView render: ${e}`)
+			throw e
+		}
+	}, {
+		selectedItemStyle: {} as CSSProperties,
+		itemStyle: {}
+	})(outsideProps)
+}

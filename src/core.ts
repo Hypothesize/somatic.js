@@ -30,7 +30,7 @@ const cache = {} as Obj<{
 }>
 
 /** Render virtual node to DOM node */
-export async function render(vnode: undefined | null | string | VNode, parentKey: string): Promise<Node> {
+export async function render(vnode: undefined | null | string | VNode, parentKey?: string): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -38,14 +38,17 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 		return document.createTextNode("")
 	}
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
-		const childVNodes = [...flatten([vnode.children]) as VNode[]]
+		const childVNodes = [...flatten(vnode.children || []) as VNode[]]
 		const vNodeType = vnode.type as string | Component | FunctionComponent
 
 		switch (typeof vNodeType) {
 			case "function": {
 				console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = vnode.props && vnode.props.key ? vnode.props.key as string : `${parentKey}-component`
-				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children]))
+				const key = vnode.props && vnode.props.key ? vnode.props.key as string || "" : `${parentKey}-component`
+				// We don't include the function properties in the hash
+				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
+					return typeof v === "function" || typeof v === "symbol" ? undefined : v
+				}))
 				// If entry doesn't exist in the cache, we add it
 				if (!cache[key] || cache[key].hash !== propsChildrenHash) {
 					cache[key] = {
@@ -81,7 +84,7 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				try {
 					await Promise
 						.all(childVNodes.map((c, i) => {
-							return render(c, `${parentKey}-${vNodeType}_${i}`)
+							return render(c, `${parentKey ? parentKey + "-" : ""}${vNodeType}${i}`)
 						}))
 						.then(childDomNodes => childDomNodes.forEach(
 							/* dont use node.appendChild drectly here */
