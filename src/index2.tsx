@@ -25,7 +25,7 @@ async function renderApp() {
 		<TestRepeater key="repeater">
 		</TestRepeater>
 		<FixedOrderComp key="orderComp" />
-		<TypedComponent key="TypedComp" model={56} list={[45, 67]} />
+		<TypedComponent key="TypedComp" model={56} />
 	</div>
 
 	const node = await core.render(Test, "")
