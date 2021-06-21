@@ -57,6 +57,5 @@ export const TabsPanel = makeAsyncFunctionComponent<PropsExtended<Props, Message
 	selectedIndex: 0,
 	selectedItemStyle: {
 		fontWeight: "bold"
-	},
-	postMsgAsync: async (msg: Messages) => ""
+	}
 })

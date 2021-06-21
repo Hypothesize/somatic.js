@@ -13,11 +13,11 @@ import { default as hash } from "hash-sum"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
-export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: VNode[]): VNode<P, T> {
+export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: VNode[] | (VNode[])[]): VNode<P, T> {
 	return {
 		type: type,
 		props: props,
-		children: children
+		children: (Array.isArray(children[0]) ? children[0] : children) as VNode[] // If an array is passed as children, we assign its content
 	}
 }
 
@@ -26,7 +26,7 @@ const cache = {} as Obj<{
 	/** Hash of properties passed to component invocation */
 	hash: string,
 	/** Result of component invocation */
-	payload: Component | FunctionComponent
+	payload: AsyncGenerator<VNode>
 }>
 
 /** Render virtual node to DOM node */
@@ -49,18 +49,19 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
 					return typeof v === "function" || typeof v === "symbol" ? undefined : v
 				}))
+				const fn: AsyncGenerator<VNode> | Promise<JSX.Element> = vNodeType({ ...vnode.props, key: key, children: vnode.children })
 				// If entry doesn't exist in the cache, we add it
-				if (!cache[key] || cache[key].hash !== propsChildrenHash) {
+				if (isAsyncIterable(fn) && (!cache[key] || cache[key].hash !== propsChildrenHash)) {
 					cache[key] = {
 						hash: propsChildrenHash,
-						payload: vNodeType({ ...vnode.props, key: key, children: vnode.children })
+						payload: fn
 					}
 				}
-				const entry = cache[key]
+
 				// We pick the content from the component
-				const elt = isAsyncIterable(entry.payload)
-					? (await (entry.payload as unknown as AsyncGenerator).next()).value
-					: await entry.payload
+				const elt = isAsyncIterable(fn)
+					? (await (fn as unknown as AsyncGenerator).next()).value
+					: await fn
 
 				if (vnode.props && key) {
 					// eslint-disable-next-line fp/no-mutation
