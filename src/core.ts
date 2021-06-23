@@ -44,7 +44,7 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 		switch (typeof vNodeType) {
 			case "function": {
 				console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = vnode.props && vnode.props.key ? vnode.props.key as string || "" : `${parentKey}-component`
+				const key = vnode.props && vnode.props.key ? vnode.props.key as string || "" : `${parentKey}_component`
 				// We don't include the function properties in the hash
 				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
 					return typeof v === "function" || typeof v === "symbol" ? undefined : v
@@ -85,7 +85,7 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				try {
 					await Promise
 						.all(childVNodes.map((c, i) => {
-							return render(c, `${parentKey ? parentKey + "-" : ""}${vNodeType}${i}`)
+							return render(c, `${parentKey ? parentKey + "_" : ""}${vNodeType}${i}`)
 						}))
 						.then(childDomNodes => childDomNodes.forEach(
 							/* dont use node.appendChild drectly here */
@@ -182,7 +182,11 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 }
 
 export function updateDOM(rootElement: Element, node: Node) {
-	morphdom(rootElement, node)
+	morphdom(rootElement, node, {
+		getNodeKey: comparedNode => {
+			return comparedNode.nodeType === 1 ? (comparedNode as HTMLElement).getAttribute("key") : undefined
+		}
+	})
 }
 
 type PendingUpdate = { elementKey: string } // | "global"
