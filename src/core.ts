@@ -472,6 +472,12 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 	}
 }
 
+/**
+ * Local updates
+ * Update loop
+ * Eventing system
+ * Key system
+ */
 setInterval(() => {
 	pendingUpdates.forEach(async update => {
 		// We remove the update from the pending list
