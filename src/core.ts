@@ -29,8 +29,10 @@ const cache = {} as Obj<{
 	payload: AsyncGenerator<VNode>
 }>
 
-/** Render virtual node to DOM node */
-export async function render(vnode: undefined | null | string | VNode, parentKey?: string): Promise<Node> {
+/** Render virtual node to DOM node.
+ * A parentKey can be given to generate a unique key in the DOM tree, for caching purpose.
+ * If writeKey is true and the component is an intrinsic component, the key will be added to the DOM element (if we want to target the element by its key at runtime) */
+export async function render(vnode: undefined | null | string | VNode, parentKey?: string, writeKey?: boolean): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -40,11 +42,12 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
 		const childVNodes = [...flatten(vnode.children || []) as VNode[]]
 		const vNodeType = vnode.type as string | Component | FunctionComponent
+		const customKey = vnode.props && vnode.props.key as string | undefined
 
 		switch (typeof vNodeType) {
 			case "function": {
 				console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = vnode.props && vnode.props.key ? vnode.props.key as string || "" : `${parentKey}_component`
+				const key = vnode.props && customKey ? customKey || "" : `${parentKey}_component`
 				// We don't include the function properties in the hash
 				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
 					return typeof v === "function" || typeof v === "symbol" ? undefined : v
@@ -70,7 +73,7 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 					elt["props"].key = vnode.props ? key : undefined
 				}
 
-				return await render(elt, key)
+				return await render(elt, key, customKey !== undefined)
 			}
 
 			case "string": {
@@ -99,7 +102,10 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				// attach attributes
 				// console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
 				const nodeProps = vnode.props ?? {}
-				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
+				Object.keys(nodeProps).forEach(propKey => writeKey || propKey !== "key"
+					? setAttribute(node, propKey, nodeProps[propKey])
+					: undefined
+				)
 				// eslint-disable-next-line fp/no-mutation
 				return node
 			}
@@ -183,9 +189,7 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 
 export function updateDOM(rootElement: Element, node: Node) {
 	morphdom(rootElement, node, {
-		getNodeKey: comparedNode => {
-			return comparedNode.nodeType === 1 ? (comparedNode as HTMLElement).getAttribute("key") : undefined
-		}
+		getNodeKey: () => undefined
 	})
 }
 
