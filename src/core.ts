@@ -26,7 +26,7 @@ const cache = {} as Obj<{
 	/** Hash of properties passed to component invocation */
 	hash: string,
 	/** Result of component invocation */
-	payload: AsyncGenerator<VNode>
+	payload: AsyncGenerator<VNode> | JSX.Element
 }>
 
 /** Render virtual node to DOM node.
@@ -52,14 +52,14 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
 					return typeof v === "function" || typeof v === "symbol" ? undefined : v
 				}))
-				const fn: AsyncGenerator<VNode> | Promise<JSX.Element> = vNodeType({ ...vnode.props, key: key, children: vnode.children })
 				// If entry doesn't exist in the cache, we add it
-				if (isAsyncIterable(fn) && (!cache[key] || cache[key].hash !== propsChildrenHash)) {
+				if (!cache[key] || cache[key].hash !== propsChildrenHash) {
 					cache[key] = {
 						hash: propsChildrenHash,
-						payload: fn
+						payload: vNodeType({ ...vnode.props, key: key, children: vnode.children })
 					}
 				}
+				const fn: AsyncGenerator<VNode> | Promise<JSX.Element> = cache[key].payload
 
 				// We pick the content from the component
 				const elt = isAsyncIterable(fn)
