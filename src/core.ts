@@ -46,8 +46,8 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 
 		switch (typeof vNodeType) {
 			case "function": {
-				console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = vnode.props && customKey ? customKey || "" : `${parentKey}_component`
+				// console.log(`Rendering vnode "${vNodeType}", a component`)
+				const key = customKey ? customKey || "" : `${parentKey}_component`
 				// We don't include the function properties in the hash
 				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
 					return typeof v === "function" || typeof v === "symbol" ? undefined : v
@@ -66,18 +66,17 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 					? (await (fn as unknown as AsyncGenerator).next()).value
 					: await fn
 
-				if (vnode.props && key) {
+				if (vnode.props && writeKey) {
 					// eslint-disable-next-line fp/no-mutation
 					elt["props"] = elt["props"] ? elt["props"] : {}
 					// eslint-disable-next-line fp/no-mutation
 					elt["props"].key = vnode.props ? key : undefined
 				}
-
 				return await render(elt, key, customKey !== undefined)
 			}
 
 			case "string": {
-				console.log(`Rendering "${vNodeType}", intrinsic component`)
+				// console.log(`Rendering "${vNodeType}", intrinsic component`)
 				const node = svgTags.includes(vNodeType)
 					? document.createElementNS('http://www.w3.org/2000/svg', vNodeType)
 					: document.createElement(vNodeType)
@@ -496,8 +495,11 @@ setInterval(() => {
 			const node = elements[0] as HTMLElement | undefined
 			if (node !== undefined) {
 				const cachedGenerator = cache[update.elementKey]
-				const nextIteration = await (cachedGenerator.payload as unknown as AsyncGenerator).next()
-				const nextElem = nextIteration.value as any
+				const payload = await (cachedGenerator.payload as unknown as AsyncGenerator)
+
+				const nextElem = isAsyncIterable(payload)
+					? (await (payload as unknown as AsyncGenerator).next()).value
+					: await payload
 
 				// The rendered element won't have a key attribute
 				const renderedElem = await render(nextElem, update.elementKey)
