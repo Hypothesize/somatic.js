@@ -9,7 +9,7 @@ import * as cuid from 'cuid'
 import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
 import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
-import { default as hash } from "hash-sum"
+import { default as isEqual } from "lodash.isequal"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
@@ -24,15 +24,19 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 /** Cache of component invocations, indexed by the 'key' property passed */
 const cache = {} as Obj<{
 	/** Hash of properties passed to component invocation */
-	hash: string,
+	props: Obj,
+	children?: VNode[],
 	/** Result of component invocation */
-	payload: AsyncGenerator<VNode> | JSX.Element
+	payload: VNodeType<Obj>
 }>
 
 /** Render virtual node to DOM node.
- * A parentKey can be given to generate a unique key in the DOM tree, for caching purpose.
- * If writeKey is true and the component is an intrinsic component, the key will be added to the DOM element (if we want to target the element by its key at runtime) */
-export async function render(vnode: undefined | null | string | VNode, parentKey?: string, writeKey?: boolean): Promise<Node> {
+ * 
+ * @param vnode The node to render
+ * @param parentKey If passed, will be attached to this element's own key to generate a unique key
+ * @param htmlKey If the component is instrincis, it will insert this key as an html attribute, otherwise it will pass it its child component
+ */
+export async function render(vnode: undefined | null | string | VNode, parentKey?: string, htmlKey?: string): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -41,45 +45,38 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 	}
 	if (typeof vnode === 'object' && 'type' in vnode && 'props' in vnode) {
 		const childVNodes = [...flatten(vnode.children || []) as VNode[]]
-		const vNodeType = vnode.type as string | Component | FunctionComponent
+
 		const customKey = vnode.props && vnode.props.key as string | undefined
 
-		switch (typeof vNodeType) {
+		switch (typeof vnode.type) {
 			case "function": {
 				// console.log(`Rendering vnode "${vNodeType}", a component`)
 				const key = customKey ? customKey || "" : `${parentKey}_component`
-				// We don't include the function properties in the hash
-				const propsChildrenHash = hash(JSON.stringify([vnode.props, vnode.children], (k, v) => {
-					return typeof v === "function" || typeof v === "symbol" ? undefined : v
-				}))
+
 				// If entry doesn't exist in the cache, we add it
-				if (!cache[key] || cache[key].hash !== propsChildrenHash) {
+				if (!cache[key] || !isEqual(cache[key].props, vnode.props) || !isEqual(cache[key].children, vnode.children)) {
 					cache[key] = {
-						hash: propsChildrenHash,
-						payload: vNodeType({ ...vnode.props, key: key, children: vnode.children })
+						props: vnode.props,
+						children: vnode.children,
+						payload: vnode.type({ ...vnode.props, key: key, children: vnode.children })
 					}
 				}
-				const fn: AsyncGenerator<VNode> | Promise<JSX.Element> = cache[key].payload
-
+				const fn = cache[key].payload
+				const isStateful = isAsyncIterable(fn)
 				// We pick the content from the component
-				const elt = isAsyncIterable(fn)
+				const elt: VNode = isStateful
 					? (await (fn as unknown as AsyncGenerator).next()).value
 					: await fn
 
-				if (vnode.props && writeKey) {
-					// eslint-disable-next-line fp/no-mutation
-					elt["props"] = elt["props"] ? elt["props"] : {}
-					// eslint-disable-next-line fp/no-mutation
-					elt["props"].key = vnode.props ? key : undefined
-				}
-				return await render(elt, key, customKey !== undefined)
+				// If the component is stateful, or received an htmlKey from a stateful parent, we pass an htmlKey to the child
+				return await render(elt, key, htmlKey || (isStateful ? customKey : undefined))
 			}
 
 			case "string": {
 				// console.log(`Rendering "${vNodeType}", intrinsic component`)
-				const node = svgTags.includes(vNodeType)
-					? document.createElementNS('http://www.w3.org/2000/svg', vNodeType)
-					: document.createElement(vNodeType)
+				const node = svgTags.includes(vnode.type)
+					? document.createElementNS('http://www.w3.org/2000/svg', vnode.type)
+					: document.createElement(vnode.type)
 				// console.log(`Created node ${node} for "${vnode.type}"; its appendChild is "${node.appendChild}"`)
 
 				// console.log(`Rendering and appending children ${childVNodes} in order for "${vnode.type}"`)
@@ -87,7 +84,7 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				try {
 					await Promise
 						.all(childVNodes.map((c, i) => {
-							return render(c, `${parentKey ? parentKey + "_" : ""}${vNodeType}${i}`)
+							return render(c, `${parentKey ? parentKey + "_" : ""}${vnode.type}${i}`)
 						}))
 						.then(childDomNodes => childDomNodes.forEach(
 							/* dont use node.appendChild drectly here */
@@ -99,13 +96,11 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 				}
 
 				// attach attributes
-				// console.log(`Attaching attribute keys [${Object.keys(vnode.props ?? {}).join(", ")}] on "${vnode.type}"`)
 				const nodeProps = vnode.props ?? {}
-				Object.keys(nodeProps).forEach(propKey => writeKey || propKey !== "key"
-					? setAttribute(node, propKey, nodeProps[propKey])
-					: undefined
-				)
-				// eslint-disable-next-line fp/no-mutation
+				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
+				if (htmlKey) {
+					setAttribute(node, "key", htmlKey)
+				}
 				return node
 			}
 

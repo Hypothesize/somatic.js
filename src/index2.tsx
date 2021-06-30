@@ -19,7 +19,6 @@ if (typeof document !== "undefined") {
 }
 
 async function renderApp() {
-	//
 	const Test = <div>
 		<h1>Basic {"<h1>"}</h1>
 		<TestRepeater key="repeater">

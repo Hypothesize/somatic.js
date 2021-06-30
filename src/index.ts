@@ -5,11 +5,11 @@ export * from './components'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Somatic from "./types"
-
+import { VNode, Component } from "./types"
 
 declare global {
 	namespace JSX {
-		type Element = any
+		type Element = AsyncGenerator<Element, Element, any> | VNode | any
 
 		interface IntrinsicElements {
 			html: Somatic.HtmlHTMLAttributes<HTMLHtmlElement>,
