@@ -9,7 +9,7 @@ import * as cuid from 'cuid'
 import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
 import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
-import { default as isEqual } from "lodash.isequal"
+import { default as isEqualWith } from "lodash.isequalwith"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
@@ -29,6 +29,15 @@ const cache = {} as Obj<{
 	/** Result of component invocation */
 	payload: VNodeType<Obj>
 }>
+
+const compareFuncsByString = (val1: unknown, val2: unknown) => {
+	if (typeof val1 === "function" && typeof val2 === "function") {
+		return val1.toString() === val2.toString()
+	}
+	else {
+		return undefined
+	}
+}
 
 /** Render virtual node to DOM node.
  * 
@@ -51,10 +60,14 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 		switch (typeof vnode.type) {
 			case "function": {
 				// console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = customKey ? customKey || "" : `${parentKey}_component`
+				const key = customKey ? customKey || "" : `${parentKey ? parentKey + "_" : ""}component`
 
-				// If entry doesn't exist in the cache, we add it
-				if (!cache[key] || !isEqual(cache[key].props, vnode.props) || !isEqual(cache[key].children, vnode.children)) {
+				// If entry doesn't exist in the cache, we add it.
+				// If it exists with different props or children, we override it
+				if (!cache[key] || !isEqualWith(cache[key].props, vnode.props, compareFuncsByString) || !isEqualWith(cache[key].children, vnode.children, compareFuncsByString)) {
+					if (cache[key] && key.includes("row")) {
+						console.log(deepDiffMapper.map(cache[key].props, vnode.props))
+					}
 					cache[key] = {
 						props: vnode.props,
 						children: vnode.children,
@@ -510,3 +523,86 @@ setInterval(() => {
 		}
 	})
 }, 50)
+
+const deepDiffMapper = function () {
+	return {
+		VALUE_CREATED: 'created',
+		VALUE_UPDATED: 'updated',
+		VALUE_DELETED: 'deleted',
+		VALUE_UNCHANGED: 'unchanged',
+		map: function (obj1: Obj<any, string> | undefined, obj2: Obj<any, string>, recursion?: number) {
+			recursion = recursion !== undefined ? recursion + 1 : 0
+			if (recursion > 8) {
+				return
+			}
+			if (this.isFunction(obj1) || this.isFunction(obj2)) {
+				throw 'Invalid argument. Function given, object expected.'
+			}
+			if (this.isValue(obj1) || this.isValue(obj2)) {
+				return this.compareValues(obj1, obj2) !== this.VALUE_UNCHANGED
+					? {
+						type: this.compareValues(obj1, obj2),
+						data: obj1 === undefined ? obj2 : obj1
+					}
+					: undefined
+			}
+
+			const diff: Obj<any, string> | undefined = {}
+			// eslint-disable-next-line fp/no-loops
+			for (const key in obj1) {
+				if (this.isFunction(obj1[key])) {
+					continue
+				}
+
+				// eslint-disable-next-line fp/no-let
+				let value2 = undefined
+				if (obj2[key] !== undefined) {
+					value2 = obj2[key]
+				}
+
+				diff[key] = this.map(obj1[key], value2, recursion)
+			}
+			// eslint-disable-next-line fp/no-loops
+			for (const key in obj2) {
+				if (this.isFunction(obj2[key]) || diff[key] !== undefined) {
+					continue
+				}
+
+				diff[key] = this.map(undefined, obj2[key], recursion)
+			}
+
+			return diff
+
+		},
+		compareValues: function (value1: any, value2: any) {
+			if (value1 === value2) {
+				return this.VALUE_UNCHANGED
+			}
+			if (this.isDate(value1) && this.isDate(value2) && value1.getTime() === value2.getTime()) {
+				return this.VALUE_UNCHANGED
+			}
+			if (value1 === undefined) {
+				return this.VALUE_CREATED
+			}
+			if (value2 === undefined) {
+				return this.VALUE_DELETED
+			}
+			return this.VALUE_UPDATED
+		},
+		isFunction: function (x: any) {
+			return Object.prototype.toString.call(x) === '[object Function]'
+		},
+		isArray: function (x: any) {
+			return Object.prototype.toString.call(x) === '[object Array]'
+		},
+		isDate: function (x: any) {
+			return Object.prototype.toString.call(x) === '[object Date]'
+		},
+		isObject: function (x: any) {
+			return Object.prototype.toString.call(x) === '[object Object]'
+		},
+		isValue: function (x: any) {
+			return !this.isObject(x) && !this.isArray(x)
+		}
+	}
+}()

@@ -41,6 +41,7 @@
 		"fast-memoize": "^2.5.2",
 		"hash-sum": "^2.0.0",
 		"lodash.isequal": "^4.5.0",
+		"lodash.isequalwith": "^4.4.0",
 		"morphdom": "^2.6.1"
 	},
 	"devDependencies": {
@@ -48,6 +49,7 @@
 		"@types/hash-sum": "^1.0.0",
 		"@types/jsdom": "^16.2.1",
 		"@types/lodash.isequal": "^4.5.5",
+		"@types/lodash.isequalwith": "^4.4.6",
 		"@types/mocha": "^7.0.2",
 		"@types/morphdom": "^2.4.2",
 		"@types/node": "^14.0.4",
