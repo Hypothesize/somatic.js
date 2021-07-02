@@ -6,7 +6,7 @@ export type Props = PanelProps & HtmlProps & {
 	key?: string
 }
 
-export const StackPanel = makeAsyncFunctionComponent<Props>(async function (props) {
+export const StackPanel = makeAsyncFunctionComponent<Props>(function (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":

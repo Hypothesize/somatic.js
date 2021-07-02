@@ -11,7 +11,7 @@ type State<T> = {
 	listItems: T[]
 }
 
-export const TypedComponent = <T extends unknown>(outsideProps: Props<T>): Component<Props<T>> => {
+export const TypedComponent = <T extends unknown>(outsideProps: Props<T>) => {
 	const TypedComp = makeComponent<Props<T>>(async function* (props) {
 		const {
 			model

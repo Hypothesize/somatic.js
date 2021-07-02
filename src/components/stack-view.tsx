@@ -11,8 +11,8 @@ export type Props<T = unknown> = PanelProps & ViewProps<T> & {
 	selectedItemStyle?: CSSProperties,
 	style?: CSSProperties
 }
-export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T>, Messages>): FunctionComponent<Props<T>> => {
-	return makeAsyncFunctionComponent<PropsExtended<Props<T>, Messages>>(async function (props) {
+export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T>, Messages>) => {
+	return makeAsyncFunctionComponent<PropsExtended<Props<T>, Messages>>(function (props) {
 		try {
 			const {
 				sourceData,

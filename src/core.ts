@@ -9,7 +9,7 @@ import * as cuid from 'cuid'
 import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
 import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
-import { default as isEqualWith } from "lodash.isequalwith"
+import { default as hash } from "hash-sum"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
@@ -21,11 +21,12 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 	}
 }
 
+const largeObjectMap = new Map()
+
 /** Cache of component invocations, indexed by the 'key' property passed */
 const cache = {} as Obj<{
 	/** Hash of properties passed to component invocation */
-	props: Obj,
-	children?: VNode[],
+	hash: string
 	/** Result of component invocation */
 	payload: VNodeType<Obj>
 }>
@@ -45,7 +46,7 @@ const compareFuncsByString = (val1: unknown, val2: unknown) => {
  * @param parentKey If passed, will be attached to this element's own key to generate a unique key
  * @param htmlKey If the component is instrincis, it will insert this key as an html attribute, otherwise it will pass it its child component
  */
-export async function render(vnode: undefined | null | string | VNode, parentKey?: string, htmlKey?: string): Promise<Node> {
+export async function render(vnode: undefined | null | string | VNode | JSX.Element, parentKey?: string, htmlKey?: string): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -60,17 +61,18 @@ export async function render(vnode: undefined | null | string | VNode, parentKey
 		switch (typeof vnode.type) {
 			case "function": {
 				// console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = customKey ? customKey || "" : `${parentKey ? parentKey + "_" : ""}component`
+				const key = customKey ? customKey : `${parentKey ? parentKey + "_" : ""}component`
+
+				const generatedHash = generateHash(key, vnode.props, vnode.children)
 
 				// If entry doesn't exist in the cache, we add it.
 				// If it exists with different props or children, we override it
-				if (!cache[key] || !isEqualWith(cache[key].props, vnode.props, compareFuncsByString) || !isEqualWith(cache[key].children, vnode.children, compareFuncsByString)) {
-					if (cache[key] && key.includes("row")) {
-						console.log(deepDiffMapper.map(cache[key].props, vnode.props))
+				if (!cache[key] || cache[key].hash !== generatedHash) {
+					if (cache[key] && customKey) {
+						console.log(`props or children have changed for key ${key}`)
 					}
 					cache[key] = {
-						props: vnode.props,
-						children: vnode.children,
+						hash: "",
 						payload: vnode.type({ ...vnode.props, key: key, children: vnode.children })
 					}
 				}
@@ -206,7 +208,7 @@ export const pendingUpdates = [] as PendingUpdate[]
 //#region types
 
 /** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<VNode<P>>, defaultProps?: D): Component<P> {
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<JSX.Element, any>, defaultProps?: D): Component<P> {
 	return (args: P & { key: string }) => {
 		const completeProps = deepMerge(defaultProps, args, {
 			key: args.key,
@@ -523,6 +525,67 @@ setInterval(() => {
 		}
 	})
 }, 50)
+
+const generateHash = (key: string, props: Obj, children?: VNode[]): string => {
+	const stringifiedProps = JSON.stringify(props)
+	const stringifiedChildren = JSON.stringify(children)
+	return hash(key + stringifiedProps + stringifiedChildren)
+}
+
+export const stringifyProps = (props: Obj): string => {
+	// For each property, we return its stringified representation
+	return Object.keys(props).map(propsKey => {
+		const rawValue = props[propsKey]
+		switch (typeof rawValue) {
+			case "function":
+				{
+					return `${propsKey}:"${rawValue.toString()}"`
+				}
+			case "object":
+				{
+					if (rawValue === null) {
+						return `${propsKey}:null`
+					}
+					else if (Array.isArray(rawValue)) {
+						if (rawValue.length > 50) {
+							if (largeObjectMap.get(rawValue) === undefined) {
+								largeObjectMap.set(rawValue, cuid.default())
+							}
+							return `${propsKey}:${largeObjectMap.get(rawValue)}`
+						}
+						else {
+							return `${propsKey}:[${rawValue}]`
+						}
+					}
+					else if (Object.keys(rawValue).length > 50) {
+						if (largeObjectMap.get(rawValue) === undefined) {
+							largeObjectMap.set(rawValue, cuid.default())
+						}
+						return `${propsKey}:${largeObjectMap.get(rawValue)}`
+					}
+					else {
+						return `${propsKey}:{${stringifyProps(rawValue as Obj)}}`
+					}
+				}
+			case "bigint":
+			case "number":
+			case "boolean":
+				{
+					return `${propsKey}:${rawValue.toString()}`
+				}
+			case "string":
+			case "symbol":
+				{
+					return `${propsKey}:"${rawValue.toString()}"`
+				}
+			case "undefined":
+				{
+					return `${propsKey}:"undefined"`
+				}
+		}
+
+	}).join()
+}
 
 const deepDiffMapper = function () {
 	return {

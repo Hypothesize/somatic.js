@@ -18,7 +18,7 @@ export type Props = {
 	selectedItemStyle?: CSSProperties
 }
 
-export const TabsPanel = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
+export const TabsPanel = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>(props => {
 
 	const {
 		headers,

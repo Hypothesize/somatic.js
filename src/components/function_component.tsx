@@ -15,7 +15,7 @@ type Props = {
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 
-export const FunctionComponent = makeAsyncFunctionComponent<Props>(async function (props) {
+export const FunctionComponent = makeAsyncFunctionComponent<Props>(function (props) {
 	const {
 		num,
 		title

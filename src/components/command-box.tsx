@@ -28,7 +28,7 @@ type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
 
 interface Messages { type: "CLICKED" }
 
-export const CommandBox = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>(async (props) => {
+export const CommandBox = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>((props) => {
 	const {
 		orientation,
 		iconPlacement, icon,
