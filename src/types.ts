@@ -66,11 +66,11 @@ export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Pa
 	}
 )
 
-export type Component<P extends Obj = Obj, R = any> = ((props: P & { key: string, children?: VNode[] }) => R /*AsyncGenerator<JSX.Element>*/)
+export type Component<P extends Obj = Obj> = ((props: P & { key: string, children?: VNode[] }) => JSX.Element /*AsyncGenerator<JSX.Element>*/)
 export type FunctionComponent<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
 
 /** Virtual node type, either a component or an intrinsic element */
-export type VNodeType<P extends Obj> = | FunctionComponent<P> | Component<P> | string /* Intrinsic element */
+export type VNodeType<P extends Obj> = | Component<P> | string /* Intrinsic element */
 
 /** Virtual node */
 export type VNode<P extends Obj = Obj, T extends VNodeType<P> = VNodeType<P>> = {

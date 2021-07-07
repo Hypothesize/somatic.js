@@ -84,8 +84,9 @@ export const SelectInput = makeAsyncFunctionComponent<PropsExtended<Props, Messa
 					style={{ color: props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? "gray" : "black" }}
 					disabled={props.disabledIndexes && props.disabledIndexes.indexOf(index) !== -1 ? true : undefined}
 					value={child?.toString()}
+					title={props.descriptions !== undefined ? props.descriptions[index] : undefined}
 					{...index === props.selectedIndex ? { selected: true } : {}}>
-					{props.descriptions !== undefined ? props.descriptions[index] : child?.toString()}
+					{child?.toString()}
 				</option>
 			)
 		}

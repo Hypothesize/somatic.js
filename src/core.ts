@@ -9,7 +9,7 @@ import * as cuid from 'cuid'
 import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
 import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
-import { default as hash } from "hash-sum"
+import { default as hashSum } from "hash-sum"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
@@ -24,21 +24,7 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 const largeObjectMap = new Map()
 
 /** Cache of component invocations, indexed by the 'key' property passed */
-const cache = {} as Obj<{
-	/** Hash of properties passed to component invocation */
-	hash: string
-	/** Result of component invocation */
-	payload: VNodeType<Obj>
-}>
-
-const compareFuncsByString = (val1: unknown, val2: unknown) => {
-	if (typeof val1 === "function" && typeof val2 === "function") {
-		return val1.toString() === val2.toString()
-	}
-	else {
-		return undefined
-	}
-}
+const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or Promise<JSX.Element> (pure) */, string /* key (user-defined or generated) */>
 
 /** Render virtual node to DOM node.
  * 
@@ -63,28 +49,25 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				// console.log(`Rendering vnode "${vNodeType}", a component`)
 				const key = customKey ? customKey : `${parentKey ? parentKey + "_" : ""}component`
 
-				const generatedHash = generateHash(key, vnode.props, vnode.children)
+				const hash = getHash(key, vnode.props, vnode.children)
 
 				// If entry doesn't exist in the cache, we add it.
 				// If it exists with different props or children, we override it
-				if (!cache[key] || cache[key].hash !== generatedHash) {
-					if (cache[key] && customKey) {
-						console.log(`props or children have changed for key ${key}`)
-					}
-					cache[key] = {
-						hash: "",
-						payload: vnode.type({ ...vnode.props, key: key, children: vnode.children })
-					}
+				if (!cache[hash]) {
+					// if (cache[hash] && customKey) {
+					// 	console.log(`props or children have changed for key ${key}`)
+					// }
+					cache[hash] = vnode.type({ ...vnode.props, key: key, children: vnode.children })
 				}
-				const fn = cache[key].payload
-				const isStateful = isAsyncIterable(fn)
+				const cacheEntry = cache[hash]
+
 				// We pick the content from the component
-				const elt: VNode = isStateful
-					? (await (fn as unknown as AsyncGenerator).next()).value
-					: await fn
+				const elem: VNode = isAsyncIterable(cacheEntry)
+					? (await cacheEntry.next()).value
+					: await cacheEntry
 
 				// If the component is stateful, or received an htmlKey from a stateful parent, we pass an htmlKey to the child
-				return await render(elt, key, htmlKey || (isStateful ? customKey : undefined))
+				return await render(elem, key, htmlKey || (isAsyncIterable(cacheEntry) ? customKey : undefined))
 			}
 
 			case "string": {
@@ -505,7 +488,7 @@ setInterval(() => {
 			const node = elements[0] as HTMLElement | undefined
 			if (node !== undefined) {
 				const cachedGenerator = cache[update.elementKey]
-				const payload = await (cachedGenerator.payload as unknown as AsyncGenerator)
+				const payload = await (cachedGenerator as unknown as AsyncGenerator)
 
 				const nextElem = isAsyncIterable(payload)
 					? (await (payload as unknown as AsyncGenerator).next()).value
@@ -526,16 +509,25 @@ setInterval(() => {
 	})
 }, 50)
 
-const generateHash = (key: string, props: Obj, children?: VNode[]): string => {
-	const stringifiedProps = JSON.stringify(props)
-	const stringifiedChildren = JSON.stringify(children)
-	return hash(key + stringifiedProps + stringifiedChildren)
+/** Returns a unique hash that is based on the key, props & children of a component
+ * @param key The identifier of the component, supposed to be unique
+ * @param props The properties (except children) passed to the component
+ * @param children The children passed to the component
+ */
+const getHash = (key: string, props: Obj, children?: VNode[]): string => {
+	const stringifiedProps = stringifyPropsByRefs(props)
+	const stringifiedChildren = stringifyPropsByRefs(children)
+	return hashSum(key + stringifiedProps + stringifiedChildren)
 }
 
-export const stringifyProps = (props: Obj): string => {
+/** Same as JSON.stringify, except that large property values (arrays & object with 50+ keys) are represented with pseudo-address references instead of JSON strings
+ * The pseudo-adress references are obtained from the value of the global object "largeObjectMap".
+ * @param obj The object to stringify
+ */
+export const stringifyPropsByRefs = (obj: Obj | Obj[]): string => {
 	// For each property, we return its stringified representation
-	return Object.keys(props).map(propsKey => {
-		const rawValue = props[propsKey]
+	return Object.keys(obj).map(propsKey => {
+		const rawValue = obj[propsKey]
 		switch (typeof rawValue) {
 			case "function":
 				{
@@ -564,7 +556,7 @@ export const stringifyProps = (props: Obj): string => {
 						return `${propsKey}:${largeObjectMap.get(rawValue)}`
 					}
 					else {
-						return `${propsKey}:{${stringifyProps(rawValue as Obj)}}`
+						return `${propsKey}:{${stringifyPropsByRefs(rawValue as Obj)}}`
 					}
 				}
 			case "bigint":
