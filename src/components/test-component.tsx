@@ -29,12 +29,12 @@ export const TestComponent = makeComponent<Props>(async function* (props) {
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.internalNumber++
-				props.requireUpdate(props.key || "")
-			}}>TRY</button>
+				props.requireUpdate()
+			}}>Increase internal number</button>
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.color = "Red"
-				props.requireUpdate(props.key || "")
+				props.requireUpdate()
 			}}>Assign state color to red</button>
 			<p>State color: {state.color}</p>
 		</div>

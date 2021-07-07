@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import * as core from './core'
-import { createElement } from "./core"
+import { createElement, startRenderingLoop } from "./core"
 export * from './types'
 export * from './core'
 export * from './components'
@@ -37,4 +37,5 @@ async function renderApp() {
 		}
 		rootNode.appendChild(node)
 	}
+	startRenderingLoop()
 }

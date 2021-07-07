@@ -29,10 +29,10 @@ const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or
 /** Render virtual node to DOM node.
  * 
  * @param vnode The node to render
- * @param parentKey If passed, will be attached to this element's own key to generate a unique key
- * @param htmlKey If the component is instrincis, it will insert this key as an html attribute, otherwise it will pass it its child component
+ * @param parentHash If passed, will be attached to this element's own key to generate a unique key
+ * @param writekey If the component is instrinsic, it will insert its key as an html attribute (for targeting purpose during re-render)
  */
-export async function render(vnode: undefined | null | string | VNode | JSX.Element, parentKey?: string, htmlKey?: string): Promise<Node> {
+export async function render(vnode: undefined | null | string | VNode | JSX.Element, parentHash?: string, writekey?: boolean): Promise<Node> {
 	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
 
 	if (vnode === null || vnode === undefined) {
@@ -46,28 +46,22 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 
 		switch (typeof vnode.type) {
 			case "function": {
-				// console.log(`Rendering vnode "${vNodeType}", a component`)
-				const key = customKey ? customKey : `${parentKey ? parentKey + "_" : ""}component`
-
-				const hash = getHash(key, vnode.props, vnode.children)
+				const effectiveKey = customKey ?? `${parentHash}-component`
+				const hash = getHash({ ...vnode.props, key: effectiveKey, children: vnode.children || [] })
 
 				// If entry doesn't exist in the cache, we add it.
-				// If it exists with different props or children, we override it
 				if (!cache[hash]) {
-					// if (cache[hash] && customKey) {
-					// 	console.log(`props or children have changed for key ${key}`)
-					// }
-					cache[hash] = vnode.type({ ...vnode.props, key: key, children: vnode.children })
+					cache[hash] = vnode.type({ ...vnode.props, key: effectiveKey, children: vnode.children })
 				}
 				const cacheEntry = cache[hash]
 
 				// We pick the content from the component
-				const elem: VNode = isAsyncIterable(cacheEntry)
+				const elem = isAsyncIterable(cacheEntry)
 					? (await cacheEntry.next()).value
 					: await cacheEntry
 
-				// If the component is stateful, or received an htmlKey from a stateful parent, we pass an htmlKey to the child
-				return await render(elem, key, htmlKey || (isAsyncIterable(cacheEntry) ? customKey : undefined))
+				// If this element is stateful, we instruct its children to write its key as an HTML attribute.
+				return await render(elem, hash, writekey || isAsyncIterable(cacheEntry))
 			}
 
 			case "string": {
@@ -82,7 +76,7 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				try {
 					await Promise
 						.all(childVNodes.map((c, i) => {
-							return render(c, `${parentKey ? parentKey + "_" : ""}${vnode.type}${i}`)
+							return render(c, `${parentHash ? parentHash + "_" : ""}${vnode.type}${i}`)
 						}))
 						.then(childDomNodes => childDomNodes.forEach(
 							/* dont use node.appendChild drectly here */
@@ -96,8 +90,8 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				// attach attributes
 				const nodeProps = vnode.props ?? {}
 				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
-				if (htmlKey) {
-					setAttribute(node, "key", htmlKey)
+				if (writekey) {
+					setAttribute(node, "key", parentHash)
 				}
 				return node
 			}
@@ -132,7 +126,7 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 					children: [...childVNodes],
 					key: vnode.props.key as string || ""
 				})
-				return renderToString((await generator.next()).value)
+				return renderToString((await (generator as AsyncGenerator).next()).value)
 			}
 
 			case "string": {
@@ -185,21 +179,21 @@ export function updateDOM(rootElement: Element, node: Node) {
 	})
 }
 
-type PendingUpdate = { elementKey: string } // | "global"
+type PendingUpdate = { elementHash: string }
 export const pendingUpdates = [] as PendingUpdate[]
 
 //#region types
 
 /** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: (key: string) => void }) => AsyncGenerator<JSX.Element, any>, defaultProps?: D): Component<P> {
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element, any>, defaultProps?: D): Component<P> {
 	return (args: P & { key: string }) => {
 		const completeProps = deepMerge(defaultProps, args, {
 			key: args.key,
-			requireUpdate: async (key: string) => {
+			requireUpdate: async () => {
 				// eslint-disable-next-line fp/no-mutating-methods
-				pendingUpdates.push({ elementKey: key })
+				pendingUpdates.push({ elementHash: getHash(args) })
 			}
-		}) as P & D & { key: string, requireUpdate: (key: string) => void }
+		}) as P & D & { key: string, requireUpdate: () => void }
 		return core.call({}, completeProps)
 	}
 }
@@ -468,65 +462,62 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 	}
 }
 
-/**
- * Local updates
- * Update loop
- * Eventing system
- * Key system
- */
-setInterval(() => {
-	pendingUpdates.forEach(async update => {
-		// We remove the update from the pending list
-		// eslint-disable-next-line fp/no-mutating-methods
-		pendingUpdates.pop()
+/** The loop in which all updates re-rendering are done */
+export const startRenderingLoop = () => {
+	setInterval(() => {
+		pendingUpdates.forEach(async update => {
+			// We remove the update from the pending list
+			// eslint-disable-next-line fp/no-mutating-methods
+			pendingUpdates.pop()
 
-		const elements = document.querySelectorAll(`[key="${update.elementKey}"]`)
-		if (elements.length > 1) {
-			console.error(`More than 1 component have the key '${update.elementKey}'`)
-		}
-		else {
-			const node = elements[0] as HTMLElement | undefined
-			if (node !== undefined) {
-				const cachedGenerator = cache[update.elementKey]
-				const payload = await (cachedGenerator as unknown as AsyncGenerator)
-
-				const nextElem = isAsyncIterable(payload)
-					? (await (payload as unknown as AsyncGenerator).next()).value
-					: await payload
-
-				// The rendered element won't have a key attribute
-				const renderedElem = await render(nextElem, update.elementKey)
-
-				updateDOM(node as HTMLElement, renderedElem);
-
-				// We put back the key on the node
-				(node as HTMLElement).setAttribute("key", update.elementKey)
+			const elements = document.querySelectorAll(`[key="${update.elementHash}"]`)
+			if (elements.length > 1) {
+				console.error(`More than 1 component have the key '${update.elementHash}'`)
 			}
 			else {
-				console.error(`Cannot update an element after setState: key '${update.elementKey}' not found in the document`)
-			}
-		}
-	})
-}, 50)
+				const node = elements[0] as HTMLElement | undefined
+				if (node !== undefined) {
+					const cachedGenerator = cache[update.elementHash]
+					const payload = await (cachedGenerator as unknown as AsyncGenerator)
 
-/** Returns a unique hash that is based on the key, props & children of a component
- * @param key The identifier of the component, supposed to be unique
- * @param props The properties (except children) passed to the component
- * @param children The children passed to the component
+					const nextElem = isAsyncIterable(payload)
+						? (await (payload as unknown as AsyncGenerator).next()).value
+						: await payload
+
+					// The rendered element won't have a key attribute
+					const renderedElem = await render(nextElem, update.elementHash)
+
+					updateDOM(node as HTMLElement, renderedElem);
+
+					// We put back the key on the node
+					(node as HTMLElement).setAttribute("key", update.elementHash)
+				}
+				else {
+					console.error(`Cannot update an element after setState: key '${update.elementHash}' not found in the document`)
+				}
+			}
+		})
+	}, 50)
+}
+
+
+/** Returns a unique key that is based on the key, props & children of a component
+ * @param props The properties passed to the component, including children and key
  */
-const getHash = (key: string, props: Obj, children?: VNode[]): string => {
-	const stringifiedProps = stringifyPropsByRefs(props)
-	const stringifiedChildren = stringifyPropsByRefs(children)
-	return hashSum(key + stringifiedProps + stringifiedChildren)
+const getHash = (props: Obj): string => {
+	return hashSum(stringifyPropsByRefs(props))
 }
 
 /** Same as JSON.stringify, except that large property values (arrays & object with 50+ keys) are represented with pseudo-address references instead of JSON strings
  * The pseudo-adress references are obtained from the value of the global object "largeObjectMap".
  * @param obj The object to stringify
  */
-export const stringifyPropsByRefs = (obj: Obj | Obj[]): string => {
+export const stringifyPropsByRefs = (obj: Obj, recursions?: number): string => {
 	// For each property, we return its stringified representation
 	return Object.keys(obj).map(propsKey => {
+		if (recursions && recursions > 20) {
+			return `${propsKey}:"Max depth"`
+		}
 		const rawValue = obj[propsKey]
 		switch (typeof rawValue) {
 			case "function":
@@ -546,7 +537,13 @@ export const stringifyPropsByRefs = (obj: Obj | Obj[]): string => {
 							return `${propsKey}:${largeObjectMap.get(rawValue)}`
 						}
 						else {
-							return `${propsKey}:[${rawValue}]`
+							// Objects in the array will be stringified, other values returned as is
+							return `${propsKey}:[${rawValue.map(
+								v =>
+									typeof v === "object"
+										? `{${stringifyPropsByRefs(v, (recursions || 0) + 1)}}`
+										: v
+							).join()}]`
 						}
 					}
 					else if (Object.keys(rawValue).length > 50) {
@@ -556,7 +553,7 @@ export const stringifyPropsByRefs = (obj: Obj | Obj[]): string => {
 						return `${propsKey}:${largeObjectMap.get(rawValue)}`
 					}
 					else {
-						return `${propsKey}:{${stringifyPropsByRefs(rawValue as Obj)}}`
+						return `${propsKey}:{${stringifyPropsByRefs(rawValue as Obj, (recursions || 0) + 1)}}`
 					}
 				}
 			case "bigint":
@@ -578,86 +575,3 @@ export const stringifyPropsByRefs = (obj: Obj | Obj[]): string => {
 
 	}).join()
 }
-
-const deepDiffMapper = function () {
-	return {
-		VALUE_CREATED: 'created',
-		VALUE_UPDATED: 'updated',
-		VALUE_DELETED: 'deleted',
-		VALUE_UNCHANGED: 'unchanged',
-		map: function (obj1: Obj<any, string> | undefined, obj2: Obj<any, string>, recursion?: number) {
-			recursion = recursion !== undefined ? recursion + 1 : 0
-			if (recursion > 8) {
-				return
-			}
-			if (this.isFunction(obj1) || this.isFunction(obj2)) {
-				throw 'Invalid argument. Function given, object expected.'
-			}
-			if (this.isValue(obj1) || this.isValue(obj2)) {
-				return this.compareValues(obj1, obj2) !== this.VALUE_UNCHANGED
-					? {
-						type: this.compareValues(obj1, obj2),
-						data: obj1 === undefined ? obj2 : obj1
-					}
-					: undefined
-			}
-
-			const diff: Obj<any, string> | undefined = {}
-			// eslint-disable-next-line fp/no-loops
-			for (const key in obj1) {
-				if (this.isFunction(obj1[key])) {
-					continue
-				}
-
-				// eslint-disable-next-line fp/no-let
-				let value2 = undefined
-				if (obj2[key] !== undefined) {
-					value2 = obj2[key]
-				}
-
-				diff[key] = this.map(obj1[key], value2, recursion)
-			}
-			// eslint-disable-next-line fp/no-loops
-			for (const key in obj2) {
-				if (this.isFunction(obj2[key]) || diff[key] !== undefined) {
-					continue
-				}
-
-				diff[key] = this.map(undefined, obj2[key], recursion)
-			}
-
-			return diff
-
-		},
-		compareValues: function (value1: any, value2: any) {
-			if (value1 === value2) {
-				return this.VALUE_UNCHANGED
-			}
-			if (this.isDate(value1) && this.isDate(value2) && value1.getTime() === value2.getTime()) {
-				return this.VALUE_UNCHANGED
-			}
-			if (value1 === undefined) {
-				return this.VALUE_CREATED
-			}
-			if (value2 === undefined) {
-				return this.VALUE_DELETED
-			}
-			return this.VALUE_UPDATED
-		},
-		isFunction: function (x: any) {
-			return Object.prototype.toString.call(x) === '[object Function]'
-		},
-		isArray: function (x: any) {
-			return Object.prototype.toString.call(x) === '[object Array]'
-		},
-		isDate: function (x: any) {
-			return Object.prototype.toString.call(x) === '[object Date]'
-		},
-		isObject: function (x: any) {
-			return Object.prototype.toString.call(x) === '[object Object]'
-		},
-		isValue: function (x: any) {
-			return !this.isObject(x) && !this.isArray(x)
-		}
-	}
-}()

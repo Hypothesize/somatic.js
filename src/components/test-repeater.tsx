@@ -24,7 +24,7 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.internalTestComponents.push(true)
-				props.requireUpdate(props.key || "")
+				props.requireUpdate()
 			}}>Add a test component</button>
 			{
 				state.internalTestComponents.map((v, i) => {
@@ -40,7 +40,7 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 					}}
 					onChange={ev => {
 						state.functionCompNumber = parseFloat(ev.target.value)
-						props.requireUpdate(props.key || "")
+						props.requireUpdate()
 					}} />
 				<FunctionComponent key={"functionComp"} title={`Function comp`} num={state.functionCompNumber}>
 				</FunctionComponent>

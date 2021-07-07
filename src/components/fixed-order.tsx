@@ -21,7 +21,7 @@ export const FixedOrderComp = makeComponent<Props>(async function* (props) {
 			<button onClick={ev => {
 				// eslint-disable-next-line fp/no-mutation
 				state.presenceOfFirst = !state.presenceOfFirst
-				props.requireUpdate(props.key || "")
+				props.requireUpdate()
 			}}>Remove first elem from DOM</button>
 			{
 				state.presenceOfFirst

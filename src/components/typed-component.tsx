@@ -11,7 +11,7 @@ type State<T> = {
 	listItems: T[]
 }
 
-export const TypedComponent = <T extends unknown>(outsideProps: Props<T>) => {
+export const TypedComponent = async function* <T extends unknown>(outsideProps: Props<T>): AsyncGenerator<JSX.Element> {
 	const TypedComp = makeComponent<Props<T>>(async function* (props) {
 		const {
 			model
@@ -24,7 +24,7 @@ export const TypedComponent = <T extends unknown>(outsideProps: Props<T>) => {
 			yield < div style={{ margin: "1em", background: "#ede" }}>
 				<p>Add an element <button onClick={ev => {
 					state.listItems.push(model)
-					props.requireUpdate(props.key)
+					props.requireUpdate()
 				}}>Click</button></p>
 				<p>Model: {model}</p>
 				<ul>List: {
@@ -36,5 +36,6 @@ export const TypedComponent = <T extends unknown>(outsideProps: Props<T>) => {
 		title: "Test component"
 	})
 
-	return <TypedComp {...outsideProps} />
+	// eslint-disable-next-line fp/no-loops
+	yield* TypedComp(outsideProps) as AsyncGenerator<JSX.Element>
 }
