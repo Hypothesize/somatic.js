@@ -18,7 +18,6 @@ export const TestComponent = makeComponent<Props>(async function* (props) {
 		internalNumber: 0,
 		color: props.color
 	}
-
 	// eslint-disable-next-line fp/no-loops
 	while (true) {
 		yield <div style={{ margin: "1em", background: "#ede" }}>

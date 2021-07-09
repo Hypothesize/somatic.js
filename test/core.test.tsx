@@ -8,10 +8,11 @@
 /* eslint-disable init-declarations */
 
 import * as assert from "assert"
+import { unique, Array as Array__ } from "@sparkwave/standard"
 import { createElement, render, renderToString } from '../dist/index.js'
 import { idProvider } from '../dist/utils'
 import { constructElement, normalizeHTML } from './utils'
-import { stringifyPropsByRefs } from "../dist/core"
+import { stringifyPropsByRefs, getHash } from "../dist/core"
 const jsdom = require('mocha-jsdom')
 jsdom({ url: 'http://localhost', skipWindowCheck: true })
 
@@ -179,6 +180,20 @@ describe("Somatic", () => {
 				}
 			}
 			assert.deepStrictEqual(stringifyPropsByRefs(manyRecursionObj), `SKU:1205,recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{color:"Orange",recursive:{color:"Green",recursive:{color:"Max depth",recursive:"Max depth"}}}}}}}}}}}}}}}}}}}}}`)
+		})
+	})
+	describe("getHash", () => {
+		it("Should return 1.000 different hash for 1.000 props varying by a number", () => {
+			const thousandsProps = Array__.fromRange(0, 999).map(n => {
+				return getHash({ color: "Blue", somNumber: n })
+			})
+			assert.deepStrictEqual([...unique(thousandsProps)].length, 1000)
+		})
+		it("Should return 1.000 different hash for 1.000 props varying by a letter", () => {
+			const thousandsProps = Array__.fromRange(0, 999).map(n => {
+				return getHash({ color: "Blue", someLetter: n.toString() })
+			})
+			assert.deepStrictEqual([...unique(thousandsProps)].length, 1000)
 		})
 	})
 

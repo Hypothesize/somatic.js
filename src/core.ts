@@ -13,12 +13,8 @@ import { default as hashSum } from "hash-sum"
 import morphdom from "morphdom"
 
 /** JSX is transformed into calls of this function */
-export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: VNode[] | (VNode[])[]): VNode<P, T> {
-	return {
-		type: type,
-		props: props,
-		children: (Array.isArray(children[0]) ? children[0] : children) as VNode[] // If an array is passed as children, we assign its content
-	}
+export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: VNode[]): VNode<P, T> {
+	return { type, props, children }
 }
 
 const largeObjectMap = new Map()
@@ -32,8 +28,7 @@ const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or
  * @param parentHash If passed, will be attached to this element's own key to generate a unique key
  * @param writekey If the component is instrinsic, it will insert its key as an html attribute (for targeting purpose during re-render)
  */
-export async function render(vnode: undefined | null | string | VNode | JSX.Element, parentHash?: string, writekey?: boolean): Promise<Node> {
-	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
+export async function render(vnode: undefined | null | string | JSX.Element, parentHash?: string, writekey?: boolean): Promise<Node> {
 
 	if (vnode === null || vnode === undefined) {
 		// console.log(`VNode is null or undefined, returning empty text node`)
@@ -46,22 +41,34 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 
 		switch (typeof vnode.type) {
 			case "function": {
+				const vnodeType = vnode.type as Component | FunctionComponent
 				const effectiveKey = customKey ?? `${parentHash}-component`
 				const hash = getHash({ ...vnode.props, key: effectiveKey, children: vnode.children || [] })
+				console.log(`Rendering component '${effectiveKey}', hash: ${hash}`)
+
+				// For stateful component (no 'isPure' option) and pure function components, we use the cache
+				const useCache = !("isPure" in vnodeType) || vnodeType.isPure === true
 
 				// If entry doesn't exist in the cache, we add it.
-				if (!cache[hash]) {
-					cache[hash] = vnode.type({ ...vnode.props, key: effectiveKey, children: vnode.children })
+				if (!cache[hash] && useCache) {
+					console.log(`It didn't exist in the cache`)
+					cache[hash] = vnodeType({ ...vnode.props, key: effectiveKey, children: vnode.children })
 				}
-				const cacheEntry = cache[hash]
+				else {
+					console.log(`It existed in the cache`)
+				}
+
+				const producer = useCache
+					? cache[hash]
+					: vnodeType({ ...vnode.props, key: effectiveKey, children: vnode.children })
 
 				// We pick the content from the component
-				const elem = isAsyncIterable(cacheEntry)
-					? (await cacheEntry.next()).value
-					: await cacheEntry
+				const elem = isAsyncIterable(producer)
+					? (await producer.next()).value
+					: await producer
 
 				// If this element is stateful, we instruct its children to write its key as an HTML attribute.
-				return await render(elem, hash, writekey || isAsyncIterable(cacheEntry))
+				return await render(elem, hash, writekey || isAsyncIterable(producer))
 			}
 
 			case "string": {
@@ -91,7 +98,7 @@ export async function render(vnode: undefined | null | string | VNode | JSX.Elem
 				const nodeProps = vnode.props ?? {}
 				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
 				if (writekey) {
-					setAttribute(node, "key", parentHash)
+					setAttribute(node, "hash", parentHash)
 				}
 				return node
 			}
@@ -185,10 +192,10 @@ export const pendingUpdates = [] as PendingUpdate[]
 //#region types
 
 /** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element, any>, defaultProps?: D): Component<P> {
-	return (args: P & { key: string }) => {
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element, JSX.Element, any>, defaultProps?: D): Component<P> {
+	return (args: P & { key?: string }) => {
 		const completeProps = deepMerge(defaultProps, args, {
-			key: args.key,
+			key: args.key || cuid.default(),
 			requireUpdate: async () => {
 				// eslint-disable-next-line fp/no-mutating-methods
 				pendingUpdates.push({ elementHash: getHash(args) })
@@ -198,10 +205,10 @@ export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P
 	}
 }
 
-export const makeAsyncFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { children?: VNode[] }) => JSX.Element, defaultProps?: D): FunctionComponent<P> => {
-	return (args: P) => {
+export const makeFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { children?: VNode[] }) => JSX.Element, options?: { isPure?: boolean }, defaultProps?: D): FunctionComponent<P> => {
+	return Object.assign((args: P) => {
 		return core.call({}, deepMerge(defaultProps, args) as P & D)
-	}
+	}, options)
 }
 
 /** Special attributes that map to DOM events. */
@@ -470,9 +477,9 @@ export const startRenderingLoop = () => {
 			// eslint-disable-next-line fp/no-mutating-methods
 			pendingUpdates.pop()
 
-			const elements = document.querySelectorAll(`[key="${update.elementHash}"]`)
+			const elements = document.querySelectorAll(`[hash="${update.elementHash}"]`)
 			if (elements.length > 1) {
-				console.error(`More than 1 component have the key '${update.elementHash}'`)
+				console.error(`More than 1 component have the hash '${update.elementHash}'`)
 			}
 			else {
 				const node = elements[0] as HTMLElement | undefined
@@ -490,10 +497,10 @@ export const startRenderingLoop = () => {
 					updateDOM(node as HTMLElement, renderedElem);
 
 					// We put back the key on the node
-					(node as HTMLElement).setAttribute("key", update.elementHash)
+					(node as HTMLElement).setAttribute("hash", update.elementHash)
 				}
 				else {
-					console.error(`Cannot update an element after setState: key '${update.elementHash}' not found in the document`)
+					console.error(`Cannot update an element after setState: hash '${update.elementHash}' not found in the document`)
 				}
 			}
 		})
@@ -504,7 +511,7 @@ export const startRenderingLoop = () => {
 /** Returns a unique key that is based on the key, props & children of a component
  * @param props The properties passed to the component, including children and key
  */
-const getHash = (props: Obj): string => {
+export const getHash = (props: Obj): string => {
 	return hashSum(stringifyPropsByRefs(props))
 }
 

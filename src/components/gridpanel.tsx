@@ -35,34 +35,37 @@ export const GridPanel = makeComponent<Props>(async function* (props) {
 				return "initial"
 		}
 	}
+	// eslint-disable-next-line fp/no-loops
+	while (true) {
+		try {
+			const {
+				orientation,
+				itemsAlignH,
+				itemsAlignV,
+				children,
+				style,
+				...htmlProps
+			} = props
 
-	try {
-		const {
-			orientation,
-			itemsAlignH,
-			itemsAlignV,
-			children,
-			style,
-			...htmlProps
-		} = props
+			yield <div
+				{...htmlProps}
 
-		yield <div
-			{...htmlProps}
+				style={{
+					display: "grid",
+					...style,
+					flexDirection: orientation === "vertical" ? "column" : "row",
+					justifyContent: justifyContent(),
+					alignItems: alignItems()
+				}}>
 
-			style={{
-				display: "grid",
-				...style,
-				flexDirection: orientation === "vertical" ? "column" : "row",
-				justifyContent: justifyContent(),
-				alignItems: alignItems()
-			}}>
+				{children}
 
-			{children}
-
-		</div>
+			</div>
+		}
+		catch (e) {
+			console.error(`GridPanel render: ${e}`)
+			throw e
+		}
 	}
-	catch (e) {
-		console.error(`GridPanel render: ${e}`)
-		throw e
-	}
+
 })

@@ -1,7 +1,7 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, makeComponent, updateDOM } from '../core'
-import { PropsExtended, Component, PanelProps, HtmlProps } from '../types'
+import { PropsExtended, Component, PanelProps, VNode, VNodeType } from '../types'
 import { TestComponent } from '../components/test-component'
 type State = {
 	presenceOfFirst: boolean,
@@ -25,10 +25,10 @@ export const FixedOrderComp = makeComponent<Props>(async function* (props) {
 			}}>Remove first elem from DOM</button>
 			{
 				state.presenceOfFirst
-					? <TestComponent key="removableComp" title={"Removable"} />
+					? <TestComponent title={"Removable"} />
 					: null
 			}
-			<TestComponent key="fixComp" title={"Ever present"} />
+			<TestComponent title={"Ever present"} />
 		</div>
 	}
 }, {

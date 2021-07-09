@@ -1,4 +1,4 @@
-import { createElement, makeAsyncFunctionComponent } from '../core'
+import { createElement, makeFunctionComponent } from '../core'
 import { CSSProperties, PropsExtended, PanelProps, ViewProps, FunctionComponent } from '../types'
 import { StackPanel } from './index'
 
@@ -12,7 +12,7 @@ export type Props<T = unknown> = PanelProps & ViewProps<T> & {
 	style?: CSSProperties
 }
 export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T>, Messages>) => {
-	return makeAsyncFunctionComponent<PropsExtended<Props<T>, Messages>>(function (props) {
+	return makeFunctionComponent<PropsExtended<Props<T>, Messages>>(function (props) {
 		try {
 			const {
 				sourceData,
@@ -50,6 +50,8 @@ export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T
 			console.error(`StackView render: ${e}`)
 			throw e
 		}
+	}, {
+		isPure: true
 	}, {
 		selectedItemStyle: {} as CSSProperties,
 		itemStyle: {}

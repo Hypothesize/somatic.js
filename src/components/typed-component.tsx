@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, makeComponent, updateDOM } from '../core'
-import { Component } from '../types'
+import { Component, VNode } from '../types'
 
 type Props<T extends unknown> = {
-	key: string
 	model: T,
 }
 
@@ -37,5 +36,5 @@ export const TypedComponent = async function* <T extends unknown>(outsideProps: 
 	})
 
 	// eslint-disable-next-line fp/no-loops
-	yield* TypedComp(outsideProps) as AsyncGenerator<JSX.Element>
+	yield* TypedComp(outsideProps) as AsyncGenerator<VNode>
 }

@@ -20,19 +20,24 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 	// eslint-disable-next-line fp/no-loops
 	while (true) {
 		yield <div style={{ border: " solid 1px gray", padding: "1em" }}>
-			<div style={{ border: "solid 1px blue" }}><h1>Immovable</h1></div>
+			<div style={{ border: "solid 1px blue" }}><h3>Repeater component</h3></div>
 			<button onClick={ev => {
-				// eslint-disable-next-line fp/no-mutation
+				// eslint-disable-next-line fp/no-mutating-methods
 				state.internalTestComponents.push(true)
 				props.requireUpdate()
-			}}>Add a test component</button>
+			}}>Add component</button>
+			<button onClick={ev => {
+				// eslint-disable-next-line fp/no-mutating-methods
+				state.internalTestComponents.pop()
+				props.requireUpdate()
+			}}>Remove component</button>
 			{
 				state.internalTestComponents.map((v, i) => {
-					return <TestComponent text={"Hohoho"} key={`testComp_${i}`} />
+					return <TestComponent text={"Hohoho"} />
 				})
 			}
 			<div style={{ border: "solid 1px orange", padding: "1em" }}>
-				<h3>Function component</h3>
+				<h3>A function component after the repeated comps</h3>
 				<input type="number"
 					value={state.functionCompNumber}
 					onKeyDown={ev => {
@@ -42,7 +47,7 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 						state.functionCompNumber = parseFloat(ev.target.value)
 						props.requireUpdate()
 					}} />
-				<FunctionComponent key={"functionComp"} title={`Function comp`} num={state.functionCompNumber}>
+				<FunctionComponent title={`Function comp`} num={state.functionCompNumber}>
 				</FunctionComponent>
 			</div>
 

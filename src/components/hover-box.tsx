@@ -1,7 +1,7 @@
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createElement, makeAsyncFunctionComponent, stringifyStyle, } from "../core"
+import { createElement, makeFunctionComponent, stringifyStyle, } from "../core"
 import { first } from "@sparkwave/standard/collections/iterable"
 import { Component, HtmlProps, CSSProperties, PropsExtended } from '../types'
 import { idProvider } from '../utils'
@@ -12,7 +12,7 @@ type Props = HtmlProps & {
 	hoverStyle?: CSSProperties
 }
 
-export const HoverBox = makeAsyncFunctionComponent<PropsExtended<Props>>((props) => {
+export const HoverBox = makeFunctionComponent<PropsExtended<Props>>((props) => {
 
 	const {
 		children,
@@ -65,6 +65,8 @@ export const HoverBox = makeAsyncFunctionComponent<PropsExtended<Props>>((props)
 
 		{child}
 	</div>
+}, {
+	isPure: true
 }, {
 	style: {
 		height: "auto",

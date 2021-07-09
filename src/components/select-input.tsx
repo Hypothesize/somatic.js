@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeAsyncFunctionComponent } from '../core'
+import { createElement, makeFunctionComponent } from '../core'
 import { PropsExtended, HtmlProps, VNode } from '../types'
 
 /** Type that defines the struct we need to send when we want to pass groups of options to this component. */
@@ -24,7 +24,7 @@ type Props = HtmlProps & {
 
 type Messages = { type: "SELECTION", data: number }
 
-export const SelectInput = makeAsyncFunctionComponent<PropsExtended<Props, Messages>>((props) => {
+export const SelectInput = makeFunctionComponent<PropsExtended<Props, Messages>>((props) => {
 	const {
 		options,
 		selectedIndex,
@@ -91,6 +91,8 @@ export const SelectInput = makeAsyncFunctionComponent<PropsExtended<Props, Messa
 			)
 		}
 	</select >
+}, {
+	isPure: true
 }, {
 	style: {
 		backgroundColor: "white !important",

@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, makeAsyncFunctionComponent } from '../core'
+import { createElement, makeFunctionComponent } from '../core'
 import { Component, HtmlProps, PanelProps, ExtractOptional, OptionalKeys } from '../types'
 import { StackPanel } from './stack-panel'
 
@@ -15,7 +15,7 @@ type Props = {
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 
-export const FunctionComponent = makeAsyncFunctionComponent<Props>(function (props) {
+export const FunctionComponent = makeFunctionComponent<Props>(function (props) {
 	const {
 		num,
 		title
@@ -27,6 +27,8 @@ export const FunctionComponent = makeAsyncFunctionComponent<Props>(function (pro
 	</StackPanel>
 
 	return <div className="Check">{mainContent}</div>
+}, {
+	isPure: true
 }, {
 	num: 5
 })
