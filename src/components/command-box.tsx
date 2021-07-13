@@ -43,7 +43,7 @@ export const CommandBox = makeFunctionComponent<PropsExtended<Props, Messages>>(
 		? props.icon
 		: <div />
 
-	const mainContent = <StackPanel key="main-content"
+	const mainContent = <StackPanel
 		orientation={orientation}
 		itemsAlignV={"center"}
 		style={{ height: "100%" }}>

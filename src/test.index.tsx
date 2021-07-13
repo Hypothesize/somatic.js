@@ -40,18 +40,18 @@ async function renderApp() {
 			display: "inline-block",
 			verticalAlign: "top"
 		}}>
-			<h3>Non-pure Time component (should be refreshed at every re-render)</h3>
+			<h3>Non - pure Time component(should be refreshed at every re - render)</h3 >
 			<RefreshBox>
 				<ImpureTimeComponent />
-			</RefreshBox>
+			</RefreshBox >
 
-			<h3>Pure time component (should not be refreshed at every re-render)</h3>
+			<h3>Pure time component(should not be refreshed at every re - render)</h3 >
 			<RefreshBox>
 				<PureTimeComponent />
-			</RefreshBox>
-		</div>
+			</RefreshBox >
+		</div >
 
-	</div>
+	</div >
 
 	const node = await core.render(Test, "")
 

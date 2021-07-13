@@ -69,7 +69,7 @@ describe("Somatic", () => {
 		it("should return a proper string for single level objects", () => {
 			const props = { color: "Blue", prices: [1, 2, 3], SKU: 1205, creation: new Date("12/12/2012").getTime() }
 			const stringifiedProps = stringifyPropsByRefs(props)
-			assert.strictEqual(stringifiedProps, 'color:"Blue",prices:[1,2,3],SKU:1205,creation:1355241600000')
+			assert.strictEqual(stringifiedProps, '{color:"Blue",prices:[1,2,3],SKU:1205,creation:1355241600000}')
 		})
 		it("should works with 3 levels", async () => {
 			const props = {
@@ -77,18 +77,20 @@ describe("Somatic", () => {
 				myObj: { color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() }
 			}
 			const stringifiedProps = stringifyPropsByRefs(props)
-			assert.strictEqual(stringifiedProps, 'myEmptyObj:{},myObj:{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000}')
+			assert.strictEqual(stringifiedProps, '{myEmptyObj:{},myObj:{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000}}')
 		})
 		it("should works with array of objects", async () => {
 			const props = {
 				myEmptyObj: {},
 				myObjArray: [
 					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() },
-					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() }
+					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() },
+					null,
+					null
 				]
 			}
 			const stringifiedProps = stringifyPropsByRefs(props)
-			assert.strictEqual(stringifiedProps, 'myEmptyObj:{},myObjArray:[{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000},{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000}]')
+			assert.strictEqual(stringifiedProps, '{myEmptyObj:{},myObjArray:[{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000},{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000},null,null]}')
 		})
 		it("should turn large arrays (>50 items) into references", () => {
 			const props = {
@@ -179,7 +181,7 @@ describe("Somatic", () => {
 					}
 				}
 			}
-			assert.deepStrictEqual(stringifyPropsByRefs(manyRecursionObj), `SKU:1205,recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{color:"Orange",recursive:{color:"Green",recursive:{color:"Max depth",recursive:"Max depth"}}}}}}}}}}}}}}}}}}}}}`)
+			assert.deepStrictEqual(stringifyPropsByRefs(manyRecursionObj), `{SKU:1205,recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{recursive:{color:"Orange",recursive:{color:"Green",recursive:{color:"Max depth",recursive:"Max depth"}}}}}}}}}}}}}}}}}}}}}}`)
 		})
 	})
 	describe("getHash", () => {

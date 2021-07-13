@@ -26,9 +26,9 @@ const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or
  * 
  * @param vnode The node to render
  * @param parentHash If passed, will be attached to this element's own key to generate a unique key
- * @param writekey If the component is instrinsic, it will insert its key as an html attribute (for targeting purpose during re-render)
+ * @param hashToWrite If the component is instrinsic, it will insert this hash as an html attribute (for targeting purpose during re-render)
  */
-export async function render(vnode: undefined | null | string | JSX.Element, parentHash?: string, writekey?: boolean): Promise<Node> {
+export async function render(vnode: undefined | null | string | JSX.Element, parentHash?: string, hashToWrite?: string): Promise<Node> {
 
 	if (vnode === null || vnode === undefined) {
 		// console.log(`VNode is null or undefined, returning empty text node`)
@@ -67,8 +67,8 @@ export async function render(vnode: undefined | null | string | JSX.Element, par
 					? (await producer.next()).value
 					: await producer
 
-				// If this element is stateful, we instruct its children to write its key as an HTML attribute.
-				return await render(elem, hash, writekey || isAsyncIterable(producer))
+				// If this element is stateful or child of a stateful one, we instruct its children to write its hash as an HTML attribute.
+				return await render(elem, hash, hashToWrite ? hashToWrite : isAsyncIterable(producer) ? hash : undefined)
 			}
 
 			case "string": {
@@ -97,8 +97,8 @@ export async function render(vnode: undefined | null | string | JSX.Element, par
 				// attach attributes
 				const nodeProps = vnode.props ?? {}
 				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
-				if (writekey) {
-					setAttribute(node, "hash", parentHash)
+				if (hashToWrite) {
+					setAttribute(node, "hash", hashToWrite)
 				}
 				return node
 			}
@@ -191,7 +191,7 @@ export const pendingUpdates = [] as PendingUpdate[]
 
 //#region types
 
-/** Turn a function into a component, merging the defaultProps to the available props and adding the requireUpdate method */
+/** Turn a function into a stateful component, merging the defaultProps to the available props and adding the requireUpdate method */
 export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element, JSX.Element, any>, defaultProps?: D): Component<P> {
 	return (args: P & { key?: string }) => {
 		const completeProps = deepMerge(defaultProps, args, {
@@ -204,7 +204,7 @@ export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P
 		return core.call({}, completeProps)
 	}
 }
-
+/** Turn a function into a function component (stateless), merging the defaultProps to the available props and adding the requireUpdate method */
 export const makeFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { children?: VNode[] }) => JSX.Element, options?: { isPure?: boolean }, defaultProps?: D): FunctionComponent<P> => {
 	return Object.assign((args: P) => {
 		return core.call({}, deepMerge(defaultProps, args) as P & D)
@@ -500,7 +500,7 @@ export const startRenderingLoop = () => {
 					(node as HTMLElement).setAttribute("hash", update.elementHash)
 				}
 				else {
-					console.error(`Cannot update an element after setState: hash '${update.elementHash}' not found in the document`)
+					console.error(`Cannot update an element: hash '${update.elementHash}' not found in the document`)
 				}
 			}
 		})
@@ -521,64 +521,66 @@ export const getHash = (props: Obj): string => {
  */
 export const stringifyPropsByRefs = (obj: Obj, recursions?: number): string => {
 	// For each property, we return its stringified representation
-	return Object.keys(obj).map(propsKey => {
-		if (recursions && recursions > 20) {
-			return `${propsKey}:"Max depth"`
-		}
-		const rawValue = obj[propsKey]
-		switch (typeof rawValue) {
-			case "function":
-				{
-					return `${propsKey}:"${rawValue.toString()}"`
-				}
-			case "object":
-				{
-					if (rawValue === null) {
-						return `${propsKey}:null`
+	return obj === null
+		? "null"
+		: `{${Object.keys(obj).map(propsKey => {
+			if (recursions && recursions > 20) {
+				return `${propsKey}:"Max depth"`
+			}
+			const rawValue = obj[propsKey]
+			switch (typeof rawValue) {
+				case "function":
+					{
+						return `${propsKey}:"${rawValue.toString()}"`
 					}
-					else if (Array.isArray(rawValue)) {
-						if (rawValue.length > 50) {
+				case "object":
+					{
+						if (rawValue === null) {
+							return `${propsKey}:null`
+						}
+						else if (Array.isArray(rawValue)) {
+							if (rawValue.length > 50) {
+								if (largeObjectMap.get(rawValue) === undefined) {
+									largeObjectMap.set(rawValue, cuid.default())
+								}
+								return `${propsKey}:${largeObjectMap.get(rawValue)}`
+							}
+							else {
+								// Objects in the array will be stringified, other values returned as is
+								return `${propsKey}:[${rawValue.map(
+									v =>
+										typeof v === "object"
+											? stringifyPropsByRefs(v, (recursions || 0) + 1)
+											: v
+								).join()}]`
+							}
+						}
+						else if (Object.keys(rawValue).length > 50) {
 							if (largeObjectMap.get(rawValue) === undefined) {
 								largeObjectMap.set(rawValue, cuid.default())
 							}
 							return `${propsKey}:${largeObjectMap.get(rawValue)}`
 						}
 						else {
-							// Objects in the array will be stringified, other values returned as is
-							return `${propsKey}:[${rawValue.map(
-								v =>
-									typeof v === "object"
-										? `{${stringifyPropsByRefs(v, (recursions || 0) + 1)}}`
-										: v
-							).join()}]`
+							return `${propsKey}:${stringifyPropsByRefs(rawValue as Obj, (recursions || 0) + 1)}`
 						}
 					}
-					else if (Object.keys(rawValue).length > 50) {
-						if (largeObjectMap.get(rawValue) === undefined) {
-							largeObjectMap.set(rawValue, cuid.default())
-						}
-						return `${propsKey}:${largeObjectMap.get(rawValue)}`
+				case "bigint":
+				case "number":
+				case "boolean":
+					{
+						return `${propsKey}:${rawValue.toString()}`
 					}
-					else {
-						return `${propsKey}:{${stringifyPropsByRefs(rawValue as Obj, (recursions || 0) + 1)}}`
+				case "string":
+				case "symbol":
+					{
+						return `${propsKey}:"${rawValue.toString()}"`
 					}
-				}
-			case "bigint":
-			case "number":
-			case "boolean":
-				{
-					return `${propsKey}:${rawValue.toString()}`
-				}
-			case "string":
-			case "symbol":
-				{
-					return `${propsKey}:"${rawValue.toString()}"`
-				}
-			case "undefined":
-				{
-					return `${propsKey}:"undefined"`
-				}
-		}
+				case "undefined":
+					{
+						return `${propsKey}:"undefined"`
+					}
+			}
 
-	}).join()
+		}).join()}}`
 }
