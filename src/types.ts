@@ -49,24 +49,28 @@ export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S
 	}
 )
 /** Async function that defines a component with defaults */
-export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
-	(AsyncIterator<
-		JSX.Element,
-		JSX.Element,
-		{
-			props: PropsExtended<P, M>,
-			mergedProps: MergedPropsExt<P, M, DP>,
-			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		}>) &
-	{
-		defaultProps: () => DP;
-		defaultState: (props?: P) => DS,
-		hashProps?: (props: P) => string,
-		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-	}
-)
+// export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
+// 	(AsyncIterator<
+// 		JSX.Element,
+// 		JSX.Element,
+// 		{
+// 			props: PropsExtended<P, M>,
+// 			mergedProps: MergedPropsExt<P, M, DP>,
+// 			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
+// 		}>) &
+// 	{
+// 		defaultProps: () => DP;
+// 		defaultState: (props?: P) => DS,
+// 		hashProps?: (props: P) => string,
+// 		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
+// 	}
+// )
 
-export type Component<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => AsyncGenerator<JSX.Element>
+export interface ComponentOptions { name?: string, isPure?: boolean, defaultProps?: Obj }
+type Renderer<P extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }) => JSX.Element)
+export type Component<P extends Obj = Obj> = Renderer<P> & ComponentOptions
+
+// export type Component<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
 
 export type FunctionComponent<P extends Obj = Obj> = ((props: P & { key?: string, children?: VNode[] }) => JSX.Element) & { isPure?: boolean }
 
