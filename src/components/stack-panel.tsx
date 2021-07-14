@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeFunctionComponent } from '../core'
+import { createElement, makeComponent } from '../core'
 import { PanelProps, HtmlProps } from '../types'
 
 export type Props = PanelProps & HtmlProps & {
 	key?: string
 }
 
-export const StackPanel = makeFunctionComponent<Props>(function (props) {
+export const StackPanel = makeComponent<Props>(function (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -57,5 +57,6 @@ export const StackPanel = makeFunctionComponent<Props>(function (props) {
 		{children}
 	</div >
 }, {
+	stateful: false,
 	isPure: true
 })

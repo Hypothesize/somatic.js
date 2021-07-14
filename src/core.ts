@@ -7,7 +7,7 @@
 import * as cuid from 'cuid'
 
 import { Obj, String, flatten, hasValue, deepMerge, isAsyncIterable } from "@sparkwave/standard"
-import { Component, VNode, VNodeType, CSSProperties, FunctionComponent, ExtractOptional, PropsExtended, Message } from "./types"
+import { Component, VNode, VNodeType, CSSProperties, ExtractOptional, ComponentOptions, Message } from "./types"
 import { svgTags, selfClosingTags } from "./constants"
 import { default as hashSum } from "hash-sum"
 import morphdom from "morphdom"
@@ -28,7 +28,7 @@ const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or
  * @param parentHash If passed, will be attached to this element's own key to generate a unique key
  * @param hashToWrite If the component is instrinsic, it will insert this hash as an html attribute (for targeting purpose during re-render)
  */
-export async function render(vnode: undefined | null | string | VNode, parentHash?: string, hashToWrite?: string): Promise<Node> {
+export async function render(vnode: undefined | null | string | JSX.Element, parentHash?: string, hashToWrite?: string): Promise<Node> {
 
 	if (vnode === null || vnode === undefined) {
 		// console.log(`VNode is null or undefined, returning empty text node`)
@@ -41,7 +41,7 @@ export async function render(vnode: undefined | null | string | VNode, parentHas
 
 		switch (typeof vnode.type) {
 			case "function": {
-				const vnodeType = vnode.type as Component | FunctionComponent
+				const vnodeType = vnode.type as Component
 				const effectiveKey = customKey ?? `${parentHash}-component`
 				const hash = getHash({ ...vnode.props, key: effectiveKey, children: vnode.children || [] })
 				console.log(`Rendering component '${effectiveKey}', hash: ${hash}`)
@@ -189,22 +189,22 @@ export function updateDOM(rootElement: Element, node: Node) {
 const pendingUpdates: { elementHash: string }[] = []
 
 /** Turn a function into a stateful component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<VNode, VNode, any>, defaultProps?: D): Component<P> {
-	return (args: P & { key?: string }) => {
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[] }) => JSX.Element, options: ComponentOptions & { stateful: false }, defaultProps?: D): Component<P>
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element>, options: ComponentOptions & { stateful: true }, defaultProps?: D): Component<P>
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate?: () => void }) => AsyncGenerator<JSX.Element> | JSX.Element, options: ComponentOptions & { stateful: boolean }, defaultProps?: D): Component<P> {
+	return Object.assign((args: P & { key?: string }) => {
 		const completeProps = deepMerge(defaultProps, args, {
 			key: args.key || cuid.default(),
 			requireUpdate: async () => {
+				if (!renderingLoopIsActive) { // We activate the rendering loop if it wasn't already
+					renderingLoopIsActive = true
+					startRenderingLoop()
+				}
 				// eslint-disable-next-line fp/no-mutating-methods
 				pendingUpdates.push({ elementHash: getHash(args) })
 			}
-		}) as P & D & { key: string, requireUpdate: () => void }
+		}) as P & D & { key: string, requireUpdate?: () => void }
 		return core.call({}, completeProps)
-	}
-}
-/** Turn a function into a function component (stateless), merging the defaultProps to the available props and adding the requireUpdate method */
-export const makeFunctionComponent = <P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { children?: VNode[] }) => JSX.Element, options?: { isPure?: boolean }, defaultProps?: D): FunctionComponent<P> => {
-	return Object.assign((args: P) => {
-		return core.call({}, deepMerge(defaultProps, args) as P & D)
 	}, options)
 }
 
@@ -466,9 +466,10 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 	}
 }
 
-/** The loop in which all updates re-rendering are done 
- * It could start when a first requireUpdate is called, otherwise no.
-*/
+// eslint-disable-next-line fp/no-let
+let renderingLoopIsActive = false
+
+/** Starts the interval timer checking for pending re-rendering every 50ms */
 const startRenderingLoop = () => {
 	setInterval(() => {
 		pendingUpdates.forEach(async update => {

@@ -54,5 +54,5 @@ export const TestRepeater = makeComponent<Props>(async function* (props) {
 		</div>
 	}
 }, {
-
+	stateful: true
 })

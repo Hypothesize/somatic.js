@@ -68,4 +68,6 @@ export const GridPanel = makeComponent<Props>(async function* (props) {
 		}
 	}
 
+}, {
+	stateful: false
 })

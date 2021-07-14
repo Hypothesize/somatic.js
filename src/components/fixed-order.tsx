@@ -10,7 +10,7 @@ export type Props = {
 
 }
 
-export const FixedOrderComp = makeComponent<Props>(async function* (props) {
+export const FixedOrderComp: Component<Props> = makeComponent<Props>(async function* (props) {
 	const state: State = {
 		presenceOfFirst: true,
 	}
@@ -32,5 +32,5 @@ export const FixedOrderComp = makeComponent<Props>(async function* (props) {
 		</div>
 	}
 }, {
-
+	stateful: true
 })

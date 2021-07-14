@@ -13,4 +13,6 @@ export const RefreshBox = makeComponent(async function* (props) {
 			{props.children}
 		</div>
 	}
+}, {
+	stateful: true
 })

@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, makeFunctionComponent } from '../core'
+import { createElement, makeComponent } from '../core'
 import { Component, HtmlProps, PanelProps, ExtractOptional, OptionalKeys } from '../types'
 import { StackPanel } from './stack-panel'
 
@@ -15,7 +15,7 @@ type Props = {
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 
-export const FunctionComponent = makeFunctionComponent<Props>(function (props) {
+export const FunctionComponent = makeComponent<Props>(function (props) {
 	const {
 		num,
 		title
@@ -28,6 +28,7 @@ export const FunctionComponent = makeFunctionComponent<Props>(function (props) {
 
 	return <div className="Check">{mainContent}</div>
 }, {
+	stateful: false,
 	isPure: true
 }, {
 	num: 5

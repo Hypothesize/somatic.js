@@ -5,7 +5,7 @@ import { deepMerge, } from '@sparkwave/standard/collections/object'
 import { StackView } from './stack-view'
 import { StackPanel } from './stack-panel'
 import { PropsExtended, CSSProperties, HtmlProps, ViewProps } from '../types'
-import { createElement, makeFunctionComponent } from '../core'
+import { createElement, makeComponent } from '../core'
 
 
 export type Messages = (
@@ -18,7 +18,7 @@ export type Props = {
 	selectedItemStyle?: CSSProperties
 }
 
-export const TabsPanel = makeFunctionComponent<PropsExtended<Props, Messages>>(props => {
+export const TabsPanel = makeComponent<PropsExtended<Props, Messages>>(props => {
 
 	const {
 		headers,
@@ -54,6 +54,7 @@ export const TabsPanel = makeFunctionComponent<PropsExtended<Props, Messages>>(p
 		</div>
 	</StackPanel>
 }, {
+	stateful: false,
 	isPure: true
 }, {
 	selectedIndex: 0,

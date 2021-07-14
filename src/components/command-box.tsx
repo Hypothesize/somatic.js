@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, makeComponent, makeFunctionComponent } from '../core'
+import { createElement, makeComponent } from '../core'
 import { PropsExtended, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 
@@ -28,7 +28,7 @@ type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
 
 interface Messages { type: "CLICKED" }
 
-export const CommandBox = makeFunctionComponent<PropsExtended<Props, Messages>>((props) => {
+export const CommandBox = makeComponent<PropsExtended<Props, Messages>>((props) => {
 	const {
 		orientation,
 		iconPlacement, icon,
@@ -38,7 +38,6 @@ export const CommandBox = makeFunctionComponent<PropsExtended<Props, Messages>>(
 		children,
 		...htmlProps
 	} = props
-
 	const iconContent = props.icon
 		? props.icon
 		: <div />
@@ -66,6 +65,7 @@ export const CommandBox = makeFunctionComponent<PropsExtended<Props, Messages>>(
 		</StackPanel>
 	</button>
 }, {
+	stateful: false,
 	isPure: true
 }, {
 	orientation: "horizontal" as const,

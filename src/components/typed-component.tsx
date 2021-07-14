@@ -32,9 +32,11 @@ export const TypedComponent = async function* <T extends unknown>(outsideProps: 
 			</div>
 		}
 	}, {
+		stateful: true
+	}, {
 		title: "Test component"
 	})
 
 	// eslint-disable-next-line fp/no-loops
-	yield* TypedComp(outsideProps) as AsyncGenerator<VNode>
+	yield* TypedComp(outsideProps) as AsyncGenerator<JSX.Element>
 }

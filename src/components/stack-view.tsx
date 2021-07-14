@@ -1,5 +1,5 @@
-import { createElement, makeFunctionComponent } from '../core'
-import { CSSProperties, PropsExtended, PanelProps, ViewProps, FunctionComponent } from '../types'
+import { createElement, makeComponent } from '../core'
+import { CSSProperties, PropsExtended, PanelProps, ViewProps } from '../types'
 import { StackPanel } from './index'
 
 export type Messages = (
@@ -12,7 +12,7 @@ export type Props<T = unknown> = PanelProps & ViewProps<T> & {
 	style?: CSSProperties
 }
 export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T>, Messages>) => {
-	return makeFunctionComponent<PropsExtended<Props<T>, Messages>>(function (props) {
+	return makeComponent<PropsExtended<Props<T>, Messages>>(function (props) {
 		try {
 			const {
 				sourceData,
@@ -51,6 +51,7 @@ export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T
 			throw e
 		}
 	}, {
+		stateful: false,
 		isPure: true
 	}, {
 		selectedItemStyle: {} as CSSProperties,
