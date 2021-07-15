@@ -40,32 +40,6 @@ export type MergedPropsExt<P, M extends Message, DP extends Partial<P>> = (
 	DP & PropsExtended<P, M> & Partial<PropsExtended<P, M>>
 )
 
-/** Async function that defines a regular component */
-export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S = {}> = (
-	| (AsyncIterator<JSX.Element, JSX.Element, PropsExtended<P, M>>) & // Regular component
-	{
-		hashProps?: (props: P) => string,
-		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-	}
-)
-/** Async function that defines a component with defaults */
-// export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
-// 	(AsyncIterator<
-// 		JSX.Element,
-// 		JSX.Element,
-// 		{
-// 			props: PropsExtended<P, M>,
-// 			mergedProps: MergedPropsExt<P, M, DP>,
-// 			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-// 		}>) &
-// 	{
-// 		defaultProps: () => DP;
-// 		defaultState: (props?: P) => DS,
-// 		hashProps?: (props: P) => string,
-// 		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-// 	}
-// )
-
 export type ComponentOptions = { name?: string, defaultProps?: Obj } & ({ stateful: true } | { stateful?: false, isPure?: boolean })
 type Renderer<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
 export type Component<P extends Obj = Obj> = Renderer<P> & ComponentOptions
