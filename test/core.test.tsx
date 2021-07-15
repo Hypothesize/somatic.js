@@ -67,14 +67,14 @@ describe("Somatic", () => {
 
 	describe("stringifyPropsByRefs", () => {
 		it("should return a proper string for single level objects", () => {
-			const props = { color: "Blue", prices: [1, 2, 3], SKU: 1205, creation: new Date("12/12/2012").getTime() }
+			const props = { color: "Blue", prices: [1, 2, 3], SKU: 1205, creation: new Date("2012-12-11T16:00:00.000Z").getTime() }
 			const stringifiedProps = stringifyPropsByRefs(props)
 			assert.strictEqual(stringifiedProps, '{color:"Blue",prices:[1,2,3],SKU:1205,creation:1355241600000}')
 		})
 		it("should works with 3 levels", async () => {
 			const props = {
 				myEmptyObj: {},
-				myObj: { color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() }
+				myObj: { color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("2012-12-11T16:00:00.000Z").getTime() }
 			}
 			const stringifiedProps = stringifyPropsByRefs(props)
 			assert.strictEqual(stringifiedProps, '{myEmptyObj:{},myObj:{color:"Blue",onSale:false,prices:[1,2,3],insideObj:{prop1:34,prop2:true},SKU:1205,creation:1355241600000}}')
@@ -83,8 +83,8 @@ describe("Somatic", () => {
 			const props = {
 				myEmptyObj: {},
 				myObjArray: [
-					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() },
-					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("12/12/2012").getTime() },
+					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("2012-12-11T16:00:00.000Z").getTime() },
+					{ color: "Blue", onSale: false, prices: [1, 2, 3], insideObj: { prop1: 34, prop2: true }, SKU: 1205, creation: new Date("2012-12-11T16:00:00.000Z").getTime() },
 					null,
 					null
 				]
