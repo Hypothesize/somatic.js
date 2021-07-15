@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { createElement, makeComponent } from '../../src/core'
-import { Component, HtmlProps, PanelProps, ExtractOptional, OptionalKeys } from '../../src/types'
 import { StackPanel } from '../../src/components/stack-panel'
 
 export const enum BtnMode { Normal = "normal", Selected = "selected", Disabled = "disabled" }
