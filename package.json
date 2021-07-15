@@ -11,7 +11,7 @@
 	"scripts": {
 		"setup": "rm -rf ./node_modules package-lock.json && npm install",
 		"clean": "rm -rf dist/* .eslintcache *-report.json",
-		"lint": "eslint --ext ts --cache src/*",
+		"lint": "eslint --ext ts --cache 'src/**'",
 		"lint-report": "eslint --ext ts --output-file .lint-report.json --format json-standard --cache src/*",
 		"compile": "tsc",
 		"test": "mocha --require ts-node/register test/*.test.*",
@@ -41,16 +41,12 @@
 		"cuid": "^2.1.8",
 		"fast-memoize": "^2.5.2",
 		"hash-sum": "^2.0.0",
-		"lodash.isequal": "^4.5.0",
-		"lodash.isequalwith": "^4.4.0",
 		"morphdom": "^2.6.1"
 	},
 	"devDependencies": {
 		"@types/eslint": "^7.2.0",
 		"@types/hash-sum": "^1.0.0",
 		"@types/jsdom": "^16.2.1",
-		"@types/lodash.isequal": "^4.5.5",
-		"@types/lodash.isequalwith": "^4.4.6",
 		"@types/mocha": "^7.0.2",
 		"@types/morphdom": "^2.4.2",
 		"@types/node": "^14.0.4",
