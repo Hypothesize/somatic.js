@@ -67,13 +67,14 @@ export const HoverBox = makeComponent<PropsExtended<Props>>((props) => {
 	</div>
 }, {
 	stateful: false,
-	isPure: true
-}, {
-	style: {
-		height: "auto",
-		width: "auto",
-		padding: 0,
-		margin: 0
-	} as CSSProperties,
-	hoverStyle: {}
+	isPure: true,
+	defaultProps: {
+		style: {
+			height: "auto",
+			width: "auto",
+			padding: 0,
+			margin: 0
+		} as CSSProperties,
+		hoverStyle: {}
+	}
 })

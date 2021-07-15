@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent, updateDOM } from '../core'
-import { Component, VNode } from '../types'
+import { createElement, makeComponent, updateDOM } from '../../src/core'
+import { Component, VNode } from '../../src/types'
 
 type Props<T extends unknown> = {
 	model: T,
@@ -32,9 +32,10 @@ export const TypedComponent = async function* <T extends unknown>(outsideProps: 
 			</div>
 		}
 	}, {
-		stateful: true
-	}, {
-		title: "Test component"
+		stateful: true,
+		defaultProps: {
+			title: "Test component"
+		}
 	})
 
 	// eslint-disable-next-line fp/no-loops

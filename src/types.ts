@@ -66,8 +66,8 @@ export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S
 // 	}
 // )
 
-export type ComponentOptions = { name?: string, defaultProps?: Obj } & ({ stateful: true } | { stateful: false, isPure?: boolean })
-type Renderer<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element | AsyncGenerator<JSX.Element>
+export type ComponentOptions = { name?: string, defaultProps?: Obj } & ({ stateful: true } | { stateful?: false, isPure?: boolean })
+type Renderer<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
 export type Component<P extends Obj = Obj> = Renderer<P> & ComponentOptions
 
 /** Virtual node type, either a component or an intrinsic element */

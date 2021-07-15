@@ -66,24 +66,25 @@ export const CommandBox = makeComponent<PropsExtended<Props, Messages>>((props) 
 	</button>
 }, {
 	stateful: false,
-	isPure: true
-}, {
-	orientation: "horizontal" as const,
-	hoverEffect: "invert" as const,
+	isPure: true,
+	defaultProps: {
+		orientation: "horizontal" as const,
+		hoverEffect: "invert" as const,
 
-	style: {
-		fontSize: "1em",
-		color: "#666",
-		borderColor: "#666",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		padding: "0",
-		margin: "0",
-		overflow: "hidden",
-		borderRadius: "2px",
-		cursor: "pointer"
-	},
+		style: {
+			fontSize: "1em",
+			color: "#666",
+			borderColor: "#666",
+			borderWidth: "1px",
+			borderStyle: "solid",
+			padding: "0",
+			margin: "0",
+			overflow: "hidden",
+			borderRadius: "2px",
+			cursor: "pointer"
+		},
 
-	iconPlacement: "before" as const,
-	mode: BtnMode.Normal
+		iconPlacement: "before" as const,
+		mode: BtnMode.Normal
+	}
 })

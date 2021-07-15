@@ -17,15 +17,13 @@ export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, pr
 	return { type, props, children }
 }
 
-const largeObjectMap = new Map()
-
-/** Cache of component invocations, indexed by the 'key' property passed */
-const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or Promise<JSX.Element> (pure) */, string /* key (user-defined or generated) */>
+/** Cache of component invocations, indexed by the hash of the key + property */
+const cache = {} as Obj<JSX.Element /* AsyncGenerator<JSX.Element> (stateful) or Promise<JSX.Element> (pure) */, string /* hash (based on the component's key + props) */>
 
 /** Render virtual node to DOM node.
  * 
  * @param vnode The node to render
- * @param parentHash If passed, will be attached to this element's own key to generate a unique key
+ * @param parentHash If passed, will be attached to this element's own key to generate a unique hash
  * @param hashToWrite If the component is instrinsic, it will insert this hash as an html attribute (for targeting purpose during re-render)
  */
 export async function render(vnode: undefined | null | string | JSX.Element, parentHash?: string, hashToWrite?: string): Promise<Node> {
@@ -44,25 +42,21 @@ export async function render(vnode: undefined | null | string | JSX.Element, par
 				const vnodeType = vnode.type as Component
 				const effectiveKey = customKey ?? `${parentHash}-component`
 				const hash = getHash({ ...vnode.props, key: effectiveKey, children: vnode.children || [] })
-				console.log(`Rendering component '${effectiveKey}', hash: ${hash}`)
+				// console.log(`Rendering component '${effectiveKey}', hash: ${hash}`)
 
-				// For stateful component (no 'isPure' option) and pure function components, we use the cache
+				// We use the cache for stateful component (no 'isPure' option) and pure function components
 				const useCache = !("isPure" in vnodeType) || vnodeType.isPure === true
 
 				// If entry doesn't exist in the cache, we add it.
 				if (!cache[hash] && useCache) {
-					console.log(`It didn't exist in the cache`)
 					cache[hash] = vnodeType({ ...vnode.props, key: effectiveKey, children: vnode.children })
-				}
-				else {
-					console.log(`It existed in the cache`)
 				}
 
 				const producer = useCache
 					? cache[hash]
 					: vnodeType({ ...vnode.props, key: effectiveKey, children: vnode.children })
 
-				// We pick the content from the component
+				// We generate the content from the component
 				const elem = isAsyncIterable(producer)
 					? (await producer.next()).value
 					: await producer
@@ -94,9 +88,11 @@ export async function render(vnode: undefined | null | string | JSX.Element, par
 					throw new Error(`Error appending children ${childVNodes} for "${vnode.type}"`)
 				}
 
-				// attach attributes
+				// Attaching attributes
 				const nodeProps = vnode.props ?? {}
 				Object.keys(nodeProps).forEach(propKey => setAttribute(node, propKey, nodeProps[propKey]))
+
+				// If the instrinsic component is the representation of a stateful component, it will need a hash attribute to be targeted
 				if (hashToWrite) {
 					setAttribute(node, "hash", hashToWrite)
 				}
@@ -180,29 +176,34 @@ export async function renderToString(vnode: undefined | null | string | VNode): 
 	}
 }
 
+/** Morph the actual DOM elements of the document into their updated version */
 export function updateDOM(rootElement: Element, node: Node) {
 	morphdom(rootElement, node, {
 		getNodeKey: () => undefined
 	})
 }
 
-const pendingUpdates: { elementHash: string }[] = []
+/** The list of stateful components waiting for a re-render, indexed by their hash */
+const pendingUpdates: string[] = []
 
-/** Turn a function into a stateful component, merging the defaultProps to the available props and adding the requireUpdate method */
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[] }) => JSX.Element, options: ComponentOptions & { stateful: false }, defaultProps?: D): Component<P>
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element>, options: ComponentOptions & { stateful: true }, defaultProps?: D): Component<P>
-export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate?: () => void }) => AsyncGenerator<JSX.Element> | JSX.Element, options: ComponentOptions & { stateful: boolean }, defaultProps?: D): Component<P> {
+/** Turn a function into a component (stateful or functional), merging the defaultProps to the props passed by the user and adding the requireUpdate method if the component is stateful*/
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[] }) => JSX.Element, options: ComponentOptions & { stateful: false }): Component<P>
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key: string, children?: VNode[], requireUpdate: () => void }) => AsyncGenerator<JSX.Element>, options: ComponentOptions & { stateful: true }): Component<P>
+export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P>>>(core: (props: P & D & { key?: string, children?: VNode[], requireUpdate?: () => void }) => AsyncGenerator<JSX.Element> | JSX.Element, options: ComponentOptions & { stateful: boolean }): Component<P> {
 	return Object.assign((args: P & { key?: string }) => {
-		const completeProps = deepMerge(defaultProps, args, {
+		const completeProps = deepMerge(options.defaultProps, args, {
 			key: args.key || cuid.default(),
-			requireUpdate: async () => {
-				if (!renderingLoopIsActive) { // We activate the rendering loop if it wasn't already
-					renderingLoopIsActive = true
-					startRenderingLoop()
+			...options.stateful === true
+				? {
+					requireUpdate: async () => {
+						if (__SomaticRenderingLoop__ === undefined) { // We activate the rendering loop if it wasn't already
+							startRenderingLoop()
+						}
+						// eslint-disable-next-line fp/no-mutating-methods
+						pendingUpdates.push(getHash(args))
+					}
 				}
-				// eslint-disable-next-line fp/no-mutating-methods
-				pendingUpdates.push({ elementHash: getHash(args) })
-			}
+				: {}
 		}) as P & D & { key: string, requireUpdate?: () => void }
 		return core.call({}, completeProps)
 	}, options)
@@ -373,7 +374,7 @@ const addListener = (node: Node, event: string, handler: (e: Event) => void, cap
 	node.addEventListener(event, handler, capture)
 }
 
-/** Remove all event listeners */
+/** Remove all event listeners stored in the document object, to prevent clogging */
 export const removeListeners = (targetNode: Node) => {
 	Object.keys(_eventHandlers).forEach(eventName => {
 		// remove listeners from the matching nodes
@@ -467,24 +468,24 @@ export function setAttribute(element: HTMLElement | SVGElement, key: string, val
 }
 
 // eslint-disable-next-line fp/no-let
-let renderingLoopIsActive = false
+let __SomaticRenderingLoop__: number | undefined = undefined
 
-/** Starts the interval timer checking for pending re-rendering every 50ms */
+/** Starts the loop that checks for pending re-rendering every 50ms */
 const startRenderingLoop = () => {
-	setInterval(() => {
-		pendingUpdates.forEach(async update => {
+	__SomaticRenderingLoop__ = setInterval(() => {
+		pendingUpdates.forEach(async elementHash => {
 			// We remove the update from the pending list
 			// eslint-disable-next-line fp/no-mutating-methods
 			pendingUpdates.pop()
 
-			const elements = document.querySelectorAll(`[hash="${update.elementHash}"]`)
+			const elements = document.querySelectorAll(`[hash="${elementHash}"]`)
 			if (elements.length > 1) {
-				console.error(`More than 1 component have the hash '${update.elementHash}'`)
+				console.error(`More than 1 component have the hash '${elementHash}'`)
 			}
 			else {
 				const node = elements[0] as HTMLElement | undefined
 				if (node !== undefined) {
-					const cachedGenerator = cache[update.elementHash]
+					const cachedGenerator = cache[elementHash]
 					const payload = await (cachedGenerator as unknown as AsyncGenerator)
 
 					const nextElem = isAsyncIterable(payload)
@@ -492,28 +493,30 @@ const startRenderingLoop = () => {
 						: await payload
 
 					// The rendered element won't have a key attribute
-					const renderedElem = await render(nextElem, update.elementHash)
+					const renderedElem = await render(nextElem, elementHash)
 
 					updateDOM(node as HTMLElement, renderedElem);
 
 					// We put back the key on the node
-					(node as HTMLElement).setAttribute("hash", update.elementHash)
+					(node as HTMLElement).setAttribute("hash", elementHash)
 				}
 				else {
-					console.error(`Cannot update an element: hash '${update.elementHash}' not found in the document`)
+					console.error(`Cannot update an element: hash '${elementHash}' not found in the document`)
 				}
 			}
 		})
-	}, 50)
+	}, 50) as unknown as number
 }
 
-
-/** Returns a unique key that is based on the key, props & children of a component
+/** Returns a unique hash that is based on the key, props & children of a component
  * @param props The properties passed to the component, including children and key
  */
 export const getHash = (props: Obj): string => {
 	return hashSum(stringifyPropsByRefs(props))
 }
+
+/** A store of large objects and their reference, used to make the function 'stringifyPropsByRefs' faster */
+const largeObjectMap = new Map()
 
 /** Same as JSON.stringify, except that large property values (arrays & object with 50+ keys) are represented with pseudo-address references instead of JSON strings
  * The pseudo-adress references are obtained from the value of the global object "largeObjectMap".

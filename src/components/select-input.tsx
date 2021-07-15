@@ -93,10 +93,11 @@ export const SelectInput = makeComponent<PropsExtended<Props, Messages>>((props)
 	</select >
 }, {
 	stateful: false,
-	isPure: true
-}, {
-	style: {
-		backgroundColor: "white !important",
-		background: "white !important"
+	isPure: true,
+	defaultProps: {
+		style: {
+			backgroundColor: "white !important",
+			background: "white !important"
+		}
 	}
 })

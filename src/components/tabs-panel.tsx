@@ -55,10 +55,11 @@ export const TabsPanel = makeComponent<PropsExtended<Props, Messages>>(props => 
 	</StackPanel>
 }, {
 	stateful: false,
-	isPure: true
-}, {
-	selectedIndex: 0,
-	selectedItemStyle: {
-		fontWeight: "bold"
+	isPure: true,
+	defaultProps: {
+		selectedIndex: 0,
+		selectedItemStyle: {
+			fontWeight: "bold"
+		}
 	}
 })

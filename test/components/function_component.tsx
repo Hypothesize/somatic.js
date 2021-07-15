@@ -3,9 +3,9 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, makeComponent } from '../core'
-import { Component, HtmlProps, PanelProps, ExtractOptional, OptionalKeys } from '../types'
-import { StackPanel } from './stack-panel'
+import { createElement, makeComponent } from '../../src/core'
+import { Component, HtmlProps, PanelProps, ExtractOptional, OptionalKeys } from '../../src/types'
+import { StackPanel } from '../../src/components/stack-panel'
 
 export const enum BtnMode { Normal = "normal", Selected = "selected", Disabled = "disabled" }
 
@@ -29,7 +29,8 @@ export const FunctionComponent = makeComponent<Props>(function (props) {
 	return <div className="Check">{mainContent}</div>
 }, {
 	stateful: false,
-	isPure: true
-}, {
-	num: 5
+	isPure: true,
+	defaultProps: {
+		num: 5
+	}
 })

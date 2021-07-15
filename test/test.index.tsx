@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import * as core from './core'
-import { createElement } from "./core"
-export * from './types'
-export * from './core'
-export * from './components'
+import * as core from '../src/core'
+import { createElement } from "../src/core"
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TestRepeater } from "./components/test-repeater"

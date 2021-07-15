@@ -1,7 +1,7 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent, updateDOM } from '../core'
-import { PropsExtended, Component, PanelProps, VNode, VNodeType } from '../types'
+import { createElement, makeComponent, updateDOM } from '../../src/core'
+import { PropsExtended, Component, PanelProps, VNode, VNodeType } from '../../src/types'
 import { TestComponent } from '../components/test-component'
 type State = {
 	presenceOfFirst: boolean,

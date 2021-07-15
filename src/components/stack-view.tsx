@@ -52,9 +52,10 @@ export const StackView = <T extends unknown>(outsideProps: PropsExtended<Props<T
 		}
 	}, {
 		stateful: false,
-		isPure: true
-	}, {
-		selectedItemStyle: {} as CSSProperties,
-		itemStyle: {}
+		isPure: true,
+		defaultProps: {
+			selectedItemStyle: {} as CSSProperties,
+			itemStyle: {}
+		}
 	})(outsideProps)
 }

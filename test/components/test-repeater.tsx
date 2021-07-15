@@ -1,9 +1,8 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent, updateDOM } from '../core'
-import { PropsExtended, Component, PanelProps, HtmlProps } from '../types'
-import { TestComponent } from '../components/test-component'
-import { FunctionComponent } from '../components/function_component'
+import { createElement, makeComponent, updateDOM } from '../../src/core'
+import { TestComponent } from './test-component'
+import { FunctionComponent } from './function_component'
 type State = {
 	internalTestComponents: boolean[],
 	functionCompNumber?: number

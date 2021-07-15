@@ -1,6 +1,6 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent } from '../core'
+import { createElement, makeComponent } from '../../src/core'
 
 export const RefreshBox = makeComponent(async function* (props) {
 	// eslint-disable-next-line fp/no-loops

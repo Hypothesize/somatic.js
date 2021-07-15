@@ -31,6 +31,6 @@
 		"./src",
 	],
 	"exclude": [
-		"testo.index.tsx"
+		"./src/test.index.tsx"
 	]
 }

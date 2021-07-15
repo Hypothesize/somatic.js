@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement, makeComponent, updateDOM } from '../core'
-import { VNode } from '../types'
+import { createElement, makeComponent, updateDOM } from '../../src/core'
+import { VNode } from '../../src/types'
 
 export type Props = {
 	color?: string,

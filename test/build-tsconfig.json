@@ -28,9 +28,11 @@
 		"outDir": "./dist"
 	},
 	"include": [
-		"../src"
+		"../src",
+		"./components",
+		"test.index.tsx"
 	],
 	"exclude": [
-		"index.tsx"
+		"../src/index.tsx"
 	]
 }
