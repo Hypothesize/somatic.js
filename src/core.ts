@@ -206,7 +206,7 @@ export function makeComponent<P extends Obj = Obj, D = Partial<ExtractOptional<P
 				: {}
 		}) as P & D & { key: string, requireUpdate?: () => void }
 		return core.call({}, completeProps)
-	}, options)
+	}, options) as Component
 }
 
 /** Special attributes that map to DOM events. */

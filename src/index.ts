@@ -9,7 +9,7 @@ import { VNode, Component } from "./types"
 
 declare global {
 	namespace JSX {
-		type Element = AsyncGenerator<Element, Element, any> | VNode
+		type Element = AsyncGenerator<VNode, VNode, any> | VNode
 
 		interface IntrinsicElements {
 			html: Somatic.HtmlHTMLAttributes<HTMLHtmlElement>,
