@@ -3,8 +3,8 @@
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createElement, mergeProps, makeComponent, makeComponent1 } from '../core'
-import { Component, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
+import { createElement, makeComponent } from '../core'
+import { PropsExtended, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 
 export const enum BtnMode { Normal = "normal", Selected = "selected", Disabled = "disabled" }
@@ -25,14 +25,49 @@ type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
 	/** normal disabled or selected */
 	mode?: BtnMode
 }
-// eslint-disable-next-line @typescript-eslint/ban-types
-type State = {}
 
 interface Messages { type: "CLICKED" }
 
+export const CommandBox = makeComponent<PropsExtended<Props, Messages>>((props) => {
+	const {
+		orientation,
+		iconPlacement, icon,
+		style, hoverEffect,
+		mode,
+		postMsgAsync,
+		children,
+		...htmlProps
+	} = props
+	const iconContent = props.icon
+		? props.icon
+		: <div />
 
-export const CommandBox = makeComponent({
-	defaultProps: () => ({
+	const mainContent = <StackPanel
+		orientation={orientation}
+		itemsAlignV={"center"}
+		style={{ height: "100%" }}>
+		{children}
+	</StackPanel>
+
+	return <button
+		{...htmlProps}
+		style={{
+			...htmlProps.disabled !== undefined
+				? { color: 'gray', borderColor: `gray` }
+				: {},
+			...style
+		}}>
+
+		<StackPanel
+			itemsAlignV={"center"}
+			orientation={orientation}>
+			{iconPlacement === "before" ? [iconContent, mainContent] : [mainContent, iconContent]}
+		</StackPanel>
+	</button>
+}, {
+	stateful: false,
+	isPure: true,
+	defaultProps: {
 		orientation: "horizontal" as const,
 		hoverEffect: "invert" as const,
 
@@ -50,48 +85,6 @@ export const CommandBox = makeComponent({
 		},
 
 		iconPlacement: "before" as const,
-		mode: BtnMode.Normal,
-		postMsgAsync: () => { }
-	}),
-	defaultState: (props) => ({})
-})<Props, Messages, State>(async (_, props, state) => {
-	const {
-		orientation,
-		iconPlacement, icon,
-		style, hoverEffect,
-		mode,
-		postMsgAsync,
-		children,
-		...htmlProps
-	} = props
-
-	const iconContent = props.icon
-		? props.icon
-		: <div />
-
-	const mainContent = <StackPanel key="main-content"
-		orientation={orientation}
-		itemsAlignV={"center"}
-		style={{ height: "100%" }}>
-		{children}
-	</StackPanel>
-
-	return <button
-		onClick={(e) => { postMsgAsync({ type: "CLICKED" }) }}
-		{...htmlProps}
-		style={{
-			...htmlProps.disabled !== undefined
-				? { color: 'gray', borderColor: `gray` }
-				: {},
-
-			...style
-		}}>
-
-		<StackPanel key="container"
-			itemsAlignV={"center"}
-			orientation={orientation}>
-			{iconPlacement === "before" ? [iconContent, mainContent] : [mainContent, iconContent]}
-		</StackPanel>
-	</button>
+		mode: BtnMode.Normal
+	}
 })
-

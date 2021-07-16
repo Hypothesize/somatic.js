@@ -1,9 +1,9 @@
 /* eslint-disable fp/no-rest-parameters */
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createElement, makeComponent, stringifyStyle, mergeProps } from "../core"
+import { createElement, makeComponent, stringifyStyle, } from "../core"
 import { first } from "@sparkwave/standard/collections/iterable"
-import { Component, HtmlProps, CSSProperties } from '../types'
+import { Component, HtmlProps, CSSProperties, PropsExtended } from '../types'
 import { idProvider } from '../utils'
 
 // type Messages = { type: "HOVER_START" } | { type: "HOVER_STOP" }
@@ -12,16 +12,7 @@ type Props = HtmlProps & {
 	hoverStyle?: CSSProperties
 }
 
-export const HoverBox = makeComponent({})<Props>(async (props) => {
-	const defaultProps = Object.freeze({
-		style: {
-			height: "auto",
-			width: "auto",
-			padding: 0,
-			margin: 0
-		} as CSSProperties,
-		hoverStyle: {}
-	})
+export const HoverBox = makeComponent<PropsExtended<Props>>((props) => {
 
 	const {
 		children,
@@ -29,11 +20,11 @@ export const HoverBox = makeComponent({})<Props>(async (props) => {
 		hoverStyle,
 		style,
 		...htmlProps
-	} = mergeProps(defaultProps, props) //as PropsExtended<Props>
+	} = props as PropsExtended<Props>
 
 	const className__ = idProvider.next()
 	// eslint-disable-next-line fp/no-let
-	let child = children ? await first(children) : undefined
+	let child = children ? first(children) : undefined
 	if (child && "props" in child) {
 		// eslint-disable-next-line fp/no-mutation
 		child = {
@@ -53,7 +44,7 @@ export const HoverBox = makeComponent({})<Props>(async (props) => {
 	}
 	else {
 		// eslint-disable-next-line fp/no-mutation
-		child = await (<div {...htmlProps} className={className__}>{child}</div>)
+		child = <div {...htmlProps} className={className__}>{child}</div>
 	}
 
 
@@ -74,4 +65,16 @@ export const HoverBox = makeComponent({})<Props>(async (props) => {
 
 		{child}
 	</div>
+}, {
+	stateful: false,
+	isPure: true,
+	defaultProps: {
+		style: {
+			height: "auto",
+			width: "auto",
+			padding: 0,
+			margin: 0
+		} as CSSProperties,
+		hoverStyle: {}
+	}
 })

@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement, makeComponent } from '../core'
-import { Component, PanelProps, HtmlProps } from '../types'
+import { PanelProps, HtmlProps } from '../types'
 
 export type Props = PanelProps & HtmlProps & {
+	key?: string
 }
 
-export const StackPanel = makeComponent({})<Props>(async (props) => {
+export const StackPanel = makeComponent<Props>(function (props) {
 	const alignItems = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignH) : (props.itemsAlignV)) {
 			case "start":
@@ -20,7 +21,6 @@ export const StackPanel = makeComponent({})<Props>(async (props) => {
 				return "initial"
 		}
 	}
-
 	const justifyContent = () => {
 		switch (props.orientation === "vertical" ? (props.itemsAlignV) : (props.itemsAlignH)) {
 			case "start":
@@ -35,35 +35,28 @@ export const StackPanel = makeComponent({})<Props>(async (props) => {
 				return "initial"
 		}
 	}
-
-	try {
-		const {
-			orientation,
-			itemsAlignH,
-			itemsAlignV,
-			children,
-			style,
-			...htmlProps
-		} = props
-
-		return (
-			<div
-				{...htmlProps}
-
-				style={{
-					display: "flex",
-					...style,
-					flexDirection: orientation === "vertical" ? "column" : "row",
-					justifyContent: justifyContent(),
-					alignItems: alignItems()
-				}}>
-
-				{children}
-
-			</div>)
-	}
-	catch (e) {
-		console.error(`StackPanel render: ${e}`)
-		throw e
-	}
+	const {
+		orientation,
+		itemsAlignH,
+		itemsAlignV,
+		children,
+		style,
+		key,
+		...htmlProps
+	} = props
+	// eslint-disable-next-line fp/no-loops
+	return <div
+		{...htmlProps}
+		style={{
+			display: "flex",
+			...style,
+			flexDirection: orientation === "vertical" ? "column" : "row",
+			justifyContent: justifyContent(),
+			alignItems: alignItems()
+		}}>
+		{children}
+	</div >
+}, {
+	stateful: false,
+	isPure: true
 })

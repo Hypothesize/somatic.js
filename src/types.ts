@@ -7,6 +7,13 @@
 
 import { Obj } from "@sparkwave/standard/utility"
 
+export type OptionalKeys<T extends object> = Exclude<{
+	[K in keyof T]: T extends Record<K, T[K]>
+	? never
+	: K
+}[keyof T], undefined>
+export type ExtractOptional<T extends object> = Pick<T, OptionalKeys<T>>
+
 export interface Message {
 	type: string,
 
@@ -18,7 +25,7 @@ export interface Message {
 }
 
 /** Full props exposed to component consumers */
-export type PropsExtended<Props, Msg extends Message = Message> = Props & {
+export type PropsExtended<Props, Msg extends Message = Message, S = {}> = Props & {
 	/** Child content of the renderer */
 	children?: any[],
 
@@ -33,49 +40,18 @@ export type MergedPropsExt<P, M extends Message, DP extends Partial<P>> = (
 	DP & PropsExtended<P, M> & Partial<PropsExtended<P, M>>
 )
 
-/** Async function that defines a regular component */
-export type ComponentRegular<P extends Obj = Obj, M extends Message = Message, S = {}> = (
-	| ((props: PropsExtended<P, M>) => JSX.Element) & // Regular component
-	{
-		hashProps?: (props: P) => string,
-		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-	}
-)
-/** Async function that defines a component with defaults */
-export type ComponentExtended<P extends Obj, M extends Message, S, DP extends Partial<P>, DS extends Partial<S> = Partial<S>> = (
-	((
-		props: PropsExtended<P, M>,
-		mergedProps: MergedPropsExt<P, M, DP>,
-		stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-	) => JSX.Element) &
-	{
-		defaultProps: () => DP;
-		defaultState: (props?: P) => DS,
-		hashProps?: (props: P) => string,
-		stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-	}
-)
-
-
-export type Component<
-	P extends Obj = Obj,
-	M extends Message = Message,
-	S = {},
-	DefaultProps extends Partial<P> = Partial<P>,
-	DefaultState extends Partial<S> = Partial<S>
-	> = (
-		| ComponentRegular<P, M, S>
-		| ComponentExtended<P, M, S, DefaultProps, DefaultState>
-	)
+export type ComponentOptions = { name?: string, defaultProps?: Obj } & ({ stateful: true } | { stateful?: false, isPure?: boolean })
+type Renderer<P extends Obj = Obj> = (props: P & { key?: string, children?: VNode[] }) => JSX.Element
+export type Component<P extends Obj = Obj> = Renderer<P> & ComponentOptions
 
 /** Virtual node type, either a component or an intrinsic element */
-export type VNodeType<P extends Obj> = | Component<P> | string /* Intrinsic element */
+export type VNodeType<P extends Obj> = Component<P> | string /* Intrinsic element */
 
 /** Virtual node */
-export interface VNode<P extends Obj = Obj, T extends VNodeType<P> = VNodeType<P>> {
+export type VNode<P extends Obj = Obj, T extends VNodeType<P> = VNodeType<P>> = {
 	type: T
 	props: P
-	children?: any[] //({ toString(): string } | VNode<any>)[]
+	children?: VNode[] //({ toString(): string } | VNode<any>)[]
 }
 
 export interface CSSProperties {

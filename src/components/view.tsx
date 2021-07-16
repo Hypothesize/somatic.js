@@ -5,7 +5,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { deepMerge, noop, promisify } from '@sparkwave/standard'
 
-import { createElement, mergeProps } from '../core'
+import { createElement } from '../core'
 import { Component, CSSProperties, PropsExtended, MergedPropsExt, PanelProps, StyleProps, ViewProps } from '../types'
 
 export type Messages = (
@@ -75,36 +75,38 @@ export async function View<T>(
 
 		const { selectedIndex, setState } = state
 
-		return <props.itemsPanel {...restOfProps}>
-			{[...sourceData].map((item, index) =>
-				<div /*key={`item-container-${index}`}*/
-					style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
-					onClick={(e) => {
-						if (!itemTemplate) {
-							setState({ selectedIndex: index })
-							postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
-						}
-					}}>
+		return <div />
 
-					{itemTemplate
-						? itemTemplate({
-							item,
-							index,
-							selected: index === selectedIndex,
-							select: () => {
-								setState({ selectedIndex: index })
-								postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
-							},
-							delete: () => {
-								postMsgAsync({ type: "ITEM-DELETED", data: { index } })
-							}
-						})
-						: String(item)
-					}
-				</div>
-			)}
+		// return <props.itemsPanel {...restOfProps}>
+		// 	{[...sourceData].map((item, index) =>
+		// 		<div /*key={`item-container-${index}`}*/
+		// 			style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
+		// 			onClick={(e) => {
+		// 				if (!itemTemplate) {
+		// 					setState({ selectedIndex: index })
+		// 					postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
+		// 				}
+		// 			}}>
 
-		</props.itemsPanel>
+		// 			{itemTemplate
+		// 				? itemTemplate({
+		// 					item,
+		// 					index,
+		// 					selected: index === selectedIndex,
+		// 					select: () => {
+		// 						setState({ selectedIndex: index })
+		// 						postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
+		// 					},
+		// 					delete: () => {
+		// 						postMsgAsync({ type: "ITEM-DELETED", data: { index } })
+		// 					}
+		// 				})
+		// 				: String(item)
+		// 			}
+		// 		</div>
+		// 	)}
+
+		// </props.itemsPanel>
 	}
 	catch (e) {
 		console.error(`StackView render: ${e}`)
