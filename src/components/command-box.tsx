@@ -1,97 +1,71 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { deepMerge } from '@agyemanjp/standard'
+import { createElement } from '../core'
+import { colorLuminance } from '../common'
+import { Component, PanelProps, HtmlProps, IconProps, CSSProperties, ButtonHTMLAttributes } from '../types'
+import { HoverBox } from './hover-box'
 
-import { createElement, mergeProps, makeComponent, makeComponent1 } from '../core'
-import { Component, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
-import { StackPanel } from './stack-panel'
-
-export const enum BtnMode { Normal = "normal", Selected = "selected", Disabled = "disabled" }
-
-type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
-	/** Icon component to be placed next/before the title of the button */
-	icon?: JSX.Element
-
-	/** Relative postion of the icon in relationship with the title */
-	iconPlacement?: "before" | "after"
-
-	/** Orientation for the container of the children */
-	orientation?: PanelProps["orientation"]
-
-	/** how colors should change on hover (or selection) */
-	hoverEffect?: "darken" | "invert"
-
-	/** normal disabled or selected */
-	mode?: BtnMode
-}
-// eslint-disable-next-line @typescript-eslint/ban-types
-type State = {}
-
-interface Messages { type: "CLICKED" }
-
-
-export const CommandBox = makeComponent({
-	defaultProps: () => ({
+export const CommandBox: Component<CommandBoxProps> = function (props) {
+	const defaultProps = {
+		color: "black",
 		orientation: "horizontal" as const,
-		hoverEffect: "invert" as const,
-
-		style: {
-			fontSize: "1em",
-			color: "#666",
-			borderColor: "#666",
-			borderWidth: "1px",
-			borderStyle: "solid",
-			padding: "0",
-			margin: "0",
-			overflow: "hidden",
-			borderRadius: "2px",
-			cursor: "pointer"
-		},
-
 		iconPlacement: "before" as const,
-		mode: BtnMode.Normal,
-		postMsgAsync: () => { }
-	}),
-	defaultState: (props) => ({})
-})<Props, Messages, State>(async (_, props, state) => {
+		hoverEffect: "invert" as const,
+		style: {
+			overflow: "hidden",
+			padding: "0",
+			margin: "0.5em",
+			borderRadius: "0.2em",
+			color: "#444444",
+			backgroundColor: "white",
+			borderWidth: "thin",
+			borderStyle: "solid",
+			cursor: "pointer"
+		}
+	}
 	const {
-		orientation,
-		iconPlacement, icon,
-		style, hoverEffect,
-		mode,
-		postMsgAsync,
+		color,
 		children,
+		icon,
 		...htmlProps
-	} = props
+	} = { ...defaultProps, ...props }
 
-	const iconContent = props.icon
-		? props.icon
-		: <div />
+	const style = { ...defaultProps.style, ...props.style }
+	const orientation = props.orientation ?? defaultProps.orientation
+	const iconPlacement = props.iconPlacement ?? defaultProps.iconPlacement
+	const hoverEffect = props.hoverEffect ?? defaultProps.hoverEffect
+	const hoverStyle: CSSProperties = hoverEffect === "invert"
+		? {
+			color: style.backgroundColor ?? style.background ?? defaultProps.style.backgroundColor,
+			borderColor: style.backgroundColor ?? style.background ?? defaultProps.style.backgroundColor,
+			backgroundColor: style.color ?? defaultProps.style.color,
+		}
+		: {
+			opacity: 1
+		}
 
-	const mainContent = <StackPanel key="main-content"
-		orientation={orientation}
-		itemsAlignV={"center"}
-		style={{ height: "100%" }}>
-		{children}
-	</StackPanel>
+	return <HoverBox style={{ opacity: hoverEffect === "darken" ? 0.75 : 1 }} hoverStyle={hoverStyle}>
+		<button
+			{...htmlProps}
+			style={{
+				borderColor: style.color,
+				...style
+			}}>
+			{children}
+		</button>
+	</HoverBox>
+}
 
-	return <button
-		onClick={(e) => { postMsgAsync({ type: "CLICKED" }) }}
-		{...htmlProps}
-		style={{
-			...htmlProps.disabled !== undefined
-				? { color: 'gray', borderColor: `gray` }
-				: {},
+export type CommandBoxProps = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
+	// color?: string
+	icon?: Component<IconProps>
+	iconPlacement?: "before" | "after"
+	orientation?: PanelProps["orientation"]
+	hoverEffect?: "darken" | "invert"
+}
 
-			...style
-		}}>
 
-		<StackPanel key="container"
-			itemsAlignV={"center"}
-			orientation={orientation}>
-			{iconPlacement === "before" ? [iconContent, mainContent] : [mainContent, iconContent]}
-		</StackPanel>
-	</button>
-})
+CommandBox.isPure = true
 
