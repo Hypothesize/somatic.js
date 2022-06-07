@@ -77,7 +77,12 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 					// for setting function values which are not event handlers.
 					// It also avoids using setAttribute to set the property to a string form of the value
 					// We assume the input property key is in the correct case as specified in the typings, * E.g., preserveAspectRatio, viewBox, fillRule, readOnly, etc
-					(element as any)[key] = effectiveVal
+					if (effectiveVal) {
+						element.setAttribute(key, effectiveVal);
+					}
+					else {
+						element.removeAttribute(key)
+					}
 				}
 			}
 			catch (err) {
