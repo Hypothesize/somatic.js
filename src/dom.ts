@@ -86,7 +86,7 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 				}
 			}
 			catch (err) {
-				console.error(`Error setting ${key} to ${value}\n{err}`)
+				console.error(`Error setting "${key}" on <${element.tagName}> to "${JSON.stringify(value, undefined, 2)}:\n${err}`)
 			}
 		}
 	}
