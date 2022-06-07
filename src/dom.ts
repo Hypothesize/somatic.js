@@ -69,7 +69,7 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 					// For string values, first set attribute using setAttribute, 
 					// for a few cases not handled properly by the assignment that follows
 					if (typeof effectiveVal === "string")
-						element.setAttribute(key, effectiveVal);
+						element.setAttribute(key, effectiveVal)
 
 					// The <key> property on the element is set directly to <effectiveVal>. This approach works:
 					// for setting 'CHECKED', 'VALUE', and 'HTMLFOR' properties;
@@ -77,7 +77,7 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 					// for setting function values which are not event handlers.
 					// It also avoids using setAttribute to set the property to a string form of the value
 					// We assume the input property key is in the correct case as specified in the typings, * E.g., preserveAspectRatio, viewBox, fillRule, readOnly, etc
-					if (effectiveVal) {
+					if (effectiveVal !== undefined) {
 						(element as any)[key] = effectiveVal
 					}
 				}
