@@ -1,5 +1,5 @@
 import * as cuid from "cuid"
-import { Obj } from "@agyemanjp/standard/utility"
+import { Obj } from "@sparkwave/standard/utility"
 
 /** Names of DOM events. */
 export const eventNames = {

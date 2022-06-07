@@ -29,7 +29,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/agyemanjp/somatic.js.git"
+		"url": "git+https://github.com/hypothesize/somatic.js.git"
 	},
 	"keywords": [
 		"ui",
@@ -45,7 +45,7 @@
 	},
 	"homepage": "https://github.com/Hypothesize/somatic.js#readme",
 	"dependencies": {
-		"@agyemanjp/standard": "^3.9.3",
+		"@sparkwave/standard": "^2.33.0",
 		"cuid": "2.1.8"
 	},
 	"devDependencies": {

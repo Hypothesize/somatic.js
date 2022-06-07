@@ -11,7 +11,7 @@
 // const x = import("morpdom")
 
 // import * as cuid from "cuid"
-import { String, hasValue } from "@agyemanjp/standard"
+import { String, hasValue } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM } from "./dom"
 import { isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"

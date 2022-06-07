@@ -4,7 +4,7 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Obj, Digit, DigitNonZero } from "@agyemanjp/standard/utility"
+import { Obj, Digit, DigitNonZero } from "@sparkwave/standard/utility"
 
 /** Main component type */
 export type Component<P extends Obj = Obj> = ((props: P & { children?: Children, key?: string }/*, extra: { invalidate: () => void }*/) =>

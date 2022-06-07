@@ -8,9 +8,9 @@
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
-// import { deepMerge, noop, promisify } from '@agyemanjp/standard'
+// import { deepMerge, noop, promisify } from '@sparkwave/standard'
 import * as cuid from "cuid"
-import { ArgsType } from "@agyemanjp/standard"
+import { ArgsType } from "@sparkwave/standard"
 import { createElement, invalidateUI } from '../core'
 import { PanelProps, HtmlProps, Component, CSSProperties, } from '../types'
 import { StackPanel } from './stack-panel'

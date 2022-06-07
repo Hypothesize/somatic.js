@@ -1,4 +1,4 @@
-import { Obj, keys, toDashCase } from "@agyemanjp/standard"
+import { Obj, keys, toDashCase } from "@sparkwave/standard"
 import { HTMLAttributes, CSSProperties } from "./types"
 import { booleanAttributes, attributeConversions, stringify } from "./common"
 

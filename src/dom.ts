@@ -1,7 +1,7 @@
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/ban-types */
-import { keys, skip, hasValue, indexesOf, first } from "@agyemanjp/standard"
+import { keys, skip, hasValue, indexesOf, first } from "@sparkwave/standard"
 
 import { stringifyStyle } from "./html"
 import { isEltProper, isIntrinsicElt } from "./element"

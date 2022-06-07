@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createElement } from '../core'
 import { Component, PanelProps, HtmlProps, CSSLength } from '../types'
-import { isArray } from '@agyemanjp/standard/utility'
+import { isArray } from '@sparkwave/standard/utility'
 
 type RowOrColumnInfo = CSSLength | "none" | "auto" | "max-content" | "min-content" | "initial" | "inherit"
 

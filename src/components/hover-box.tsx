@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as cuid from 'cuid'
-import { deepMerge, first } from '@agyemanjp/standard'
+import { deepMerge, first } from '@sparkwave/standard'
 import { createElement } from '../core'
 import { stringifyStyle } from '../html'
 import { getChildren, normalizeChildren, isEltProper } from '../element'

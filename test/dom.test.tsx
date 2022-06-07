@@ -20,7 +20,7 @@ import { traceToLeafAsync, isIntrinsicElt } from "../dist/element"
 import { StackPanel, CommandBox, View } from "../dist/components"
 
 
-import { Set, except } from '@agyemanjp/standard'
+import { Set, except } from '@sparkwave/standard'
 
 
 /*describe("isAugmentedDOM", () => {

@@ -1,7 +1,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable fp/no-mutation */
 /* eslint-disable @typescript-eslint/ban-types */
-import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync } from "@agyemanjp/standard"
+import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync } from "@sparkwave/standard"
 import {
 	Children,
 	ComponentResult, ComponentEltAugmented,
