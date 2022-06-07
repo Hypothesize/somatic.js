@@ -1,68 +1,48 @@
+/* eslint-disable fp/no-loops */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { deepMerge, } from '@sparkwave/standard/collections/object'
+import { hasValue } from '@sparkwave/standard'
 
-import { StackView, Props as StackViewProps } from './stack-view'
-import { StackPanel, Props as StackPanelProps } from './stack-panel'
-import { Component, CSSProperties, HtmlProps, ViewProps } from '../types'
-import { createElement, makeComponent } from '../core'
+import { createElement, } from '../core'
+import { View, ViewProps } from './view'
+import { StackPanel } from './stack-panel'
+import { HtmlProps, Component, CSSProperties } from '../types'
 
+export const TabsPanel: Component<Props> = async function* (props) {
+	const { headers, headerItemStyle, headerItemTemplate, headerStyle, selectedHeaderItemStyle, selectedIndex, children, } = props
+	const _selectedIndex = selectedIndex ?? 0
 
-export type Messages = (
-	{ type: "selection", data: string }
-)
+	const _children = (!hasValue(children)) ? [] : Array.isArray(children) ? children.flat() : [children]
 
-export type Props = HtmlProps & {
-	headers: ViewProps<string>
-	selectedIndex?: number
-	selectedItemStyle: CSSProperties
+	while (true) yield <StackPanel orientation={"vertical"}>
+		<View
+			orientation={"horizontal"}
+			sourceData={headers}
+			itemStyle={headerItemStyle}
+			selectedItemStyle={selectedHeaderItemStyle}
+			itemsPanel={StackPanel}
+			itemTemplate={headerItemTemplate}
+		/>
+
+		<div>{_children[selectedIndex || 0]}</div>
+	</StackPanel>
 }
 
-export const TabsPanel = makeComponent({})<Props>(async (props) => {
+export type Props<THeader = any> = HtmlProps & {
+	headers: Array<THeader>
+	headerStyle?: CSSProperties
+	headerItemTemplate?: ViewProps<THeader>["itemTemplate"]
+	headerItemStyle?: CSSProperties
+	selectedHeaderItemStyle?: CSSProperties
+	selectedIndex?: number
+}
 
-	const defaultProps/*: RecursivePartial<Props>*/ = {
-		selectedIndex: 0,
-		selectedItemStyle: {
-			fontWeight: "bold"
-		},
-		headers: {
-			itemTemplate: (headerInfo: { item: unknown, index: number }) => <div>{headerInfo.item}</div>
-		},
-		postMsgAsync: async (msg: Messages) => ""
+// TabsPanel.stateful = false
+TabsPanel.isPure = true
+TabsPanel.defaultProps = {
+	selectedIndex: 0,
+	selectedHeaderItemStyle: {
+		fontWeight: "bold"
 	}
-
-	const {
-		headers,
-		selectedIndex,
-		selectedItemStyle,
-
-		children,
-		postMsgAsync,
-		style,
-		...htmlProps
-	} = deepMerge(defaultProps, props)
-
-
-	return <StackPanel orientation={"vertical"}>
-		<StackView
-			orientation={"horizontal"}
-			sourceData={headers.sourceData}
-			itemStyle={headers.itemStyle}
-			selectedItemStyle={selectedItemStyle}
-			itemTemplate={headers.itemTemplate}
-			postMsgAsync={async msg => {
-				postMsgAsync({
-					type: "selection",
-					data: [...headers.sourceData][msg.data]
-				})
-			}}
-			selectedItemIndex={selectedIndex}>
-
-		</StackView>
-
-		<div>
-			{(children ?? [])[selectedIndex]}
-		</div>
-	</StackPanel>
-})
+}
 

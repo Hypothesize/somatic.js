@@ -1,3 +1,7 @@
+/* eslint-disable prefer-const */
+/* eslint-disable fp/no-let */
+/* eslint-disable fp/no-loops */
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable fp/no-mutation */
@@ -5,12 +9,13 @@
 /* eslint-disable init-declarations */
 
 import * as assert from "assert"
-import { Component, createElement, render } from '../dist/index.js'
-import { PanelProps, CSSProperties } from '../dist/types.js'
-import { StackPanel, DialogBox, StackView, ToggleInput, CommandBox } from '../dist/components/index.js'
-import { describe, it, beforeEach, afterEach } from 'mocha'
-const jsdom = require('mocha-jsdom')
-jsdom({ url: 'http://localhost', skipWindowCheck: true })
+// import { describe, it, beforeEach, afterEach } from 'mocha'
+
+import '../dist/index.js'
+import { Component, createElement, renderAsync } from '../dist/index.js'
+// import { StackPanel, DialogBox, StackView, ToggleInput, CommandBox } from '../dist/components/index.js'
+
+const cleanup = require('jsdom-global')()
 
 const theme = {
 	colors: {
@@ -53,6 +58,7 @@ describe("Components", () => {
 	})
 
 	afterEach(() => {
+		// eslint-disable-next-line no-unused-expressions
 		if (container) container?.remove()
 		container = null
 	})
@@ -156,3 +162,33 @@ describe("Components", () => {
 		})
 	})*/
 })
+
+
+// const x = <div></div>
+
+
+// cleanup()
+
+// Pure component examples:
+
+// Stateless function, with (possibly impure) children
+// const numChildren: Component = (props) => <div>{normalizeChildren(props.children).length}</div>
+
+// Stateless generator function, with (possibly impure) children
+// const numChildren: Component = (props) => <div>{normalizeChildren(props.children).length}</div>
+
+
+// Stateful, with (possibly impure) children
+// const selector: Component<{ selectedIndex: number }> = function* (props) {
+// 	let { selectedIndex, children } = props
+// 	while (true)
+// 		yield <div>
+// 			{normalizeChildren(children).map((child, index) =>
+// 				<div onClick={() => selectedIndex = index}>{child}</div>
+// 			)}
+// 		</div>
+// }
+
+
+// Impure component examples
+

@@ -1,113 +1,113 @@
+/* eslint-disable prefer-const */
+/* eslint-disable fp/no-let */
+/* eslint-disable fp/no-mutation */
+/* eslint-disable fp/no-loops */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable brace-style */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { deepMerge, noop, promisify } from '@sparkwave/standard'
 
-import { createElement, mergeProps } from '../core'
-import { Component, CSSProperties, PropsExtended, MergedPropsExt, PanelProps, StyleProps, ViewProps } from '../types'
+// import { deepMerge, noop, promisify } from '@sparkwave/standard'
+import * as cuid from "cuid"
+import { ArgsType } from "@sparkwave/standard"
+import { createElement, invalidateUI } from '../core'
+import { PanelProps, HtmlProps, Component, CSSProperties, } from '../types'
+import { StackPanel } from './stack-panel'
 
-export type Messages = (
-	| { type: "ITEM-SELECTED", data: { index: number } }
-	| { type: "ITEM-DELETED", data: { index: number } }
-)
+// interface SelectionEvent extends SyntheticEvent { selectedIndex: number }
+// const event = new CustomEvent('build', { detail: elem.dataset.time })
 
-type Props<T = unknown> = StyleProps & PanelProps & {
+// ToDo: Implement deletion and rearrangement
+
+export type ViewProps<T = unknown> = HtmlProps & PanelProps & {
 	sourceData: Iterable<T>
-	itemsPanel: Component<PanelProps>,
-
 	selectedIndex?: number,
-	itemTemplate?: (itemInfo: {
-		item: T,
-		index: number,
-		selected: boolean,
-		select: () => void,
-		delete: () => void
-	}) => JSX.Element
 
+	itemsPanel: Component<HtmlProps & PanelProps>,
+	itemTemplate?: Component<{ value: T, index: number, selected?: boolean/*, children?: never[]*/ }>
 	itemStyle?: CSSProperties,
 	selectedItemStyle?: CSSProperties
 
-	extraFeatures?: {
-		selection?: boolean
-		arrangement?: boolean
-		deletion?: boolean
+	children?: never[]
+
+	selectionEnabled?: boolean
+	// arrangementEnabled?: boolean
+	// deletionEnabled?: boolean
+
+	// Custom event handler callback
+	onSelection?: (eventData: { selectedIndex: number }) => void
+	// onDelete?: (eventData: { deletedIndex: number }) => void
+	// onArrange?: (eventData: { oldIndex: number, newIndex: number }) => void
+}
+
+export async function* View<T>(props: ArgsType<Component<ViewProps<T>>>[0]): AsyncGenerator<JSX.Element, JSX.Element, typeof props> {
+	const defaultProps = {
+		id: cuid(),
+		selectedIndex: 0,
+		itemsPanel: StackPanel,
+		itemTemplate: (p => <div>{p.value}</div>) as Required<ViewProps<T>>["itemTemplate"],
+		itemStyle: {} as CSSProperties,
+		selectedItemStyle: {} as CSSProperties,
+		selectionEnabled: true,
 	}
-}
-type State = {
-
-}
-
-const defaultProps = () => ({
-	selectedIndex: 0,
-	itemStyle: {} as CSSProperties,
-	selectedItemStyle: {} as CSSProperties,
-	extraFeatures: {},
-	postMsgAsync: promisify(noop)
-})
-
-const defaultState = function <T>(props?: Props<T>) {
-	return {
-		selectedIndex: props?.selectedIndex ?? 0
-	}
-}
-
-export async function View<T>(
-	_: PropsExtended<Props<T>, Messages>,
-	props: MergedPropsExt<Props<T>, Messages, ReturnType<typeof defaultProps>>,
-	state: ReturnType<typeof defaultState> & State & Partial<State> & { setState: (delta: Partial<State>) => void }
-) {
 
 	try {
-		const {
-			sourceData,
-			itemTemplate,
-			itemsPanel,
-			itemStyle,
-			selectedItemStyle,
-			postMsgAsync,
-			children,
-			style,
+		while (true) {
+			let {
+				id,
+				style,
+				children, // children will be ignored, should be undefined
+				sourceData,
+				// itemTemplate: ItemTemplate,
+				itemsPanel: ItemsPanel,
+				itemStyle,
+				selectedItemStyle,
+				selectedIndex,
+				selectionEnabled,
+				onSelection,
+				...restOfProps
+			} = Object.assign({ ...defaultProps, ...props })
 
-			...restOfProps
-		} = props
+			const ItemTemplate = props.itemTemplate ?? defaultProps.itemTemplate
 
-		const { selectedIndex, setState } = state
+			console.assert(ItemTemplate !== undefined, `ItemTemplate is undefined`)
 
-		return <props.itemsPanel {...restOfProps}>
-			{[...sourceData].map((item, index) =>
-				<div /*key={`item-container-${index}`}*/
-					style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
-					onClick={(e) => {
-						if (!itemTemplate) {
-							setState({ selectedIndex: index })
-							postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
-						}
-					}}>
+			// Yield the current UI, and also updating props with any new injected props
+			props = (yield <ItemsPanel id={id} style={style} {...restOfProps}>
+				{
+					[...sourceData].map((item, index) =>
+						<div id={`${id}_item_container_${index}`} // Pre-pend parent id so that child ids are globally unique
+							style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
+							onClick={(ev) => {
+								if (selectionEnabled) {
+									// const oldSelectedIndex = selectedIndex
+									selectedIndex = index
+									if (onSelection)
+										onSelection({ selectedIndex })
+									invalidateUI([id])
+								}
+							}}>
 
-					{itemTemplate
-						? itemTemplate({
-							item,
-							index,
-							selected: index === selectedIndex,
-							select: () => {
-								setState({ selectedIndex: index })
-								postMsgAsync({ type: "ITEM-SELECTED", data: { index } })
-							},
-							delete: () => {
-								postMsgAsync({ type: "ITEM-DELETED", data: { index } })
-							}
-						})
-						: String(item)
-					}
-				</div>
-			)}
-
-		</props.itemsPanel>
+							{<ItemTemplate value={item} index={index} selected={index === selectedIndex} />}
+						</div>
+					)
+				}
+			</ItemsPanel>) ?? props // So that props is not overwritten with undefined in case none were injected
+		}
 	}
 	catch (e) {
-		console.error(`StackView render: ${e}`)
+		console.error(`View render: ${e}`)
 		throw e
 	}
 }
+
+
+
+// this should succeed type-checking
+// const elt1 = <View sourceData={[1, 2, 3]} itemsPanel={StackPanel}></View>
+
+// this should fail type-checking because the View component does not accept children
+// const elt2 = <View sourceData={[1, 2, 3]} itemsPanel={StackPanel}><div /></View>
+
+

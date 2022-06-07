@@ -1,389 +1,256 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable fp/no-mutation */
 /* eslint-disable fp/no-mutating-assign */
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable fp/no-rest-parameters */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable brace-style */
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable fp/no-loops */
+/* eslint-disable @typescript-eslint/ban-types */
+// import * as chalk from "chalk"
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 
-import morphdom from 'morphdom'
-import fastMemoize from 'fast-memoize'
-import { VNode, VNodeType, PropsExtended, Message, MergedPropsExt, CSSProperties, ComponentExtended, Component } from "./types"
-import { setAttribute, isEventKey, camelCaseToDash, encodeHTML, idProvider } from "./utils"
-import { svgTags, eventNames, mouseMvmntEventNames, } from "./constants"
-import { Obj, Primitive, flatten, deepMerge } from "@sparkwave/standard"
+// import *  as morphdom from "morphdom"
+// const morphdom = require("morphdom")
+// const x = import("morpdom")
 
-// export const Fragment = (async () => ({})) as Renderer
-export const fnStore: ((evt: Event) => unknown)[] = []
+// import * as cuid from "cuid"
+import { String, hasValue } from "@sparkwave/standard"
+import { stringifyAttributes } from "./html"
+import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM } from "./dom"
+import { isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
+import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
+import { selfClosingTags } from "./common"
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createElement<P extends Obj, T extends VNodeType<P>>(type: T, props: P, ...children: any[]): VNode<P, T> {
-	return { type, props, children }
+export const Fragment = ""
+export type Fragment = typeof Fragment
+
+/** JSX is transformed into calls of this function */
+export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
+	if (!type) console.warn(`Type argument mising in call to createElement`)
+
+	return { type, props: props ?? {}, children: (children ?? []).flat() }
 }
 
-const _stateCache: Obj<Obj> = (global as any).__SOMATIC_CACHE__ = {}
-
-/** Render virtual node to DOM node */
-export async function render<Props extends Obj>(vnode?: Primitive | Object | VNode<PropsExtended<Props>> | Promise<VNode<PropsExtended<Props>>>): Promise<Node> {
-	// console.log(`Starting render of vnode: ${JSON.stringify(vnode)}`)
-
-	if (vnode === null || vnode === undefined) {
-		// console.log(`VNode is null or undefined, returning empty text node`)
-		return document.createTextNode("")
+/** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
+export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
+	if (hasValue(elt)
+		&& typeof elt === "object"
+		&& "props" in elt &&
+		"children" in elt &&
+		typeof elt.type === "undefined") {
+		console.warn(`Object appearing to represent proper element has no type member\n
+			This is likely an error arising from creating an element with an undefined component`)
+		// return createDOMShallow(JSON.stringify(elt)) as Text
 	}
 
-	const _vnode = await vnode
-	if (typeof _vnode === 'object' && 'type' in _vnode && 'props' in _vnode) {
-		// console.log(`vNode is object with 'type' and 'props' properties`)
+	const trace = await traceToLeafAsync(elt)
+	const leaf = trace.leafElement
+	const dom = createDOMShallow(leaf)
 
-		switch (typeof _vnode.type) {
-			case "function": {
-				const intrinsicNode = await getIntrinsicFromComponentElement(_vnode as VNode)
+	if (!isTextDOM(dom)) {
+		const domWithChildren = await updateChildrenAsync(dom, getChildren(leaf))
+		return domWithChildren instanceof DocumentFragment
+			? domWithChildren
+			: Object.assign(domWithChildren, { renderTrace: trace })
 
-				return intrinsicNode.children === undefined
-					? await memoizedRender(intrinsicNode)
-					: await render(intrinsicNode) // If element has children, we don't use the cache system (yet)
-			}
-
-			case "string": {
-				const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
-				// console.log(`vNode type is string, rendering as intrinsic component`)
-				const node = svgTags.includes(_vnode.type)
-					? document.createElementNS('http://www.w3.org/2000/svg', _vnode.type)
-					: document.createElement(_vnode.type)
-
-				// render and append children in order
-				await Promise
-					.all(children.map((c) => render(c)))
-					.then(rendered => rendered.forEach(child => node.appendChild(child)))
-
-				// attach attributes
-				const nodeProps = _vnode.props || {}
-				Object.keys(nodeProps).forEach(propKey => {
-					try {
-						const propValue = nodeProps[propKey]
-						if (propValue !== undefined) {
-							const htmlPropKey = propKey.toUpperCase()
-							if (isEventKey(htmlPropKey) && typeof propValue === "function") {
-								// The first condition above is to prevent useless searches through the events list.
-								const eventId = idProvider.next()
-								// We attach an eventId per possible event: an element having an onClick and onHover will have 2 such properties.
-								node.setAttribute(`data-${htmlPropKey}-eventId`, eventId)
-
-								// If the vNode had an event, we add it to the document-wide event. 
-								// We keep track of every event and its matching element through the eventId:
-								// each listener contains one, each DOM element as well
-								addListener(document, eventNames[htmlPropKey], (e: Event) => {
-									const target = e.target as HTMLElement | null
-									if (target !== document.getRootNode()) {
-										// We don't want to do anything when the document itself is the target
-										// We bubble up to the actual target of an event: a <div> with an onClick might be triggered by a click on a <span> inside
-										const intendedTarget = target ? target.closest(`[data-${htmlPropKey.toLowerCase()}-eventId="${eventId}"]`) : undefined
-
-										// For events about mouse movements (onmouseenter...), an event triggered by a child should not activate the parents handler (we when leave a span inside a div, we don't activate the onmouseleave of the div)
-										// We also don't call handlers if the bubbling was cancelled in a previous handler (from a child element)
-										const shouldNotTrigger = mouseMvmntEventNames.includes(htmlPropKey) && intendedTarget !== target
-											|| e.cancelBubble
-
-										if (!shouldNotTrigger && intendedTarget) {
-											// Execute the callback with the context set to the found element
-											// jQuery goes way further, it even has it's own event object
-											(propValue as (e: Event) => unknown).call(intendedTarget, e)
-										}
-									}
-								}, true)
-							}
-							else {
-								setAttribute(node, propKey, (propValue as (e: Event) => unknown))
-							}
-						}
-					}
-					catch (e) {
-						console.error(`Error setting dom attribute ${propKey} to ${JSON.stringify(nodeProps[propKey])}:\n${e}`)
-					}
-				})
-				if (_vnode.props && _vnode.props.key) {
-					setAttribute(node, "key", _vnode.props.key)
-				}
-				return node
-			}
-
-			default: {
-				console.error(`Somatic render(): invalid vnode "${JSON.stringify(_vnode)}" of type "${typeof _vnode}"; `)
-				return document.createTextNode(String(_vnode))
-			}
-		}
 	}
 	else {
-		return document.createTextNode(String(_vnode))
+		return dom
 	}
 }
-const memoizedRender = fastMemoize(render, {})
 
-/** Render virtual node to HTML string */
-export async function renderToString<P extends Obj = Obj>(vnode?: { toString(): string } | VNode<P> | Promise<VNode<P>>): Promise<string> {
-	const elt = (await render(vnode)) as Node | Element
-	const result = ('outerHTML' in elt)
-		? elt.outerHTML
-		: (elt.textContent ?? elt.nodeValue ?? "")
-
-	// console.log(`renderToString output: ${result}`)
-	return result
-
-	/*if (vnode === null || vnode === undefined) {
-		return ""
+/** Render a UI element into a tree of intrinsic elements, optionally injecting some props in the root element */
+export async function renderToIntrinsicAsync(elt: UIElement/*, injectedProps?: Obj*/): Promise<IntrinsicElement | ValueElement> {
+	if (hasValue(elt) && typeof elt === "object" && "props" in elt && "children" in elt && typeof elt.type === "undefined") {
+		console.warn(`Object appearing to represent proper element has no type member\nThis is likely an error due to creating an element with an undefined component`)
+		return (elt)
 	}
-	const _vnode = await vnode
 
-	if (typeof _vnode === 'object' && 'type' in _vnode) {
-		const children = new Array(flatten(_vnode.children || [])) as Array<JSX.Element>
-		switch (typeof _vnode.type) {
-			case "function": {
-				const _props: PropsExtended<P, Message> = { ..._vnode.props, children: [...children || []] }
+	const leaf = await getLeafAsync(elt)
 
-				const resolvedVNode = await _vnode.type(_props)
-				return typeof resolvedVNode.type === "function" && children.length === 0
-					? await memoizedRenderToString(resolvedVNode)
-					: await renderToString(resolvedVNode) // If elem have children, we don't use the cache system (yet).
-			}
-
-			case "string": {
-				const notSelfClosing = !selfClosingTags.includes(_vnode.type.toLocaleLowerCase())
-				const childrenHtml = (notSelfClosing && _vnode.children && _vnode.children.length > 0)
-					? (await Promise.all(children.map(child => {
-						return renderToString(child)
-					}))).join("")
-					: ""
-
-				const nodeProps = _vnode.props || {}
-				const attributesHtml = new SuperString(Object.keys(nodeProps)
-					.map(propName => {
-						const propValue = nodeProps[propName]
-						switch (propName) {
-							case "style":
-								return `${propName}="${stringifyStyle(propValue as CSSProperties)}"`
-
-							default:
-								return typeof propValue === "string"
-									? `${propName}="${encodeHTML(propValue)}"`
-									: typeof propValue === "function"
-										? `${propName.toLowerCase()}="(${escape(propValue.toString())})(this);"`
-										: ""
-						}
-					})
-					.filter(attrHTML => attrHTML?.length > 0)
-					.join(" ")
-				).prependSpaceIfNotEmpty().toString()
-
-				return notSelfClosing
-					? `<${_vnode.type}${attributesHtml}>${childrenHtml}</${_vnode.type}>`
-					: `<${_vnode.type}${attributesHtml}>`
-
-			}
-
-			default:
-				console.error(`\nrender(): invalid vnode type "${typeof _vnode}"; `)
-				return String(_vnode)
+	// console.log(`Leaf from render to intrinsic: ${JSON.stringify(leaf)}`)
+	return (isIntrinsicElt(leaf))
+		? {
+			...leaf,
+			// props: injectedProps ? mergeProps(leaf.props, injectedProps) : leaf.props,
+			children: await Promise.all(getChildren(leaf).map(c => renderToIntrinsicAsync(c)))
 		}
+
+		: (leaf)
+}
+
+/** Render a UI element into its HTML string representation */
+export async function renderToStringAsync(elt: UIElement): Promise<string> {
+	if (hasValue(elt) && typeof elt === "object" && "props" in elt && "children" in elt && typeof elt.type === "undefined") {
+		console.warn(`Object appearing to represent proper element has no type member\nThis is likely an error arising from creating an element with an undefined component`)
+		return globalThis.String(elt)
+	}
+
+	const trace = await traceToLeafAsync(elt)
+	const leaf = trace.leafElement
+	if (isIntrinsicElt(leaf)) {
+		const children = getChildren(leaf)
+		const attributesHtml = new String(stringifyAttributes(leaf.props)).prependSpaceIfNotEmpty().toString()
+		const childrenHtml = () => Promise.all(children.map(renderToStringAsync)).then(arr => arr.join(""))
+		return hasValue(leaf.type)
+			? selfClosingTags.includes(leaf.type.toUpperCase()) && children.length === 0
+				? `<${leaf.type}${attributesHtml} />`
+				: `<${leaf.type}${attributesHtml}>${await childrenHtml()}</${leaf.type}>`
+			: `${await childrenHtml()}`
+
 	}
 	else {
-		return String(_vnode)
-	}*/
+		return globalThis.String(leaf ?? "")
+	}
 }
 
-/** Attach event listeners from element to corresponding nodes in container */
-export function hydrate(element: HTMLElement): void {
-	[...element.attributes].forEach(attr => {
-		// Event attributes will give place to an event listener and be removed.
-		if (isEventKey(attr.name)) {
-			const callback: (evt: Event) => void = fnStore[parseInt(attr.value)]
-			setAttribute(element, attr.name, callback)
-			element.addEventListener(eventNames[attr.name], { handleEvent: callback })
-			element.removeAttribute(attr.name)
-		}
-		else if (attr.name === "htmlfor") { // the innerHTML that we are hydrating might have turned the htmlFor to lowercase in some browsers
-			setAttribute(element, "htmlFor", attr.value)
-			element.removeAttribute(attr.name)
-		}
-		else if (attr.name === "classname") { // the innerHTML that we are hydrating might have turned the className to lowercase in some browsers
-			setAttribute(element, "className", attr.value)
-			element.removeAttribute(attr.name)
-		}
-		else {
-			setAttribute(element, attr.name, attr.value)
-		}
-	});[...element["children"]].forEach(child => {
-		hydrate(child as HTMLElement)
-	})
-}
-
-/** Compares an HTML element with a node, and updates only the parts of the HTML element that are different
- * @param rootElement An HTML element that will be updated
- * @param node A node obtained by rendering a VNode
+/** Update the rendering of an existing DOM element (because the data on which its rendering was based has changed)
+ * @param dom The DOM element whose rendering is to be updated
+ * @param elt A UI (JSX) element that is used as the overriding starting point of the re-render, if passed
+ * @returns The updated DOM element, which is updated in-place
  */
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
+export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
+	/** Checks for compatibility between a DOM and UI element */
+	function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
+		if (isTextDOM(_dom)) return false // DOM element is just a text element
 
-/** Global dictionary of events indexed by their names e.g., onmouseenter */
-const _eventHandlers: Obj<{ node: Node, handler: (e: Event) => void, capture: boolean }[]> = {}
-const addListener = (node: Node, event: string, handler: (e: Event) => void, capture = false) => {
-	if (_eventHandlers[event] === undefined) {
-		// eslint-disable-next-line fp/no-mutation
-		_eventHandlers[event] = []
+		switch (true) {
+			case (!isEltProper(_elt)):
+				return false
+			case (isIntrinsicElt(_elt) && _dom.renderTrace.componentElts.length > 0):
+				return false
+			case (isComponentElt(_elt) && _dom.renderTrace.componentElts.length === 0):
+				return false
+			case isComponentElt(_elt) && _elt.type === _dom.renderTrace.componentElts[0].type:
+				return true
+			case isIntrinsicElt(_elt) && _elt.type.toUpperCase() === _dom.tagName.toUpperCase():
+				return true
+			default:
+				return false
+		}
 	}
-	// Here we track the events and their nodes (note that we cannot use node as Object keys, as they'd get coerced into a string)
-	// eslint-disable-next-line fp/no-mutating-methods
-	_eventHandlers[event].push({ node: node, handler: handler, capture: capture })
-	node.addEventListener(event, handler, capture)
-}
 
-/** Remove all event listeners */
-export const removeListeners = (targetNode: Node) => {
-	Object.keys(_eventHandlers).forEach(eventName => {
-		// remove listeners from the matching nodes
-		_eventHandlers[eventName]
-			.filter(({ node }) => node === targetNode)
-			.forEach(({ node, handler, capture }) => node.removeEventListener(eventName, handler, capture))
-
-		// update _eventHandlers global
-		// eslint-disable-next-line fp/no-mutation
-		_eventHandlers[eventName] = _eventHandlers[eventName].filter(
-			({ node }) => node !== targetNode,
-		)
-	})
-}
-
-/** Converts a css props object literal to a string */
-export function stringifyStyle(style: CSSProperties, important = false) {
-	if (typeof style === "object") {
-		return Object.keys(style)
-			.map((key) => `${camelCaseToDash(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
-			.join("; ")
-			.concat(";")
+	if (isTextDOM(dom)) {
+		// don't use hasValue here because that will flag null, "", etc, which are valid value elements
+		return elt !== undefined
+			? renderAsync(elt).then(domNew => (dom.replaceWith(domNew), domNew))
+			: dom
 	}
-	else {
-		console.warn(`Input "${JSON.stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
-		return ""
-	}
-}
+	else { // DOM elt is augmented
+		if (elt !== undefined) { // don't use hasValue here because that will flag null, "", etc, which are valid value elements
+			if (areCompatible(dom, elt)) { // dom is not Text, elt is not a value, and they have the same type/tag
+				const trace = isComponentElt(elt)
+					? await updateTraceAsync(dom.renderTrace, elt)
+					: { componentElts: [], leafElement: elt }
 
-export function stringifyAttribs(props: Obj) {
-	return Object.keys(props)
-		.map(name => {
-			const value = props[name]
-			switch (true) {
-				case name === "style":
-					return (`style="${encodeHTML(stringifyStyle(value as CSSProperties))}"`)
-				case typeof value === "string":
-					return (`${encodeHTML(name)}="${encodeHTML(String(value))}"`)
-				case typeof value === "number":
-					return (`${encodeHTML(name)}="${value}"`)
-				// case typeof value === "function":
-				// 	fnStore.push(value as (e: Event) => unknown)
-				// 	return (`${encodeHTML(name.toLowerCase())}="${fnStore.length - 1}"`)
-				case value === true:
-					return (`${encodeHTML(name)}`)
-				default:
-					return ""
-			}
-		})
-		.filter(attrHTML => attrHTML?.length > 0)
-		.join(" ")
-}
-
-/** Merge default props with actual props of renderer */
-export function mergeProps<P extends Obj, D extends Partial<P>>(defaults: D, props: P): D & P & Partial<P> {
-	return deepMerge(defaults, props) as D & P & Partial<P>
-}
-
-
-export const makeComponent = <DP, DS>(args:
-	{
-		defaultProps?: () => DP,
-		defaultState?: (props: DP) => DS
-	}) => {
-	return <P extends Obj = Obj, M extends Message = Message, S = {}>(
-		comp: (
-			props: PropsExtended<P, M>,
-			mergedProps: MergedPropsExt<P, M, DP>,
-			stateCache: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		) => JSX.Element) => {
-
-		return Object.assign(comp, { ...args })
-	}
-}
-
-export function makeComponent1<P extends Obj, M extends Message = Message, S = unknown>() {
-	return <DP extends Partial<P>, DS extends Partial<S>>(
-		comp: (
-			_: PropsExtended<P, M>,
-			props: MergedPropsExt<P, M, DP>,
-			state: DS & S & Partial<S> & { setState: (delta: Partial<S>) => void }
-		) => JSX.Element,
-
-		opts: {
-			defaultProps: () => DP,
-			defaultState: (props?: P) => DS,
-			hashProps?: (props: P) => string,
-			stateChangeCallback?: (delta: Partial<S>) => Promise<void>
-
-		}) => {
-
-		const r: ComponentExtended<P, M, S, DP, DS> = Object.assign(comp, { ...opts })
-		return r
-	}
-}
-
-/** Turns a vNode representing a component into a vNode representing an intrisic (HTML) element */
-const getIntrinsicFromComponentElement = async <Props extends Obj, State extends Obj>(_vnode: VNode) => {
-	const children = [...flatten([_vnode.children]) as JSX.Element[]]
-
-	const component = _vnode.type as Component<Props>
-	const _props = { ..._vnode.props, children: [...children] } as PropsExtended<Props, Message>
-
-	const fullProps = mergeProps("defaultProps" in component && component.defaultProps && typeof component.defaultProps === "function"
-		? component.defaultProps() as PropsExtended<Props, Message>
-		: {} as PropsExtended<Props, Message>,
-		_props
-	)
-
-	const fullState = mergeProps("defaultState" in component && component.defaultState
-		? component.defaultState(fullProps)
-		: {},
-		_stateCache[fullProps.key ?? ""] ?? {}
-	)
-
-	const intrinsicNode = await component(_props, fullProps, {
-		...fullState,
-		setState: async (delta: Partial<State>) => {
-			if (fullProps.key === undefined) {
-				console.error("Cannot change the state of a component without a key")
+				return await (isIntrinsicElt(trace.leafElement)
+					? applyLeafElementAsync(dom, trace.leafElement)
+						.then(_ => Object.assign(_ as DOMElement, { renderTrace: trace }))
+					: (() => {
+						updateDomShallow(dom, trace.leafElement)
+						return Promise.resolve(dom as any as Text)
+					})()
+				)
 			}
 			else {
-				// console.log(`Setting state for key "${_props.key}" to ${JSON.stringify(delta, undefined, 2)}`)
-				_stateCache[fullProps.key] = { ..._stateCache[fullProps.key] ?? {}, ...delta }
+				const replacement = await renderAsync(elt)
+				return (dom.replaceWith(replacement)), replacement
 			}
-
-			// We re-render the element
-			const newElem = await getIntrinsicFromComponentElement<Props, State>(_vnode)
-			const renderedElem = await render(newElem) // If element has children, we don't use the cache system (yet)
-			const elements = document.querySelectorAll(`[key="${_props.key}"]`)
-			if (elements.length > 1) {
-				console.error(`More than 1 component have the key '${_props.key}'`)
-			} else {
-				if (elements[0] !== undefined) {
-					updateDOM(elements[0], renderedElem)
-				}
-				else {
-					console.error(`Cannot update an element after setState: key '${_props.key}' not found in the document`)
-				}
-			}
-
 		}
-	})
-	if (intrinsicNode.props && _vnode.props && _vnode.props.key) {
-		intrinsicNode.props.key = _vnode.props ? _vnode.props.key : undefined
+		else {
+			const newTrace = await updateTraceAsync(dom.renderTrace)
+			if (isIntrinsicElt(newTrace.leafElement))
+				applyLeafElementAsync(dom, newTrace.leafElement)
+			else
+				updateDomShallow(dom, newTrace.leafElement)
+			return Object.assign(dom, { renderingTrace: newTrace })
+		}
 	}
-	return intrinsicNode
+}
+
+/** Invalidate UI */
+export function invalidateUI(invalidatedElementIds?: string[]) {
+	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
+}
+
+/** Convenience method to mount the entry point dom node of a client app */
+export async function mountElement(element: UIElement, container: Element) {
+	/** Library-specific DOM update/refresh interval */
+	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
+
+	const invalidatedElementIds: string[] = []
+	// console.log(`Mounting element ${stringify(element)} on container ${container}...`)
+
+	// eslint-disable-next-line fp/no-let
+	let daemon: NodeJS.Timeout | undefined = undefined
+
+	// console.log(`Setting up UIInvalidated event listener on document`)
+	document.addEventListener('UIInvalidated', async (eventInfo) => {
+		// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
+		const _invalidatedElementIds = (eventInfo as any).detail?.invalidatedElementIds ?? []
+		// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
+		invalidatedElementIds.push(..._invalidatedElementIds)
+		// eslint-disable-next-line fp/no-mutation
+		if (daemon === undefined) daemon = setInterval(async () => {
+			if (invalidatedElementIds.length === 0 && daemon) {
+				clearInterval(daemon)
+				// eslint-disable-next-line fp/no-mutation
+				daemon = undefined
+			}
+			// eslint-disable-next-line fp/no-mutating-methods
+			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
+			const topmostElementIds = getApexElementIds(idsToProcess)
+			await Promise.all(topmostElementIds.map(id => {
+				// console.log(`Updating "${id}" dom element...`)
+				const elt = document.getElementById(id)
+				if (elt)
+					updateAsync(elt as DOMAugmented)
+			}))
+
+		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+	})
+
+	container.replaceChildren(await renderAsync(element))
+}
+
+/** Update children of an DOM element; has side effects */
+export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
+	const eltDomChildren = [...eltDOM.childNodes]
+	const matching = (dom: Node, elt: UIElement) => {
+		return isAugmentedDOM(dom)
+			&& isIntrinsicElt(dom.renderTrace.leafElement)
+			&& "key" in dom.renderTrace.leafElement.props
+			&& isEltProper(elt)
+			&& "key" in elt.props
+			&& dom.renderTrace.leafElement.props.key === elt.props.key
+	}
+
+	const newChildren = await Promise.all(children.map((child, index) => {
+		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child))
+			? eltDomChildren[index]
+			: eltDomChildren.find(c => matching(c, child)) ?? eltDomChildren[index]
+		const updated = matchingNode
+			? updateAsync(matchingNode as DOMAugmented, child)
+			: renderAsync(child)
+
+		return updated
+	}))
+
+	const fragment = new DocumentFragment()
+	fragment.append(...newChildren)
+	eltDOM.replaceChildren(fragment)
+
+	return eltDOM
+}
+
+/** Update input DOM element to reflect input leaf UI element (type, props, and children)
+ * Posibly mutates the input node
+ */
+export async function applyLeafElementAsync(nodeDOM: DOMElement, eltLeaf: IntrinsicElement)/*: Promise<DOMAugmented | Text>*/ {
+	// eslint-disable-next-line fp/no-mutating-assign
+	// const augmentedNode = Object.assign(nodeDOM, { renderTrace: trace })
+	const updatedDOM = updateDomShallow(nodeDOM, eltLeaf)
+
+	return isTextDOM(updatedDOM)
+		? updatedDOM
+		: isIntrinsicElt(eltLeaf) && "children" in eltLeaf
+			? updateChildrenAsync(updatedDOM, getChildren(eltLeaf))
+			: updatedDOM
 }
