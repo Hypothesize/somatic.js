@@ -216,6 +216,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	const matching = (dom: Node, elt: UIElement) => {
 		return isAugmentedDOM(dom)
 			&& isIntrinsicElt(dom.renderTrace.leafElement)
+			&& dom.renderTrace.leafElement.props !== null
 			&& typeof dom.renderTrace.leafElement.props === "object"
 			&& "key" in dom.renderTrace.leafElement.props
 			&& isEltProper(elt)
