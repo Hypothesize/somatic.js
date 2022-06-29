@@ -63,7 +63,9 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 						? attributeConversions[key.toLowerCase()]
 						: key
 					// console.log(`Setting ${effectiveKey} to ${effectiveVal}`)
-					element.setAttribute(effectiveKey, effectiveVal)
+					if(effectiveVal !== undefined){
+						element.setAttribute(effectiveKey, effectiveVal)
+					}
 				}
 				else {
 					// For string values, first set attribute using setAttribute, 
