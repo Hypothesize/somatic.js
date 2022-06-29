@@ -220,6 +220,8 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 			&& typeof dom.renderTrace.leafElement.props === "object"
 			&& "key" in dom.renderTrace.leafElement.props
 			&& isEltProper(elt)
+			&& elt.props !== null
+			&& typeof elt.props === "object"
 			&& "key" in elt.props
 			&& dom.renderTrace.leafElement.props.key === elt.props.key
 	}
