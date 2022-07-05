@@ -17,8 +17,7 @@ export const isTextDOM = (node: Node): node is Text => node.nodeType === Node.TE
 export function setAttribute(element: DOMElement, attributeName: string, attributeValue: any) {
 	try {
 		if (attributeValue === undefined) {
-			console.warn(`Ignored setting ${attributeName} on <${element.tagName}> to undefined`)
-			// return
+			return
 		}
 		if (["CLASSNAME", "CLASS"].includes(attributeName.toUpperCase())) {
 			if (typeof attributeValue === "string") {
