@@ -202,6 +202,16 @@ describe("DOM MODULE", () => {
 			setAttribute(textArea, "readOnly", true)
 			assert(textArea.readOnly)
 		})
+
+		it("ignores non-boolean attributes with undefined values", async () => {
+			const input = document.createElement("input")
+			setAttribute(input, "type", "radio")
+			assert.doesNotThrow(() => {
+				const path = document.createElementNS('http://www.w3.org/2000/svg', "path")
+				setAttribute(path, "id", undefined)
+				console.log(Object.keys(path))
+			})
+		})
 	})
 
 	describe("createDOMShallow", () => {
