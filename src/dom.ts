@@ -16,8 +16,8 @@ export const isTextDOM = (node: Node): node is Text => node.nodeType === Node.TE
 /** Set a property on a DOM element to a value, in a DOM-idiomatic way. */
 export function setAttribute(element: DOMElement, attributeName: string, attributeValue: any) {
 	try {
-		if (attributeValue === undefined) {
-			return
+		if (attributeValue === undefined && !booleanAttributes.includes(attributeName.toUpperCase())) {
+			return // Except boolean attributes, those with undefined values will be ignored
 		}
 		if (["CLASSNAME", "CLASS"].includes(attributeName.toUpperCase())) {
 			if (typeof attributeValue === "string") {
