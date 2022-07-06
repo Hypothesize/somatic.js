@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.1.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.0...v2.1.1) (2022-07-06)
+
+
+### Bug Fixes
+
+* ([#83](https://www.github.com/Hypothesize/somatic.js/issues/83)) Dealing with null props ([190faeb](https://www.github.com/Hypothesize/somatic.js/commit/190faebcc475e2d4e3b935294cf4f1ba5e882b42))
+
 ## [2.1.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.0.1...v2.1.0) (2022-06-07)
 
 
