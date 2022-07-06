@@ -14,37 +14,41 @@ export const isAugmentedDOM = (node: Node): node is DOMAugmented => node.nodeTyp
 export const isTextDOM = (node: Node): node is Text => node.nodeType === Node.TEXT_NODE
 
 /** Set a property on a DOM element to a value, in a DOM-idiomatic way. */
-export function setAttribute(element: DOMElement, key: string, value: any) {
+export function setAttribute(element: DOMElement, attributeName: string, attributeValue: any) {
 	try {
-		if (["CLASSNAME", "CLASS"].includes(key.toUpperCase())) {
-			if (typeof value === "string") {
+		if (attributeValue === undefined && !booleanAttributes.includes(attributeName.toUpperCase())) {
+			console.warn(`Ignored setting ${attributeName} on <${element.tagName}> to undefined`)
+			return
+		}
+		if (["CLASSNAME", "CLASS"].includes(attributeName.toUpperCase())) {
+			if (typeof attributeValue === "string") {
 				// The class attribute is set with setAttribute(). This approach:
 				// avoids manipulating classList, which is cumbersome to reset, and not fully supported in all browsers
 				// avoids setting className directly, since that works better for SVG elements,
 				// avoids a type error, since Typescript (incorrectly) types className as read-only 
-				element.setAttribute('class', value)
+				element.setAttribute('class', attributeValue)
 				//ToDo: Check if setAttributeNS is better to use above and in similar calls
 			}
 			else {
-				console.warn(`Ignored setting class on <${element.tagName}> to non-string value ${value}`)
+				console.warn(`Ignored setting class on <${element.tagName}> to non-string value ${attributeValue}`)
 			}
 		}
-		else if (key.toUpperCase() === 'STYLE') {
-			if (typeof value === 'object') {
+		else if (attributeName.toUpperCase() === 'STYLE') {
+			if (typeof attributeValue === 'object') {
 				// The style (replaced with {} if null) is set with setAttribute(). This approach:
 				// avoids a type error with setting style directly, since Typescript (incorrectly) types style as a read-only 
 				// avoids updating individual style properties directly, since the value argument should entirely replace any previous styles, and it is cumbersome to remove existing syle properties 
 				// avoids merging the incoming value with existing styles, since the value argument should entirely replace any previous styles
-				element.setAttribute('style', stringifyStyle(value ?? {}))
+				element.setAttribute('style', stringifyStyle(attributeValue ?? {}))
 				// console.log(`Style property on <${element.tagName}> set to '${stringifyStyle(value ?? {})}'`)
 			}
 			else {
-				console.warn(`Ignored setting style on <${element.tagName}> to non-object value ${value}`)
+				console.warn(`Ignored setting style on <${element.tagName}> to non-object value ${attributeValue}`)
 			}
 		}
-		else if (typeof value === 'function' && isEventKey(key)) {
+		else if (typeof attributeValue === 'function' && isEventKey(attributeName)) {
 			// const eventName = eventNames[key.toUpperCase() as keyof typeof eventNames];
-			(element as any)[key.toLowerCase()] = value
+			(element as any)[attributeName.toLowerCase()] = attributeValue
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			// element.addEventListener(eventName, value as any)
 			// element.addEventListener("unload", () => {
@@ -53,23 +57,22 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 			// })
 		}
 		else {
-			const effectiveVal = booleanAttributes.includes(key.toUpperCase())
-				? [undefined, null, false].includes(value) ? false : true
-				: value
+			const effectiveVal = booleanAttributes.includes(attributeName.toUpperCase())
+				? [undefined, null, false].includes(attributeValue) ? false : true
+				: attributeValue
 
 			try {
 				if (svgTags.includes(element.tagName.toUpperCase()) && !["function", "object"].includes(typeof effectiveVal)) {
-					const effectiveKey = keys(attributeConversions).includes(key.toLowerCase())
-						? attributeConversions[key.toLowerCase()]
-						: key
-					// console.log(`Setting ${effectiveKey} to ${effectiveVal}`)
+					const effectiveKey = keys(attributeConversions).includes(attributeName.toLowerCase())
+						? attributeConversions[attributeName.toLowerCase()]
+						: attributeName
 					element.setAttribute(effectiveKey, effectiveVal)
 				}
 				else {
 					// For string values, first set attribute using setAttribute, 
 					// for a few cases not handled properly by the assignment that follows
 					if (typeof effectiveVal === "string")
-						element.setAttribute(key, effectiveVal)
+						element.setAttribute(attributeName, effectiveVal);
 
 					// The <key> property on the element is set directly to <effectiveVal>. This approach works:
 					// for setting 'CHECKED', 'VALUE', and 'HTMLFOR' properties;
@@ -77,18 +80,16 @@ export function setAttribute(element: DOMElement, key: string, value: any) {
 					// for setting function values which are not event handlers.
 					// It also avoids using setAttribute to set the property to a string form of the value
 					// We assume the input property key is in the correct case as specified in the typings, * E.g., preserveAspectRatio, viewBox, fillRule, readOnly, etc
-					if (effectiveVal !== undefined) {
-						(element as any)[key] = effectiveVal
-					}
+					(element as any)[attributeName] = effectiveVal
 				}
 			}
 			catch (err) {
-				console.error(`Error setting "${key}" on <${element.tagName}> to "${JSON.stringify(value, undefined, 2)}:\n${err}`)
+				console.error(`Error setting "${attributeName}" on <${element.tagName}> to "${JSON.stringify(attributeValue, undefined, 2)}:\n${err}`)
 			}
 		}
 	}
 	catch (e) {
-		console.error(`Error setting "${key}" on <${element.tagName}> to "${JSON.stringify(value, undefined, 2)}:\n${e}`)
+		console.error(`Error setting "${attributeName}" on <${element.tagName}> to "${JSON.stringify(attributeValue, undefined, 2)}:\n${e}`)
 	}
 }
 
