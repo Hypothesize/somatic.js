@@ -7,8 +7,6 @@ import { createElement, mergeProps, makeComponent, makeComponent1 } from '../cor
 import { Component, HtmlProps, PanelProps, ButtonHTMLAttributes, CSSProperties } from '../types'
 import { StackPanel } from './stack-panel'
 
-export const enum BtnMode { Normal = "normal", Selected = "selected", Disabled = "disabled" }
-
 type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
 	/** Icon component to be placed next/before the title of the button */
 	icon?: JSX.Element
@@ -21,9 +19,6 @@ type Props = Partial<HtmlProps & ButtonHTMLAttributes<any>> & {
 
 	/** how colors should change on hover (or selection) */
 	hoverEffect?: "darken" | "invert"
-
-	/** normal disabled or selected */
-	mode?: BtnMode
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 type State = {}
@@ -50,7 +45,6 @@ export const CommandBox = makeComponent({
 		},
 
 		iconPlacement: "before" as const,
-		mode: BtnMode.Normal,
 		postMsgAsync: () => { }
 	}),
 	defaultState: (props) => ({})
@@ -59,7 +53,6 @@ export const CommandBox = makeComponent({
 		orientation,
 		iconPlacement, icon,
 		style, hoverEffect,
-		mode,
 		postMsgAsync,
 		children,
 		...htmlProps
