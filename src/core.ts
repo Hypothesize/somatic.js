@@ -90,7 +90,7 @@ export async function render<Props extends Obj>(vnode?: Primitive | Object | VNo
 										if (!shouldNotTrigger && intendedTarget) {
 											// Execute the callback with the context set to the found element
 											// jQuery goes way further, it even has it's own event object
-											(propValue as (e: Event) => unknown).call(intendedTarget, e)
+											(propValue as (ev: Event) => unknown).call(intendedTarget, e)
 										}
 									}
 								}, true)
