@@ -33,7 +33,7 @@ export const HoverBox = makeComponent({})<Props>(async (props) => {
 
 	const className__ = idProvider.next()
 	// eslint-disable-next-line fp/no-let
-	let child = children ? await first(children) : undefined
+	let child: any = children ? await first(children) : undefined
 	if (child && "props" in child) {
 		// eslint-disable-next-line fp/no-mutation
 		child = {
