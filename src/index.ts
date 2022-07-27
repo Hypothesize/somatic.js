@@ -7,7 +7,7 @@ export * from './components'
 import * as Somatic from "./types"
 declare global {
 	namespace JSX {
-		type Element = Promise<Somatic.VNode>
+		type Element = any
 
 		interface IntrinsicElements {
 			html: Somatic.HtmlHTMLAttributes<HTMLHtmlElement>,
