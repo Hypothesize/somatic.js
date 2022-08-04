@@ -170,42 +170,46 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
+const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
+const INVALIDATED_ELEMENT_IDS: string[] = []
+
+const InvalidationHandler = async (eventInfo: Event) => {
+	let daemon: NodeJS.Timeout | undefined = undefined
+
+	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
+	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
+	// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
+	INVALIDATED_ELEMENT_IDS.push(..._invalidatedElementIds)
+	// eslint-disable-next-line fp/no-mutation
+	if (daemon === undefined) daemon = setInterval(async () => {
+		if (INVALIDATED_ELEMENT_IDS.length === 0 && daemon) {
+			clearInterval(daemon)
+			// eslint-disable-next-line fp/no-mutation
+			daemon = undefined
+		}
+		// eslint-disable-next-line fp/no-mutating-methods
+		const idsToProcess = INVALIDATED_ELEMENT_IDS.splice(0, INVALIDATED_ELEMENT_IDS.length)
+		const topmostElementIds = getApexElementIds(idsToProcess)
+		await Promise.all(topmostElementIds.map(id => {
+			// console.log(`Updating "${id}" dom element...`)
+			const elt = document.getElementById(id)
+			if (elt)
+				updateAsync(elt as DOMAugmented)
+		}))
+
+	}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+}
+
 /** Convenience method to mount the entry point dom node of a client app */
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
-	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 
-	const invalidatedElementIds: string[] = []
 	// console.log(`Mounting element ${stringify(element)} on container ${container}...`)
 
 	// eslint-disable-next-line fp/no-let
-	let daemon: NodeJS.Timeout | undefined = undefined
 
 	// console.log(`Setting up UIInvalidated event listener on document`)
-	document.addEventListener('UIInvalidated', async (eventInfo) => {
-		// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-		const _invalidatedElementIds = (eventInfo as any).detail?.invalidatedElementIds ?? []
-		// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
-		invalidatedElementIds.push(..._invalidatedElementIds)
-		// eslint-disable-next-line fp/no-mutation
-		if (daemon === undefined) daemon = setInterval(async () => {
-			if (invalidatedElementIds.length === 0 && daemon) {
-				clearInterval(daemon)
-				// eslint-disable-next-line fp/no-mutation
-				daemon = undefined
-			}
-			// eslint-disable-next-line fp/no-mutating-methods
-			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-			const topmostElementIds = getApexElementIds(idsToProcess)
-			await Promise.all(topmostElementIds.map(id => {
-				// console.log(`Updating "${id}" dom element...`)
-				const elt = document.getElementById(id)
-				if (elt)
-					updateAsync(elt as DOMAugmented)
-			}))
-
-		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
-	})
+	document.addEventListener('UIInvalidated', InvalidationHandler)
 
 	container.replaceChildren(await renderAsync(element))
 }
