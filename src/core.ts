@@ -241,9 +241,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
-	const fragment = new DocumentFragment()
-	fragment.append(...newChildren)
-	eltDOM.replaceChildren(fragment)
+    newChildren.forEach(child => eltDOM.appendChild(child))
 
 	return eltDOM
 }
