@@ -242,6 +242,17 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
     newChildren.forEach(child => eltDOM.appendChild(child))
+        // const fragment = new DocumentFragment();
+        // fragment.append(...newChildren);
+        // eltDOM.replaceChildren(fragment);
+
+        eltDOM.replaceChildren("")
+        newChildren.forEach(child => {
+            eltDOM.append(child)
+        });
+        // eltDOM.appendChild(fragment);
+        // eltDOM.append(fragment);
+
 
 	return eltDOM
 }

@@ -77,7 +77,7 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 
 					// We set boolean properties when they are true
 					if (effectiveVal === true){
-						element.setAttribute(attributeName, "");
+						element.setAttribute(attributeName, "")
 					}
 
 					// The <key> property on the element is set directly to <effectiveVal>. This approach works:
