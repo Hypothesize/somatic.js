@@ -171,6 +171,7 @@ describe("DOM MODULE", () => {
 
 		it("should set boolean/no-value attributes properly", async () => {
 			const input = document.createElement("input")
+			const option = document.createElement("option")
 			setAttribute(input, "type", "radio")
 
 			setAttribute(input, "DISABLED", "disabled")
@@ -201,6 +202,12 @@ describe("DOM MODULE", () => {
 			assert(!textArea.readOnly) // // Should fail since "readonly" not in the proper case
 			setAttribute(textArea, "readOnly", true)
 			assert(textArea.readOnly)
+
+			setAttribute(option, "selected", true)
+			assert(option.selected, "Option is selected")
+
+			setAttribute(option, "selected", false)
+			assert(!option.selected, "Option is not selected")
 		})
 	})
 
