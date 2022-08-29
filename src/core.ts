@@ -239,7 +239,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
-	eltDOM.replaceChildren("")
+	eltDOM.textContent = ""
 	newChildren.forEach(child => {
 		eltDOM.append(child)
 	})
