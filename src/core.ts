@@ -239,11 +239,10 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
-    newChildren.forEach(child => eltDOM.appendChild(child))
-        eltDOM.replaceChildren()
-        newChildren.forEach(child => {
-            eltDOM.append(child)
-        })
+	eltDOM.replaceChildren()
+	newChildren.forEach(child => {
+		eltDOM.append(child)
+	})
 	return eltDOM
 }
 
