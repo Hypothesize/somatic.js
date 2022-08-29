@@ -189,14 +189,12 @@ const InvalidationHandler = async (eventInfo: Event) => {
 		}
 		// eslint-disable-next-line fp/no-mutating-methods
 		const idsToProcess = INVALIDATED_ELEMENT_IDS.splice(0, INVALIDATED_ELEMENT_IDS.length)
-		const topmostElementIds = getApexElementIds(idsToProcess)
-		await Promise.all(topmostElementIds.map(id => {
+		await Promise.all(idsToProcess.map(id => {
 			// console.log(`Updating "${id}" dom element...`)
 			const elt = document.getElementById(id)
 			if (elt)
 				updateAsync(elt as DOMAugmented)
 		}))
-
 	}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
 }
 
@@ -242,16 +240,10 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
     newChildren.forEach(child => eltDOM.appendChild(child))
-        // const fragment = new DocumentFragment();
-        // fragment.append(...newChildren);
-        // eltDOM.replaceChildren(fragment);
-
         eltDOM.replaceChildren()
         newChildren.forEach(child => {
             eltDOM.append(child)
         })
-        // eltDOM.appendChild(fragment);
-        // eltDOM.append(fragment);
 	return eltDOM
 }
 

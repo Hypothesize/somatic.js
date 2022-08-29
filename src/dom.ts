@@ -71,13 +71,8 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 				else {
 					// For string values, first set attribute using setAttribute, 
 					// for a few cases not handled properly by the assignment that follows
-					if (typeof effectiveVal === "string"){
+					if (typeof effectiveVal === "string" || effectiveVal === true){
 						element.setAttribute(attributeName, effectiveVal)
-					}
-
-					// We set boolean properties when they are true
-					if (effectiveVal === true){
-						element.setAttribute(attributeName, "")
 					}
 
 					// The <key> property on the element is set directly to <effectiveVal>. This approach works:
