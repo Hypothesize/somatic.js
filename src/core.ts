@@ -239,6 +239,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
+	// eslint-disable-next-line require-atomic-updates
 	eltDOM.textContent = ""
 	newChildren.forEach(child => {
 		eltDOM.append(child)
