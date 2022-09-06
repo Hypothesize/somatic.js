@@ -173,7 +173,7 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 const INVALIDATED_ELEMENT_IDS: string[] = []
 
-const InvalidationHandler = async (eventInfo: Event) => {
+const invalidationHandler = async (eventInfo: Event) => {
 	let daemon: NodeJS.Timeout | undefined = undefined
 
 	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
@@ -207,7 +207,7 @@ export async function mountElement(element: UIElement, container: Element) {
 	// eslint-disable-next-line fp/no-let
 
 	// console.log(`Setting up UIInvalidated event listener on document`)
-	document.addEventListener('UIInvalidated', InvalidationHandler)
+	document.addEventListener('UIInvalidated', invalidationHandler)
 
 	container.replaceChildren(await renderAsync(element))
 }
