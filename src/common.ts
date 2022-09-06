@@ -194,7 +194,8 @@ export const booleanAttributes = [
 	"DISABLED",
 	"CHECKED",
 	"READONLY",
-	"AUTOFOCUS"
+	"AUTOFOCUS",
+	"SELECTED"
 ]
 
 /** Attribute name conversions when passed to DOM setAttribute or rendered as HTML
