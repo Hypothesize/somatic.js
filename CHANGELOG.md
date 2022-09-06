@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.1.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.1...v2.1.2) (2022-09-06)
+
+
+### Bug Fixes
+
+* ([#87](https://www.github.com/Hypothesize/somatic.js/issues/87)) Rendering fixes ([d345cf6](https://www.github.com/Hypothesize/somatic.js/commit/d345cf657182cdbb304902aace75ac4708bc22b9))
+
 ### [2.1.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.0...v2.1.1) (2022-07-06)
 
 
