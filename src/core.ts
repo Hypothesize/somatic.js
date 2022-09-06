@@ -201,14 +201,8 @@ const invalidationHandler = async (eventInfo: Event) => {
 /** Convenience method to mount the entry point dom node of a client app */
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
-
-	// console.log(`Mounting element ${stringify(element)} on container ${container}...`)
-
-	// eslint-disable-next-line fp/no-let
-
-	// console.log(`Setting up UIInvalidated event listener on document`)
 	document.addEventListener('UIInvalidated', invalidationHandler)
-
+	
 	container.replaceChildren(await renderAsync(element))
 }
 
