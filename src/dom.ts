@@ -71,7 +71,7 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 				else {
 					// For string values, first set attribute using setAttribute, 
 					// for a few cases not handled properly by the assignment that follows
-					if (typeof effectiveVal === "string" || effectiveVal === true){
+					if (typeof effectiveVal === "string" || effectiveVal === true) {
 						element.setAttribute(attributeName, effectiveVal)
 					}
 
@@ -99,7 +99,9 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
  * @returns A text DOM element when passed a primitive value
  */
 export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragment | Text {
-	if (isEltProper(eltUI)) {
+	if (isIntrinsicElt(eltUI)) {
+		// if (typeof eltUI.type !== "string") { throw new Error("Blarg") }
+
 		const dom = svgTags.includes(eltUI.type.toUpperCase())
 			? document.createElementNS('http://www.w3.org/2000/svg', eltUI.type)
 			: eltUI.type === "" ? document.createDocumentFragment()
