@@ -171,22 +171,16 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	const eltDomChildren = [...eltDOM.childNodes]
 	const matching = (dom: Node, elt: UIElement) => {
-		return isAugmentedDOM(dom)
-			&& isIntrinsicElt(dom.renderTrace.leafElement)
-			&& dom.renderTrace.leafElement.props !== null
-			&& typeof dom.renderTrace.leafElement.props === "object"
-			&& "key" in dom.renderTrace.leafElement.props
-			&& isEltProper(elt)
-			&& elt.props !== null
-			&& typeof elt.props === "object"
-			&& "key" in elt.props
-			&& dom.renderTrace.leafElement.props.key === elt.props.key
+		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement) ? dom.renderTrace?.leafElement?.props?.key : undefined
+		const eltKey = isEltProper(elt) ? elt?.props?.key : undefined
+
+		return domKey === eltKey
 	}
 
 	const newChildren = await Promise.all(children.map((child, index) => {
 		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child))
 			? eltDomChildren[index]
-			: eltDomChildren.find(c => matching(c, child)) ?? eltDomChildren[index]
+			: eltDomChildren.find(c => matching(c, child))
 		const updated = matchingNode
 			? updateAsync(matchingNode as DOMAugmented, child)
 			: renderAsync(child)
@@ -220,7 +214,7 @@ export async function applyLeafElementAsync(nodeDOM: DOMElement, eltLeaf: Intrin
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
 	document.addEventListener('UIInvalidated', invalidationHandler)
-	
+
 	container.replaceChildren(await renderAsync(element))
 }
 
@@ -231,7 +225,7 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 
 let __somatic_daemon__: NodeJS.Timeout | undefined = undefined
 
-async function invalidationHandler (eventInfo: Event) {
+async function invalidationHandler(eventInfo: Event) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
