@@ -162,7 +162,7 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 				applyLeafElementAsync(dom, newTrace.leafElement)
 			else
 				updateDomShallow(dom, newTrace.leafElement)
-			return Object.assign(dom, { renderingTrace: newTrace })
+			return Object.assign(dom, { renderTrace: newTrace })
 		}
 	}
 }
@@ -170,19 +170,25 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 /** Update children of an DOM element; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	const eltDomChildren = [...eltDOM.childNodes]
-	const matching = (dom: Node, elt: UIElement) => {
-		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement) ? dom.renderTrace?.leafElement?.props?.key : undefined
-		const eltKey = isEltProper(elt) ? elt?.props?.key : undefined
+	const matching = (dom: Node, elt: UIElement, sameIndex: boolean) => {
+		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
+			? dom.renderTrace?.leafElement?.props?.key
+			: undefined
+		const eltKey = isEltProper(elt)
+			? elt?.props?.key
+			: undefined
 
-		return domKey === eltKey
+		return sameIndex
+			? domKey === eltKey
+			: domKey && eltKey && domKey === eltKey
 	}
 
 	const newChildren = await Promise.all(children.map((child, index) => {
-		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child))
+		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child, true))
 			? eltDomChildren[index]
-			: eltDomChildren.find(c => matching(c, child))
+			: eltDomChildren.find((c, i) => matching(c, child, i === index))
 		const updated = matchingNode
-			? updateAsync(matchingNode as DOMAugmented, child)
+			? updateAsync(matchingNode.cloneNode(true) as DOMAugmented, child)
 			: renderAsync(child)
 
 		return updated
