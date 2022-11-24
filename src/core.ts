@@ -227,7 +227,7 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-let __somatic_daemon__: NodeJS.Timeout | undefined = undefined
+let somaticDaemon: NodeJS.Timeout | undefined = undefined
 
 async function invalidationHandler(eventInfo: Event) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
@@ -240,11 +240,11 @@ async function invalidationHandler(eventInfo: Event) {
 
 	/** Creating the daemon if it doesn't exist yet */
 	// eslint-disable-next-line fp/no-mutation
-	if (__somatic_daemon__ === undefined) __somatic_daemon__ = setInterval(async () => {
-		if (invalidatedElementIds.length === 0 && __somatic_daemon__) {
-			clearInterval(__somatic_daemon__)
+	if (somaticDaemon === undefined) somaticDaemon = setInterval(async () => {
+		if (invalidatedElementIds.length === 0 && somaticDaemon) {
+			clearInterval(somaticDaemon)
 			// eslint-disable-next-line fp/no-mutation
-			__somatic_daemon__ = undefined
+			somaticDaemon = undefined
 		}
 		// eslint-disable-next-line fp/no-mutating-methods
 		const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
