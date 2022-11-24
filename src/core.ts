@@ -227,24 +227,22 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-let somaticDaemon: NodeJS.Timeout | undefined = undefined
-
-async function invalidationHandler(eventInfo: Event) {
+async function invalidationHandler (eventInfo: Event) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
-	/** Adding new elements to the stack to be updated */
+	let daemon: NodeJS.Timeout | undefined = undefined
+
+	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
 	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
 	// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
 	invalidatedElementIds.push(..._invalidatedElementIds)
-
-	/** Creating the daemon if it doesn't exist yet */
 	// eslint-disable-next-line fp/no-mutation
-	if (somaticDaemon === undefined) somaticDaemon = setInterval(async () => {
-		if (invalidatedElementIds.length === 0 && somaticDaemon) {
-			clearInterval(somaticDaemon)
+	if (daemon === undefined) daemon = setInterval(async () => {
+		if (invalidatedElementIds.length === 0 && daemon) {
+			clearInterval(daemon)
 			// eslint-disable-next-line fp/no-mutation
-			somaticDaemon = undefined
+			daemon = undefined
 		}
 		// eslint-disable-next-line fp/no-mutating-methods
 		const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
