@@ -114,8 +114,6 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 		switch (true) {
 			case (!isEltProper(_elt)):
 				return false
-			case (!isAugmentedDOM(_dom)):
-				return false
 			case (isIntrinsicElt(_elt) && _dom.renderTrace.componentElts.length > 0):
 				return false
 			case (isComponentElt(_elt) && _dom.renderTrace.componentElts.length === 0):
@@ -188,7 +186,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 			? eltDomChildren[index]
 			: eltDomChildren.find((c, i) => matching(c, child, i === index))
 		const updated = matchingNode
-			? updateAsync(matchingNode.cloneNode(true) as DOMAugmented, child)
+			? updateAsync(matchingNode as DOMAugmented, child)
 			: renderAsync(child)
 
 		return updated
