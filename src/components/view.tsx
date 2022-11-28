@@ -12,7 +12,7 @@
 import * as cuid from "cuid"
 import { ArgsType } from "@sparkwave/standard"
 import { createElement, invalidateUI } from '../core'
-import { PanelProps, HtmlProps, Component, CSSProperties, } from '../types'
+import { PanelProps, HtmlProps, Component, CSSProperties, Children } from '../types'
 import { StackPanel } from './stack-panel'
 
 // interface SelectionEvent extends SyntheticEvent { selectedIndex: number }
@@ -41,7 +41,7 @@ export type ViewProps<T = unknown> = HtmlProps & PanelProps & {
 	// onArrange?: (eventData: { oldIndex: number, newIndex: number }) => void
 }
 
-export async function* View<T>(props: ArgsType<Component<ViewProps<T>>>[0]): AsyncGenerator<JSX.Element, JSX.Element, typeof props> {
+export async function* View<T extends Children | undefined>(props: ArgsType<Component<ViewProps<T>>>[0]): AsyncGenerator<JSX.Element, JSX.Element, typeof props> {
 	const defaultProps = {
 		id: cuid(),
 		selectedIndex: 0,
