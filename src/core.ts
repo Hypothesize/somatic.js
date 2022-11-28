@@ -185,7 +185,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child, true))
 			? eltDomChildren[index]
 			: eltDomChildren.find((c, i) => matching(c, child, i === index))
-		const updated = matchingNode
+		const updated = matchingNode && isAugmentedDOM(matchingNode)
 			? updateAsync(matchingNode as DOMAugmented, child)
 			: renderAsync(child)
 
