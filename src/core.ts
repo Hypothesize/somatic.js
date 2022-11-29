@@ -160,7 +160,7 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 				applyLeafElementAsync(dom, newTrace.leafElement)
 			else
 				updateDomShallow(dom, newTrace.leafElement)
-			return Object.assign(dom, { renderingTrace: newTrace })
+			return Object.assign(dom, { renderTrace: newTrace })
 		}
 	}
 }
@@ -168,24 +168,24 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 /** Update children of an DOM element; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	const eltDomChildren = [...eltDOM.childNodes]
-	const matching = (dom: Node, elt: UIElement) => {
-		return isAugmentedDOM(dom)
-			&& isIntrinsicElt(dom.renderTrace.leafElement)
-			&& dom.renderTrace.leafElement.props !== null
-			&& typeof dom.renderTrace.leafElement.props === "object"
-			&& "key" in dom.renderTrace.leafElement.props
-			&& isEltProper(elt)
-			&& elt.props !== null
-			&& typeof elt.props === "object"
-			&& "key" in elt.props
-			&& dom.renderTrace.leafElement.props.key === elt.props.key
+	const matching = (dom: Node, elt: UIElement, sameIndex: boolean) => {
+		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
+			? dom.renderTrace?.leafElement?.props?.key
+			: undefined
+		const eltKey = isEltProper(elt)
+			? elt?.props?.key
+			: undefined
+
+		return sameIndex
+			? domKey === eltKey
+			: domKey && eltKey && domKey === eltKey
 	}
 
 	const newChildren = await Promise.all(children.map((child, index) => {
-		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child))
+		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child, true))
 			? eltDomChildren[index]
-			: eltDomChildren.find(c => matching(c, child)) ?? eltDomChildren[index]
-		const updated = matchingNode
+			: eltDomChildren.find((c, i) => matching(c, child, i === index))
+		const updated = matchingNode && isAugmentedDOM(matchingNode)
 			? updateAsync(matchingNode as DOMAugmented, child)
 			: renderAsync(child)
 
@@ -218,7 +218,7 @@ export async function applyLeafElementAsync(nodeDOM: DOMElement, eltLeaf: Intrin
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
 	document.addEventListener('UIInvalidated', invalidationHandler)
-	
+
 	container.replaceChildren(await renderAsync(element))
 }
 
