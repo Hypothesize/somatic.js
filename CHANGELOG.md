@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.1.3](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.2...v2.1.3) (2022-11-29)
+
+
+### Bug Fixes
+
+* ([#90](https://www.github.com/Hypothesize/somatic.js/issues/90)) Updates to the dom matching function ([273037f](https://www.github.com/Hypothesize/somatic.js/commit/273037f39ebd8e536cb0328517b891e6a05386b7))
+
 ### [2.1.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.1...v2.1.2) (2022-09-06)
 
 
