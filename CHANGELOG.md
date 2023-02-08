@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.3...v2.2.0) (2023-02-08)
+
+
+### Features
+
+* (92) Create SVG title tags as SVG elements ([1a8ae04](https://www.github.com/Hypothesize/somatic.js/commit/1a8ae0413ff247eae933351cde0e0aab03aa8682)), closes [#92](https://www.github.com/Hypothesize/somatic.js/issues/92)
+
 ### [2.1.3](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.2...v2.1.3) (2022-11-29)
 
 
