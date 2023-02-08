@@ -159,7 +159,7 @@ export const svgTags = [
 
 	"TEXT",
 	"TEXTPATH",
-	//"TITLE",
+	"TITLE",
 	"TSPAN",
 
 	"UNKNOWN",
