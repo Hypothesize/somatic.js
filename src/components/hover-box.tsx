@@ -1,7 +1,3 @@
-/* eslint-disable fp/no-mutation */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as cuid from 'cuid'
 import { deepMerge, first } from '@sparkwave/standard'
 import { createElement } from '../core'
@@ -23,7 +19,6 @@ export const HoverBox: Component<HoverBoxProps> = (props) => {
 
 	const className__ = cuid()
 
-	// eslint-disable-next-line fp/no-let
 	let child = normalizeChildren(children)[0]
 	if (isEltProper(child)) {
 		child = {

@@ -1,6 +1,3 @@
-/* eslint-disable brace-style */
-/* eslint-disable fp/no-mutation */
-/* eslint-disable @typescript-eslint/ban-types */
 import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync } from "@sparkwave/standard"
 import {
 	Children,
@@ -80,7 +77,6 @@ export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace
 		return { componentElts: [], leafElement: eltUI ?? "" }
 	}
 
-	// eslint-disable-next-line fp/no-mutation
 	// (self as any).leafElement = ret.leafElement
 	// console.assert(ret.leafElement !== undefined, `Leaf elt in traceToLeafAsync return is misisng`)
 	// console.log(`Returning leaf elt from traceToLeafAsync: ${ret.leafElement}`)

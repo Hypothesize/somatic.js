@@ -1,16 +1,3 @@
-/* eslint-disable fp/no-mutating-assign */
-/* eslint-disable brace-style */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/ban-types */
-// import * as chalk from "chalk"
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-
-// import *  as morphdom from "morphdom"
-// const morphdom = require("morphdom")
-// const x = import("morpdom")
-
-// import * as cuid from "cuid"
 import { String, hasValue } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
@@ -203,7 +190,6 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
  * Posibly mutates the input node
  */
 export async function applyLeafElementAsync(nodeDOM: DOMElement, eltLeaf: IntrinsicElement)/*: Promise<DOMAugmented | Text>*/ {
-	// eslint-disable-next-line fp/no-mutating-assign
 	// const augmentedNode = Object.assign(nodeDOM, { renderTrace: trace })
 	const updatedDOM = updateDomShallow(nodeDOM, eltLeaf)
 
@@ -227,7 +213,7 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-async function invalidationHandler (eventInfo: Event) {
+async function invalidationHandler(eventInfo: Event) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
@@ -235,16 +221,12 @@ async function invalidationHandler (eventInfo: Event) {
 
 	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
 	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
-	// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
 	invalidatedElementIds.push(..._invalidatedElementIds)
-	// eslint-disable-next-line fp/no-mutation
 	if (daemon === undefined) daemon = setInterval(async () => {
 		if (invalidatedElementIds.length === 0 && daemon) {
 			clearInterval(daemon)
-			// eslint-disable-next-line fp/no-mutation
 			daemon = undefined
 		}
-		// eslint-disable-next-line fp/no-mutating-methods
 		const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
 		await Promise.all(idsToProcess.map(id => {
 			// console.log(`Updating "${id}" dom element...`)

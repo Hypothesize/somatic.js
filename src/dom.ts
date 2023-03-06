@@ -1,6 +1,3 @@
-/* eslint-disable fp/no-mutation */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/ban-types */
 import { keys, skip, hasValue, indexesOf, first } from "@sparkwave/standard"
 
 import { stringifyStyle } from "./html"
@@ -49,7 +46,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 		else if (typeof attributeValue === 'function' && isEventKey(attributeName)) {
 			// const eventName = eventNames[key.toUpperCase() as keyof typeof eventNames];
 			(element as any)[attributeName.toLowerCase()] = attributeValue
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			// element.addEventListener(eventName, value as any)
 			// element.addEventListener("unload", () => {
 			// 	console.warn(`onloading element ${element}...`)
@@ -160,13 +156,10 @@ function detachedUpdate(dom: Node, fn: (dom: Node) => any) {
 /** Get ids of peak DOM elements among a list of elements in a tree */
 export function getApexElementIds(elementIds: string[]): string[] {
 	return elementIds.filter(id => {
-		// eslint-disable-next-line fp/no-let
 		let parent = document.getElementById(id)?.parentElement
-		// eslint-disable-next-line fp/no-loops
 		while (parent) {
 			if (elementIds.includes(parent.id))
 				return false
-			// eslint-disable-next-line fp/no-mutation
 			parent = parent.parentElement
 		}
 		return true
@@ -174,13 +167,10 @@ export function getApexElementIds(elementIds: string[]): string[] {
 }
 export function getApexElements(elements: DOMElement[]): DOMElement[] {
 	return elements.filter(elt => {
-		// eslint-disable-next-line fp/no-let
 		let parent = elt.parentElement
-		// eslint-disable-next-line fp/no-loops
 		while (parent) {
 			if (elements.includes(parent))
 				return false
-			// eslint-disable-next-line fp/no-mutation
 			parent = parent.parentElement
 		}
 		return true

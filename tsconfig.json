@@ -24,6 +24,7 @@
 		"experimentalDecorators": true,
 		"strict": true,
 		"strictNullChecks": true,
+		"skipDefaultLibCheck": true,
 		"skipLibCheck": true,
 		"incremental": true,
 		"outDir": "./dist"
@@ -31,5 +32,8 @@
 	"include": [
 		"./src",
 	],
-	"exclude": []
+	"exclude": [
+		"./node_modules",
+		"node_modules"
+	]
 }

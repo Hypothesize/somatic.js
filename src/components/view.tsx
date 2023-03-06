@@ -1,12 +1,3 @@
-/* eslint-disable prefer-const */
-/* eslint-disable fp/no-let */
-/* eslint-disable fp/no-mutation */
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable brace-style */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 // import { deepMerge, noop, promisify } from '@sparkwave/standard'
 import * as cuid from "cuid"

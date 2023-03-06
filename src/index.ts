@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-namespace */
 
 import {
 	UIElement,
@@ -42,7 +39,7 @@ declare global {
 
 		/** This interface declaration is important for type-checking JSX children properly */
 		interface ElementChildrenAttribute {
-			children: {}; // specify children name to use
+			children: {} // specify children name to use
 		}
 
 		type Intrinsic<T> = T & {
@@ -94,7 +91,7 @@ declare global {
 			/** Represents a portion of a document whose content is only indirectly related to the document's main content. 
 			 * Asides are frequently presented as sidebars or call-out boxes. 
 			 */
-			aside: HTMLAttributes<HTMLElement>;
+			aside: HTMLAttributes<HTMLElement>
 			/** Represents introductory content, typically a group of introductory or navigational aids. 
 			 * It may contain some heading elements but also a logo, a search form, an author name, and other elements. 
 			 */
@@ -318,10 +315,10 @@ declare global {
 			 * You can use <video> for audio content as well, but the audio element may provide a more appropriate user experience.
 			 */
 			video: Intrinsic<HTMLAttributes<HTMLVideoElement> & {
-				height?: number | string;
-				width?: number | string;
-				controls?: boolean;
-				poster?: string;
+				height?: number | string
+				width?: number | string
+				controls?: boolean
+				poster?: string
 			}>
 			/** Used as a child of the media elements: audio and video. 
 			 * It lets you specify timed text tracks (or time-based data), for example to automatically handle subtitles. 
@@ -336,7 +333,7 @@ declare global {
 			/** Embeds external content at the specified point in the document. 
 			 * This content is provided by an external application or other source of interactive content such as a browser plug-in. 
 			 */
-			embed: HTMLAttributes<HTMLElement>;
+			embed: HTMLAttributes<HTMLElement>
 			/** Represents a nested browsing context, embedding another HTML page into the current one. */
 			iframe: HTMLAttributes<HTMLElement>
 			/** Represents an external resource, which can be treated as an image, a nested browsing context, or a resource to be handled by a plugin. */
@@ -379,9 +376,9 @@ declare global {
 
 			//#region Interactive elements
 			details: HTMLAttributes<HTMLElement>
-			dialog: HTMLAttributes<HTMLElement>;
-			menu: HTMLAttributes<HTMLElement>;
-			summary: HTMLAttributes<HTMLElement>;
+			dialog: HTMLAttributes<HTMLElement>
+			menu: HTMLAttributes<HTMLElement>
+			summary: HTMLAttributes<HTMLElement>
 			//#endregion
 
 			//#region Forms
