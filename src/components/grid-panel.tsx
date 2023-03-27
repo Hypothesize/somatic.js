@@ -52,11 +52,12 @@ export const GridPanel: Component<GridPanelProps> = function (props) {
 		style, ...htmlProps
 	} = props
 
-	return <div {...htmlProps}
+	return <div
+		{...htmlProps}
 		style={{
 			...style,
-			gridTemplateRows: isArray(rows) ? rows.join(" ") : (String(rows) ?? "unset"),
-			gridTemplateColumns: isArray(cols) ? cols.join(" ") : (String(cols) ?? "unset"),
+			gridTemplateRows: isArray(rows) ? rows.join(" ") : (rows?.toString() ?? "unset"),
+			gridTemplateColumns: isArray(cols) ? cols.join(" ") : (cols?.toString() ?? "unset"),
 			...typeof gap === "string" ? { gap } : { rowGap: gap?.row ?? "unset", columnGap: gap?.column ?? "unset" },
 			display: "grid",
 			flexDirection: orientation === "vertical" ? "column" : "row",

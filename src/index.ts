@@ -9,7 +9,7 @@ import {
 	SVGAttributes,
 	HtmlHTMLAttributes,
 	AnchorHTMLAttributes,
-	AudioHTMLAttributes,
+	MediaHTMLAttributes,
 	ButtonHTMLAttributes,
 	CanvasHTMLAttributes,
 	FormHTMLAttributes,
@@ -310,7 +310,7 @@ declare global {
 			 * It may contain one or more audio sources, represented using the src attribute or the source element: the browser will choose the most suitable one. 
 			 * It can also be the destination for streamed media, using a MediaStream.
 			 */
-			audio: AudioHTMLAttributes<HTMLAudioElement>
+			audio: MediaHTMLAttributes<HTMLAudioElement>
 			/** Embeds a media player which supports video playback into the document. 
 			 * You can use <video> for audio content as well, but the audio element may provide a more appropriate user experience.
 			 */

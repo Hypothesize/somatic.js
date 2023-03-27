@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable brace-style */
-
 import * as assert from "assert"
 import { expect, use } from "chai"
 import * as chaiHTML from "chai-html"
@@ -677,8 +673,8 @@ describe("CORE MODULE", () => {
 				props: { orientation: "horizontal" },
 				children: [
 					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: CommandBox, children: ["Hello"] },
-					{ type: "a" },
+					{ type: CommandBox, children: ["Hello"], props: {} },
+					{ type: "a", props: {} },
 				]
 			}
 			const trace = await traceToLeafAsync(elt)
@@ -689,6 +685,7 @@ describe("CORE MODULE", () => {
 			assert(!isTextDOM(dom))
 
 			// eslint-disable-next-line fp/no-mutating-assign
+			console.log(JSON.stringify(trace.leafElement))
 			const updatedDom = await applyLeafElementAsync(dom, trace.leafElement)
 
 			assert(!isTextDOM(updatedDom))

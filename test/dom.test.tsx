@@ -104,7 +104,7 @@ describe("DOM MODULE", () => {
 					viewBox: "0 0 122.88 78.97"
 				},
 				children: [
-					{ type: "title", children: ["logo"] },
+					{ type: "title", children: ["logo"], props: {} },
 					{
 						type: "path",
 						props: {

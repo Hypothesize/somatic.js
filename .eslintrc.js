@@ -123,7 +123,7 @@ module.exports = {
 		"jsdoc/check-param-names": "off",
 		"jsdoc/require-param-description": "error",
 		"jsdoc/require-param-type": "off",
-		"jsdoc/require-param": "error",
+		"jsdoc/require-param": "off",
 		"jsdoc/require-returns": "warn",
 		"jsdoc/require-returns-type": "off",
 
@@ -132,7 +132,8 @@ module.exports = {
 		/* jsx */
 		"react/jsx-first-prop-new-line": "error",
 		"react/react-in-jsx-scope": "off",
-		"react/jsx-key": "warn"
+		"react/jsx-key": "warn",
+		"react/prop-types": "warn"
 	},
 	"settings": {
 		"jsdoc": {

@@ -102,10 +102,10 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
 			? document.createElementNS('http://www.w3.org/2000/svg', eltUI.type)
 			: eltUI.type === "" ? document.createDocumentFragment()
 				: document.createElement(eltUI.type)
-		const props = eltUI.props ?? {}
-		if (!(dom instanceof DocumentFragment))
+		const props = eltUI.props
+		if (!(dom instanceof DocumentFragment)) {
 			Object.keys(props).forEach(key => setAttribute(dom, key, props[key]))
-
+		}
 		return dom
 	}
 	else {
@@ -122,7 +122,7 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
 export function updateDomShallow(eltDOM: DOMElement, eltUI: LeafElement) {
 	if ("attributes" in eltDOM && isIntrinsicElt(eltUI) && eltUI.type.toUpperCase() === eltDOM.tagName.toUpperCase()) {
 		[...eltDOM.attributes].forEach(attrib => eltDOM.removeAttribute(attrib.name))
-		const props = eltUI.props ?? {}
+		const props = eltUI.props
 		Object.keys(props).forEach(key => setAttribute(eltDOM, key, props[key]))
 		return eltDOM
 	}
@@ -158,8 +158,9 @@ export function getApexElementIds(elementIds: string[]): string[] {
 	return elementIds.filter(id => {
 		let parent = document.getElementById(id)?.parentElement
 		while (parent) {
-			if (elementIds.includes(parent.id))
+			if (elementIds.includes(parent.id)) {
 				return false
+			}
 			parent = parent.parentElement
 		}
 		return true
@@ -169,8 +170,9 @@ export function getApexElements(elements: DOMElement[]): DOMElement[] {
 	return elements.filter(elt => {
 		let parent = elt.parentElement
 		while (parent) {
-			if (elements.includes(parent))
+			if (elements.includes(parent)) {
 				return false
+			}
 			parent = parent.parentElement
 		}
 		return true

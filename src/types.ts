@@ -496,8 +496,6 @@ export type IconProps = Partial<{
 
 //#region Attributes
 export interface Attributes { key?: string | number | symbol }
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ClassAttributes<T> extends Attributes { }
 export type DOMAttributes<T> = {
 	//childrenx?: Somatic.VNode[];
 	// dangerouslySetInnerHTML?: {
@@ -1025,7 +1023,7 @@ export interface AnchorHTMLAttributes<T> extends HTMLAttributes<T> {
 	type?: string
 }
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface AudioHTMLAttributes<T> extends MediaHTMLAttributes<T> { }
+// export interface AudioHTMLAttributes<T> extends MediaHTMLAttributes<T> { }
 export interface AreaHTMLAttributes<T> extends HTMLAttributes<T> {
 	alt?: string
 	coords?: string
@@ -1437,9 +1435,8 @@ export interface FocusEvent<T = Element> extends SyntheticEvent<T> {
 	relatedTarget: EventTarget
 	target: EventTarget & T
 }
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface FormEvent<T = Element> extends SyntheticEvent<T> {
-}
+
+//export interface FormEvent<T = Element> extends SyntheticEvent<T> {}
 export interface InvalidEvent<T = Element> extends SyntheticEvent<T> {
 	target: EventTarget & T
 }
@@ -1537,7 +1534,7 @@ type ClipboardEventHandler<T = Element> = EventHandler<ClipboardEvent<T>>
 type CompositionEventHandler<T = Element> = EventHandler<CompositionEvent<T>>
 type DragEventHandler<T = Element> = EventHandler<DragEvent<T>>
 type FocusEventHandler<T = Element> = EventHandler<FocusEvent<T>>
-type FormEventHandler<T = Element> = EventHandler<FormEvent<T>>
+type FormEventHandler<T = Element> = EventHandler<SyntheticEvent<T>>
 type ChangeEventHandler<T = Element> = EventHandler<ChangeEvent<T>>
 type KeyboardEventHandler<T = Element> = EventHandler<KeyboardEvent<T>>
 type MouseEventHandler<T = Element> = EventHandler<MouseEvent<T>>

@@ -1,4 +1,4 @@
-import { String, hasValue } from "@sparkwave/standard"
+import { String as String__, hasValue } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
@@ -8,11 +8,11 @@ import { selfClosingTags } from "./common"
 export const Fragment = ""
 export type Fragment = typeof Fragment
 
+let daemon: NodeJS.Timeout | undefined = undefined
+
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
-	if (!type) console.warn(`Type argument mising in call to createElement`)
-
-	return { type, props: props ?? {}, children: (children ?? []).flat() }
+	return { type, props: props ?? {}, children: children.flat() }
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
@@ -67,14 +67,14 @@ export async function renderToIntrinsicAsync(elt: UIElement/*, injectedProps?: O
 export async function renderToStringAsync(elt: UIElement): Promise<string> {
 	if (hasValue(elt) && typeof elt === "object" && "props" in elt && "children" in elt && typeof elt.type === "undefined") {
 		console.warn(`Object appearing to represent proper element has no type member\nThis is likely an error arising from creating an element with an undefined component`)
-		return globalThis.String(elt)
+		return String(elt)
 	}
 
 	const trace = await traceToLeafAsync(elt)
 	const leaf = trace.leafElement
 	if (isIntrinsicElt(leaf)) {
 		const children = getChildren(leaf)
-		const attributesHtml = new String(stringifyAttributes(leaf.props)).prependSpaceIfNotEmpty().toString()
+		const attributesHtml = new String__(stringifyAttributes(leaf.props)).prependSpaceIfNotEmpty().toString()
 		const childrenHtml = () => Promise.all(children.map(renderToStringAsync)).then(arr => arr.join(""))
 		return hasValue(leaf.type)
 			? selfClosingTags.includes(leaf.type.toUpperCase()) && children.length === 0
@@ -84,7 +84,7 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
 
 	}
 	else {
-		return globalThis.String(leaf ?? "")
+		return String(leaf ?? "")
 	}
 }
 
@@ -93,7 +93,7 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
  * @param elt A UI (JSX) element that is used as the overriding starting point of the re-render, if passed
  * @returns The updated DOM element, which is updated in-place
  */
-export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
+export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text | DOMElement)> {
 	/** Checks for compatibility between a DOM and UI element */
 	function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 		if (isTextDOM(_dom)) return false // DOM element is just a text element
@@ -127,7 +127,7 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 					? await updateTraceAsync(dom.renderTrace, elt)
 					: { componentElts: [], leafElement: elt }
 
-				return await (isIntrinsicElt(trace.leafElement)
+				return (isIntrinsicElt(trace.leafElement)
 					? applyLeafElementAsync(dom, trace.leafElement)
 						.then(_ => Object.assign(_ as DOMElement, { renderTrace: trace }))
 					: (() => {
@@ -143,11 +143,13 @@ export async function updateAsync(dom: DOMAugmented | Text, elt?: UIElement): Pr
 		}
 		else {
 			const newTrace = await updateTraceAsync(dom.renderTrace)
-			if (isIntrinsicElt(newTrace.leafElement))
-				applyLeafElementAsync(dom, newTrace.leafElement)
-			else
+			if (isIntrinsicElt(newTrace.leafElement)) {
+				return applyLeafElementAsync(dom, newTrace.leafElement)
+			}
+			else {
 				updateDomShallow(dom, newTrace.leafElement)
-			return Object.assign(dom, { renderTrace: newTrace })
+				return Object.assign(dom, { renderTrace: newTrace })
+			}
 		}
 	}
 }
@@ -157,10 +159,10 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	const eltDomChildren = [...eltDOM.childNodes]
 	const matching = (dom: Node, elt: UIElement, sameIndex: boolean) => {
 		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
-			? dom.renderTrace?.leafElement?.props?.key
+			? dom.renderTrace.leafElement.props.key
 			: undefined
 		const eltKey = isEltProper(elt)
-			? elt?.props?.key
+			? elt.props.key
 			: undefined
 
 		return sameIndex
@@ -217,22 +219,26 @@ async function invalidationHandler(eventInfo: Event) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
-	let daemon: NodeJS.Timeout | undefined = undefined
+	//let daemon: NodeJS.Timeout | undefined = undefined
 
 	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
 	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
 	invalidatedElementIds.push(..._invalidatedElementIds)
-	if (daemon === undefined) daemon = setInterval(async () => {
-		if (invalidatedElementIds.length === 0 && daemon) {
-			clearInterval(daemon)
-			daemon = undefined
-		}
-		const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-		await Promise.all(idsToProcess.map(id => {
-			// console.log(`Updating "${id}" dom element...`)
-			const elt = document.getElementById(id)
-			if (elt)
-				updateAsync(elt as DOMAugmented)
-		}))
-	}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+	if (daemon === undefined) {
+		daemon = setInterval(async () => {
+			if (invalidatedElementIds.length === 0 && daemon) {
+				clearInterval(daemon)
+				daemon = undefined
+			}
+			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
+			await Promise.all(idsToProcess.map(id => {
+				// console.log(`Updating "${id}" dom element...`)
+				const elt = document.getElementById(id)
+				if (elt) {
+					return updateAsync(elt as DOMAugmented)
+				}
+				return undefined
+			}))
+		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+	}
 }
