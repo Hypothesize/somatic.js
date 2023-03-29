@@ -1554,6 +1554,10 @@ type WheelEventHandler<T = Element> = EventHandler<WheelEvent<T>>;
 type AnimationEventHandler<T = Element> = EventHandler<AnimationEvent<T>>;
 type TransitionEventHandler<T = Element> = EventHandler<TransitionEvent<T>>;
 
+export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentOptions<P> & (
+	(props: P & { children?: Children, key?: string }) => AsyncGenerator<UIElement, UIElement, typeof props>
+)
+
 //#endregion
 
 /* export interface DOMElement<Attr extends HTMLAttributes<Elt> | SVGAttributes<Elt>, Elt extends Element> extends VNode<Attr, string> {
