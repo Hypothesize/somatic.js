@@ -14,7 +14,7 @@ import * as cuid from "cuid"
 import { String, hasValue } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
-import { isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
+import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
 import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
 import { selfClosingTags } from "./common"
 
@@ -233,7 +233,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0)
-				console.warn(`updateChildrenAsync "${updateAsyncInvocationId}": Returning empty doc fragment as dom for child ${stringify(child)}`)
+				console.warn(`updateChildrenAsync "${updateAsyncInvocationId}": Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
 		})
 
 		return updated
