@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.2.0...v2.3.0) (2023-06-06)
+
+
+### Features
+
+* 94 - Processing document fragments correctly; Addition of stateful component type ([1788407](https://www.github.com/Hypothesize/somatic.js/commit/1788407601fee2e07899f70ffe740367790e6612))
+
 ## [2.2.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.1.3...v2.2.0) (2023-02-08)
 
 
