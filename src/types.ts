@@ -15,6 +15,10 @@ export type Component<P extends Obj = Obj> = ((props: P & { children?: Children,
 	| UIElement
 ) & ComponentOptions<P>
 
+export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentOptions<P> & (
+	(props: P & { children?: Children, key?: string }) => AsyncGenerator<UIElement, UIElement, typeof props>
+)
+
 export interface ComponentOptions<P extends Obj = Obj> {
 	name?: string
 	isPure?: boolean
@@ -1553,10 +1557,6 @@ type UIEventHandler<T = Element> = EventHandler<UIEvent<T>>;
 type WheelEventHandler<T = Element> = EventHandler<WheelEvent<T>>;
 type AnimationEventHandler<T = Element> = EventHandler<AnimationEvent<T>>;
 type TransitionEventHandler<T = Element> = EventHandler<TransitionEvent<T>>;
-
-export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentOptions<P> & (
-	(props: P & { children?: Children, key?: string }) => AsyncGenerator<UIElement, UIElement, typeof props>
-)
 
 //#endregion
 
