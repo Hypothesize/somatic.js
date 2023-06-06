@@ -15,6 +15,10 @@ export type Component<P extends Obj = Obj> = ((props: P & { children?: Children,
 	| UIElement
 ) & ComponentOptions<P>
 
+export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentOptions<P> & (
+	(props: P & { children?: Children, key?: string }) => AsyncGenerator<UIElement, UIElement, typeof props>
+)
+
 export interface ComponentOptions<P extends Obj = Obj> {
 	name?: string
 	isPure?: boolean

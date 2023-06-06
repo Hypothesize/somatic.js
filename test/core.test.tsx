@@ -8,7 +8,7 @@ import * as chaiHTML from "chai-html"
 const cleanup = require('jsdom-global')()
 
 import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, updateChildrenAsync, applyLeafElementAsync, updateAsync, mountElement } from '../dist/core'
+import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, updateChildrenAsync, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
 import { StackPanel, CommandBox, View } from '../dist/components'
@@ -667,42 +667,6 @@ describe("CORE MODULE", () => {
 
 			assert(str.length > 0)
 			// assert.throws(() => { parseValue([] as any) }, Error, "Error thrown")
-		})
-	})
-
-	describe("applyLeafElementAsync", () => {
-		it("should work for an intrinsic element with component", async () => {
-			const elt = {
-				type: StackPanel,
-				props: { orientation: "horizontal" },
-				children: [
-					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: CommandBox, children: ["Hello"] },
-					{ type: "a" },
-				]
-			}
-			const trace = await traceToLeafAsync(elt)
-			assert(isIntrinsicElt(trace.leafElement))
-			assert.strictEqual(trace.leafElement.type.toUpperCase(), "DIV")
-
-			const dom = document.createElement("span") as HTMLSpanElement
-			assert(!isTextDOM(dom))
-
-			// eslint-disable-next-line fp/no-mutating-assign
-			const updatedDom = await applyLeafElementAsync(dom, trace.leafElement)
-
-			assert(!isTextDOM(updatedDom))
-			assert(!(updatedDom instanceof DocumentFragment))
-
-			assert.notStrictEqual(updatedDom, dom)
-			assert.strictEqual(updatedDom.tagName.toUpperCase(), "DIV")
-			assert.strictEqual(updatedDom.style.flexDirection, "row")
-
-			assert.strictEqual(updatedDom.childNodes.length, 3)
-
-			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
-			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
-			assert.strictEqual(firstChild.style.flexDirection, "column")
 		})
 	})
 
