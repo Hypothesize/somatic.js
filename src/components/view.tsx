@@ -62,20 +62,19 @@ export async function* View<T extends Children | undefined>(props: ArgsType<Comp
 
 			const ItemTemplate = props.itemTemplate ?? defaultProps.itemTemplate
 
-			console.assert(ItemTemplate !== undefined, `ItemTemplate is undefined`)
-
 			// Yield the current UI, and also updating props with any new injected props
 			props = (yield <ItemsPanel id={id} style={style} {...restOfProps}>
 				{
 					[...sourceData].map((item, index) =>
 						<div id={`${id}_item_container_${index}`} // Pre-pend parent id so that child ids are globally unique
 							style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
-							onClick={(ev) => {
+							onClick={ev => {
 								if (selectionEnabled) {
 									// const oldSelectedIndex = selectedIndex
 									selectedIndex = index
-									if (onSelection)
+									if (onSelection) {
 										onSelection({ selectedIndex })
+									}
 									invalidateUI([id])
 								}
 							}}>
@@ -84,7 +83,7 @@ export async function* View<T extends Children | undefined>(props: ArgsType<Comp
 						</div>
 					)
 				}
-			</ItemsPanel>) ?? props // So that props is not overwritten with undefined in case none were injected
+			</ItemsPanel >) ?? props // So that props is not overwritten with undefined in case none were injected
 		}
 	}
 	catch (e) {

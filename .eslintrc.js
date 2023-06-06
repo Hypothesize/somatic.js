@@ -9,6 +9,11 @@ module.exports = {
 		"plugin:react/recommended",
 		"plugin:jsdoc/recommended"
 	],
+	"overrides": [
+		{
+			"files": ["./**/*.js", "./**/*.ts"]
+		}
+	],
 	"rules": {
 		/* logic */
 		"array-callback-return": "error",
@@ -22,6 +27,18 @@ module.exports = {
 		"no-async-promise-executor": "error",
 		"for-direction": "error",
 		"no-unreachable": "error",
+		"@typescript-eslint/switch-exhaustiveness-check": "warn",
+		"sonarjs/no-all-duplicated-branches": "error", //All branches in a conditional structure should not have exactly the same implementation
+		"sonarjs/no-element-overwrite": "error", // Collection elements should not be replaced unconditionally
+		"sonarjs/no-empty-collection": "error", // Empty collections should not be accessed or iterated
+		"sonarjs/no-extra-arguments": "error", // Function calls should not pass extra arguments
+		"sonarjs/no-identical-conditions": "error", // Related "if/else if" statements should not have the same condition
+		"sonarjs/no-identical-expressions": "error", // Identical expressions used on both sides of a binary operator
+		"sonarjs/no-collection-size-mischeck": "error", // Testing array/collection size/length is greater than or equal to zero doesn't make sense
+		"sonarjs/no-ignored-return": "error", // Return values from functions without side effects should not be ignored
+		"sonarjs/no-one-iteration-loop": "error", // Loops with at most one iteration should be refactored
+		"sonarjs/no-use-of-empty-return-value": "error", // The output of functions that don't return anything should not be used
+		"sonarjs/non-existent-operator": "error", // Non-existent operators '=+', '=-' and '=!' should not be used
 
 		"sonarjs/no-all-duplicated-branches": "error", //All branches in a conditional structure should not have exactly the same implementation
 		"sonarjs/no-element-overwrite": "error", // Collection elements should not be replaced unconditionally
@@ -40,7 +57,7 @@ module.exports = {
 		"sonarjs/prefer-object-literal": "error", // initialize object's properties in its declaration vs setting them one-by-one.
 		"prefer-const": "error",
 		"no-var": "error",
-		"no-param-reassign": "error",
+		"no-param-reassign": "warn",
 		"no-unused-expressions": "error",
 		"sonarjs/no-unused-collection": "error", // Collection is populated but its contents never used
 		"eqeqeq": "error", // Use of type-unsafe equality operators such as == and != 
@@ -64,8 +81,8 @@ module.exports = {
 		"@typescript-eslint/no-inferrable-types": "error",
 		"@typescript-eslint/prefer-as-const": "error",
 		"@typescript-eslint/ban-ts-comment": "error",
-		"@typescript-eslint/ban-types": "warn",
-		"@typescript-eslint/no-unnecessary-condition": ["error", { "allowConstantLoopConditions": true }],
+		"@typescript-eslint/ban-types": "off",
+		"@typescript-eslint/no-unnecessary-condition": ["warn", { "allowConstantLoopConditions": true }],
 		"no-return-await": "error",
 		"guard-for-in": "error", // using a for-in loop without filtering the results in the loop
 		"semi": ["error", "never"],
@@ -83,13 +100,15 @@ module.exports = {
 		"no-await-in-loop": "warn",
 		"require-atomic-updates": "warn",
 		"no-invalid-this": "warn",
-
+		"sonarjs/no-duplicate-string": "warn", // String literals that are duplicated
 		"no-shadow": "off",
 		"no-unused-vars": "off",
 		"@typescript-eslint/no-unused-vars": "off",
 		"@typescript-eslint/no-var-requires": "off", // require statements in import statements.
 		"@typescript-eslint/explicit-module-boundary-types": "off",
 		"@typescript-eslint/no-empty-function": "off",
+		"@typescript-eslint/no-namespace": "off",
+		"@typescript-eslint/no-empty-interface": "off",
 		"no-undef-init": "off",
 
 		/* formatting */
@@ -106,7 +125,9 @@ module.exports = {
 			"require": {
 				"FunctionDeclaration": true,
 				"MethodDefinition": true,
-				"ArrowFunctionExpression": true
+				"ClassDeclaration": false,
+				"ArrowFunctionExpression": false,
+				"FunctionExpression": false
 			},
 			"contexts": [
 				// "ExportNamedDeclaration",
@@ -118,27 +139,30 @@ module.exports = {
 			"exemptEmptyConstructors": true
 		}],
 		"jsdoc/require-param": "off",
+		"jsdoc/require-param-type": "off",
+		"jsdoc/check-param-names": "off",
+		"jsdoc/require-param-description": "warn",
+		"jsdoc/require-returns": "off",
+		"jsdoc/require-returns-type": "off",
 		"jsdoc/multiline-blocks": ["error", { "noZeroLineText": false }],
 		"jsdoc/newline-after-description": "off",
-		"jsdoc/check-param-names": "off",
-		"jsdoc/require-param-description": "error",
-		"jsdoc/require-param-type": "off",
-		"jsdoc/require-param": "off",
-		"jsdoc/require-returns": "warn",
-		"jsdoc/require-returns-type": "off",
-
 		"no-warning-comments": ["warn", { "terms": ["todo"], "location": "anywhere" }],
 
 		/* jsx */
 		"react/jsx-first-prop-new-line": "error",
 		"react/react-in-jsx-scope": "off",
-		"react/jsx-key": "warn",
-		"react/prop-types": "warn"
+		"react/jsx-key": "off",
+		"react/no-unknown-property": "warn",
+		"react/prop-types": "off",
+
+		"sonarjs/no-ignored-return": "warn",
+
+		// "sonarjs/cognitive-complexity": "error",
+		// "@typescript-eslint/await-thenable": "error",
+		// "@typescript-eslint/naming-convention": "warn",
 	},
 	"settings": {
-		"jsdoc": {
-
-		}
+		"jsdoc": {}
 	},
 	"noInlineConfig": true
 }

@@ -11,18 +11,20 @@ export const TabsPanel: Component<Props> = async function* (props) {
 
 	const _children = (!hasValue(children)) ? [] : Array.isArray(children) ? children.flat() : [children]
 
-	while (true) yield <StackPanel orientation={"vertical"}>
-		<View
-			orientation={"horizontal"}
-			sourceData={headers}
-			itemStyle={headerItemStyle}
-			selectedItemStyle={selectedHeaderItemStyle}
-			itemsPanel={StackPanel}
-			itemTemplate={headerItemTemplate}
-		/>
+	while (true) {
+		yield <StackPanel orientation={"vertical"}>
+			<View
+				orientation={"horizontal"}
+				sourceData={headers}
+				itemStyle={headerItemStyle}
+				selectedItemStyle={selectedHeaderItemStyle}
+				itemsPanel={StackPanel}
+				itemTemplate={headerItemTemplate}
+			/>
 
-		<div>{_children[selectedIndex || 0]}</div>
-	</StackPanel>
+			<div>{_children[_selectedIndex || 0]}</div>
+		</StackPanel>
+	}
 }
 
 export type Props<THeader = any> = HtmlProps & {

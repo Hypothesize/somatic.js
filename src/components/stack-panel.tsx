@@ -47,7 +47,8 @@ export const StackPanel: Component<StackPanelProps> = function (props) {
 		}
 	}
 
-	return <div {...htmlProps}
+	return <div
+		{...htmlProps}
 		style={{
 			...style,
 			display: "flex",

@@ -310,7 +310,7 @@ export const colorConstants/*: Record<string, string>*/ = {
 export const colors: Record<string, string> = colorConstants
 
 export function colourNameToHex(colour: string) {
-	return (typeof colors[colour.toLowerCase()] != 'undefined')
+	return (typeof colors[colour.toLowerCase()] !== 'undefined')
 		? colors[colour.toLowerCase()]
 		: colour
 }
@@ -329,11 +329,11 @@ export function colorLuminance(color: string, luminosity: number) {
 		: sanitizedColor[0] + sanitizedColor[0] + sanitizedColor[1] + sanitizedColor[1] + sanitizedColor[2] + sanitizedColor[2]
 
 	// Convert to decimal and change luminosity
-	return "#" + [0, 1, 2].map(i => {
+	return `#${[0, 1, 2].map(i => {
 		const initialColor = parseInt(hexColor.substr(i * 2, 2), 16)
 		const endColor = Math.round(Math.min(Math.max(0, initialColor + (initialColor * luminosity)), 255)).toString(16)
 		return endColor
-	}).join("")
+	}).join("")}`
 }
 
 class IdProvider {

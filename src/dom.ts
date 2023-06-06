@@ -92,7 +92,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 
 /** Create a shallow DOM element based on the passed intrinsic element or primitive value.
  * @returns A non-text DOM element (without children) when passed an intrinsic element (that possibly has children)
- * @returns A text DOM element when passed a primitive value
  */
 export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragment | Text {
 	if (isIntrinsicElt(eltUI)) {

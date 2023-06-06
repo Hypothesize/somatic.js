@@ -21,7 +21,6 @@ export interface IntrinsicElement<P extends Obj = Obj> extends UIElementBase<P> 
 // export interface FragmentElement extends UIElementBase<undefined> { type: "" }
 export interface ComponentElt<P extends Obj = Obj> extends UIElementBase<P> { type: Component<P>, result?: ComponentResult }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type ValueElement = | null | string | number | bigint | symbol | boolean | Object
 
 /** An UI element is, basically, information for a future (component) function invocation,
@@ -29,7 +28,6 @@ export type ValueElement = | null | string | number | bigint | symbol | boolean 
  * A component element produces another component element, recursively,
  * until an intrinsic element is obtained, at which point we can generate an actual node from it
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type UIElement<P extends Obj = Obj> = ComponentElt<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
 
 export type ComponentResult = {
@@ -1022,7 +1020,7 @@ export interface AnchorHTMLAttributes<T> extends HTMLAttributes<T> {
 	target?: string
 	type?: string
 }
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+
 // export interface AudioHTMLAttributes<T> extends MediaHTMLAttributes<T> { }
 export interface AreaHTMLAttributes<T> extends HTMLAttributes<T> {
 	alt?: string

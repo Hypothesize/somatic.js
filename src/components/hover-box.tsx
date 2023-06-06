@@ -9,7 +9,7 @@ export type HoverBoxProps = HtmlProps & {
 	hoverStyle?: CSSProperties
 }
 
-export const HoverBox: Component<HoverBoxProps> = (props) => {
+export const HoverBox: Component<HoverBoxProps> = props => {
 	const {
 		children,
 		hoverStyle,
@@ -24,17 +24,13 @@ export const HoverBox: Component<HoverBoxProps> = (props) => {
 		child = {
 			...child,
 			props: {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				...child.props,
 				className: className__,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				style: child.props?.style ?? {},
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				style: child.props.style ?? {},
 				onMouseEnter: (e: unknown) => {
 					// if (postMsgAsync)
 					// 	postMsgAsync({ type: "HOVER_START" })
 				},
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 				onMouseLeave: (e: any) => {
 					// if (postMsgAsync)
 					// 	postMsgAsync({ type: "HOVER_STOP" })
