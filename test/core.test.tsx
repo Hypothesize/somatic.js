@@ -7,7 +7,7 @@ import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } f
 import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, updateChildrenAsync, applyLeafElementAsync, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
-import { StackPanel, CommandBox, View } from '../dist/components'
+//import { StackPanel, CommandBox, View } from '../dist/components'
 import { idProvider } from '../dist/common'
 import { normalizeHTML } from './utils'
 

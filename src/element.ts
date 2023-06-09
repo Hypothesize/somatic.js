@@ -1,4 +1,4 @@
-import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync } from "@sparkwave/standard"
+import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync, flatten } from "@sparkwave/standard"
 import {
 	Children,
 	ComponentResult, ComponentEltAugmented,
@@ -127,15 +127,15 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 		.skipAsync(1)
 		.reduceAsync(initialAugElts, async (eltPromisesAccum, eltCurrent) => {
 			const lastEltPromise = last(eltPromisesAccum)
-			if (!lastEltPromise) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
+			if (!(Boolean(lastEltPromise))) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
 				throw new Error(`Last element of accumulated trace is null in reducer`)
 			}
-			const eltResult = (await lastEltPromise).result.element
+			const eltResult = (await lastEltPromise!).result.element
 			if (isEltProper(eltResult) && eltResult.type === eltCurrent.type) {
 				const childrenResult = getChildren(eltResult)
 				const childrenCurr = getChildren(eltCurrent)
 
-				const elt = eltResult.type.isPure && childrenCurr.length === 0 && childrenResult.length === 0 && shallowEquals(eltResult.props, eltCurrent.props)
+				const elt = (eltResult.type.isPure ?? false) && childrenCurr.length === 0 && childrenResult.length === 0 && shallowEquals(eltResult.props, eltCurrent.props)
 					? Promise.resolve(eltCurrent) // no need to update results
 					: updateResultAsync({
 						...eltCurrent,
@@ -192,7 +192,7 @@ export function normalizeChildren(children?: Children): UIElement<Obj<unknown, s
 		return []
 	}
 	return Array.isArray(children)
-		? children.flat()
+		? [...flatten(children)]
 		: [children]
 }
 

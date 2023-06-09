@@ -1,4 +1,4 @@
-import { String as String__, hasValue } from "@sparkwave/standard"
+import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
@@ -12,7 +12,7 @@ let daemon: NodeJS.Timeout | undefined = undefined
 
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
-	return { type, props: props ?? {}, children: children.flat() }
+	return { type, props: props ?? {}, children: flatten(children) }
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
@@ -167,11 +167,11 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 
 		return sameIndex
 			? domKey === eltKey
-			: domKey && eltKey && domKey === eltKey
+			: (Boolean(domKey)) && (Boolean(eltKey)) && domKey === eltKey
 	}
 
 	const newChildren = await Promise.all(children.map((child, index) => {
-		const matchingNode = (index < eltDomChildren.length && matching(eltDomChildren[index], child, true))
+		const matchingNode = (index < eltDomChildren.length && (Boolean(matching(eltDomChildren[index], child, true))))
 			? eltDomChildren[index]
 			: eltDomChildren.find((c, i) => matching(c, child, i === index))
 		const updated = matchingNode && isAugmentedDOM(matchingNode)
@@ -202,6 +202,9 @@ export async function applyLeafElementAsync(nodeDOM: DOMElement, eltLeaf: Intrin
 			: updatedDOM
 }
 
+interface IUInvalidatedEvent extends Event {
+	detail?: { invalidatedElementIds: string[] }
+}
 /** Convenience method to mount the entry point dom node of a client app */
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
@@ -215,14 +218,14 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-async function invalidationHandler(eventInfo: Event) {
+async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
 	//let daemon: NodeJS.Timeout | undefined = undefined
 
 	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
+	const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
 	invalidatedElementIds.push(..._invalidatedElementIds)
 	if (daemon === undefined) {
 		daemon = setInterval(async () => {

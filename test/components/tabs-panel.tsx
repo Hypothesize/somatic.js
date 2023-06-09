@@ -27,7 +27,7 @@ export const TabsPanel: Component<Props> = async function* (props) {
 	}
 }
 
-export type Props<THeader = any> = HtmlProps & {
+export type Props<THeader = unknown> = HtmlProps & {
 	headers: Array<THeader>
 	headerStyle?: CSSProperties
 	headerItemTemplate?: ViewProps<THeader>["itemTemplate"]

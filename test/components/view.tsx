@@ -1,9 +1,8 @@
-
 // import { deepMerge, noop, promisify } from '@sparkwave/standard'
 import * as cuid from "cuid"
 import { ArgsType } from "@sparkwave/standard"
-import { createElement, invalidateUI } from '../core'
-import { PanelProps, HtmlProps, Component, CSSProperties, Children } from '../types'
+import { createElement, invalidateUI } from '../../dist/core'
+import { PanelProps, HtmlProps, Component, CSSProperties, Children } from '../../dist/types'
 import { StackPanel } from './stack-panel'
 
 // interface SelectionEvent extends SyntheticEvent { selectedIndex: number }
@@ -66,7 +65,8 @@ export async function* View<T extends Children | undefined>(props: ArgsType<Comp
 			props = (yield <ItemsPanel id={id} style={style} {...restOfProps}>
 				{
 					[...sourceData].map((item, index) =>
-						<div id={`${id}_item_container_${index}`} // Pre-pend parent id so that child ids are globally unique
+						<div
+							id={`${id}_item_container_${index}`} // Pre-pend parent id so that child ids are globally unique
 							style={{ ...itemStyle, ...index === selectedIndex ? selectedItemStyle : {} }}
 							onClick={ev => {
 								if (selectionEnabled) {

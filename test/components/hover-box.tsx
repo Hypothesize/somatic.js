@@ -31,7 +31,7 @@ export const HoverBox: Component<HoverBoxProps> = props => {
 					// if (postMsgAsync)
 					// 	postMsgAsync({ type: "HOVER_START" })
 				},
-				onMouseLeave: (e: any) => {
+				onMouseLeave: (e: unknown) => {
 					// if (postMsgAsync)
 					// 	postMsgAsync({ type: "HOVER_STOP" })
 				}

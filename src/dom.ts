@@ -24,7 +24,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 				// avoids setting className directly, since that works better for SVG elements,
 				// avoids a type error, since Typescript (incorrectly) types className as read-only 
 				element.setAttribute('class', attributeValue)
-				//ToDo: Check if setAttributeNS is better to use above and in similar calls
 			}
 			else {
 				console.warn(`Ignored setting class on <${element.tagName}> to non-string value ${attributeValue}`)
@@ -116,7 +115,7 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
  * If passed an intrinsic element with the same tag as the existing DOM, the DOM is updated to match the intrinsic element
  * Else the existing DOM is replaced (with respect to its parent) with a new shallow DOM based on the intrinsic element
  * If passed a primitive value, the original DOM is replaced with a new text element with content set to the value
- * @returns: The original or new DOM element according to the above rules
+ * @returns The original or new DOM element according to the above rules
  */
 export function updateDomShallow(eltDOM: DOMElement, eltUI: LeafElement) {
 	if ("attributes" in eltDOM && isIntrinsicElt(eltUI) && eltUI.type.toUpperCase() === eltDOM.tagName.toUpperCase()) {
@@ -141,16 +140,15 @@ export function truncateChildNodes(node: Node, newLength: number) {
 export function emptyContainer(container: Node) {
 	container.textContent = ""
 }
-
-function detachedUpdate(dom: Node, fn: (dom: Node) => any) {
-	const parent = dom.parentNode
+/* function detachedUpdate(dom: Node, fn: (dom: Node) => any) {
+		const parent = dom.parentNode
 	if (parent) {
 		const index = first(indexesOf(parent.childNodes.entries(), { value: dom }))
 		parent.removeChild(dom)
 		fn(dom)
 		parent.insertBefore(dom, parent.childNodes.item(index))
 	}
-}
+} */
 
 /** Get ids of peak DOM elements among a list of elements in a tree */
 export function getApexElementIds(elementIds: string[]): string[] {
