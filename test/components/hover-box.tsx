@@ -1,9 +1,9 @@
 import * as cuid from 'cuid'
 import { deepMerge, first } from '@sparkwave/standard'
-import { createElement } from '../core'
-import { stringifyStyle } from '../html'
-import { getChildren, normalizeChildren, isEltProper } from '../element'
-import { Component, CSSProperties, HtmlProps } from '../types'
+import { createElement } from '../../dist/core'
+import { stringifyStyle } from '../../dist/html'
+import { getChildren, normalizeChildren, isEltProper } from '../../dist/element'
+import { Component, CSSProperties, HtmlProps } from '../../dist/types'
 
 export type HoverBoxProps = HtmlProps & {
 	hoverStyle?: CSSProperties

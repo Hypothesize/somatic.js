@@ -154,6 +154,7 @@ module.exports = {
 		"react/jsx-key": "off",
 		"react/no-unknown-property": "warn",
 		"react/prop-types": "off",
+		"react/display-name": "off",
 
 		"sonarjs/no-ignored-return": "warn",
 

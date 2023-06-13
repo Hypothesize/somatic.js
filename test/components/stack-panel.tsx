@@ -1,6 +1,6 @@
 
-import { createElement } from '../core'
-import { Component, PanelProps, HtmlProps, CSSLength } from '../types'
+import { createElement } from '../../dist/core'
+import { Component, PanelProps, HtmlProps, CSSLength } from '../../dist/types'
 
 export type StackPanelProps = PanelProps & HtmlProps & {
 

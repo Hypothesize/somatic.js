@@ -7,7 +7,7 @@ import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } f
 import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, updateChildrenAsync, applyLeafElementAsync, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
-//import { StackPanel, CommandBox, View } from '../dist/components'
+import { StackPanel, View, HoverBox } from './components'
 import { idProvider } from '../dist/common'
 import { normalizeHTML } from './utils'
 
@@ -69,15 +69,15 @@ describe("CORE MODULE", () => {
 				children: [
 					{ type: View, props: { sourceData: [], orientation: "vertical" } },
 					{ type: StackPanel, children: ["Hello"] },
-					{ type: CommandBox, children: ["Hello"] }
+					//{ type: CommandBox, children: ["Hello"] }
 				]
 			}
 			const trace = await traceToLeafAsync(intrinsic)
 			const dom = createDOMShallow(intrinsic)
 			assert(!isTextDOM(dom))
-			// eslint-disable-next-line fp/no-mutating-assign
+
 			const updatedDom = await updateChildrenAsync(dom, getChildren(trace.leafElement))
-			assert.strictEqual(updatedDom.childNodes.length, 3)
+			assert.strictEqual(updatedDom.childNodes.length, 2)
 
 			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
@@ -88,7 +88,7 @@ describe("CORE MODULE", () => {
 	describe("renderAsync", () => {
 		it("should return elt with same html as renderToString, for an elt without children", async () => {
 			try {
-				const elt = <CommandBox
+				const elt = <HoverBox
 					// icon={{ on: ()=><span>On</span>, off: ()=><span>Off</span> }}
 					style={{ height: "auto", width: "auto", fontSize: "14px" }}
 				/>
@@ -193,9 +193,9 @@ describe("CORE MODULE", () => {
 		it("should render SVG elements properly", async () => {
 
 			type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
-			const MakeIcon = (svgElement: JSX.Element): FontIcon => {
+			const MakeIcon = (svgElement: JSX.Element): FontIcon =>
 				// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
-				return function (props) {
+				function (props) {
 					const elt = svgElement as any
 					// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
 					return <svg
@@ -212,7 +212,7 @@ describe("CORE MODULE", () => {
 						{elt.children}
 					</svg>
 				}
-			}
+
 			const VytalsLogo = MakeIcon(
 				<svg
 					id="Layer_1"
@@ -238,11 +238,13 @@ describe("CORE MODULE", () => {
 			const Layout: Component<Props> = async function (props) {
 				// console.log(`Starting layout component render`)
 				const { user, children } = props
-				return <StackPanel id="root"
+				return <StackPanel
+					id="root"
 					orientation="vertical"
 					style={{ padding: 0, margin: 0 }}>
 
-					<StackPanel id="header"
+					<StackPanel
+						id="header"
 						itemsAlignH="uniform"
 						itemsAlignV="center"
 						style={{ backgroundColor: "purple", width: "100vw", height: "10vh" }}>
@@ -262,19 +264,21 @@ describe("CORE MODULE", () => {
 
 					</StackPanel>
 
-					<StackPanel id="content"
+					<StackPanel
+						id="content"
 						style={{ backgroundColor: "whitesmoke", height: "75vh" }}>
 						{children}
 					</StackPanel>
 
-					<StackPanel id="footer"
+					<StackPanel
+						id="footer"
 						style={{ height: "10vh" }}>
 
 					</StackPanel>
 
 				</StackPanel>
 			}
-			const SplashPage: Component<Props> = (props) => <div>Splash page</div>
+			const SplashPage: Component<Props> = props => <div>Splash page</div>
 
 			const elt = <Layout user={undefined}><SplashPage user={undefined} /></Layout>
 
@@ -429,7 +433,7 @@ describe("CORE MODULE", () => {
 	describe("renderToIntrinsicAsync", () => {
 		it("should return elt with same html as renderToString, for an elt without children", async () => {
 			try {
-				const elt = <CommandBox
+				const elt = <HoverBox
 					// icon={{ on: ()=><span>On</span>, off: ()=><span>Off</span> }}
 					style={{ height: "auto", width: "auto", fontSize: "14px" }}
 				/>
@@ -517,9 +521,9 @@ describe("CORE MODULE", () => {
 		it("should render SVG elements properly", async () => {
 
 			type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
-			const MakeIcon = (svgElement: JSX.Element): FontIcon => {
+			const MakeIcon = (svgElement: JSX.Element): FontIcon =>
 				// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
-				return function (props) {
+				function (props) {
 					const elt = svgElement as any
 					// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
 					return <svg
@@ -536,7 +540,7 @@ describe("CORE MODULE", () => {
 						{elt.children}
 					</svg>
 				}
-			}
+
 			const VytalsLogo = MakeIcon(
 				<svg
 					id="Layer_1"
@@ -612,7 +616,6 @@ describe("CORE MODULE", () => {
 				refreshToken: string
 				accessToken: string
 			}
-			// eslint-disable-next-line @typescript-eslint/ban-types
 			const SplashPage: Component<any> = async function* (props) {
 				// console.log(`Starting splash page render`)
 				yield <div>Splash page</div>
@@ -621,11 +624,13 @@ describe("CORE MODULE", () => {
 				// console.log(`Starting layout component render`)
 				const { user, children } = props
 
-				yield <StackPanel id="root"
+				yield <StackPanel
+					id="root"
 					orientation="vertical"
 					style={{ padding: 0, margin: 0 }}>
 
-					<StackPanel id="header"
+					<StackPanel
+						id="header"
 						itemsAlignH="uniform"
 						itemsAlignV="center"
 						style={{ backgroundColor: "purple", width: "100vw", height: "10vh" }}>
@@ -644,12 +649,14 @@ describe("CORE MODULE", () => {
 
 					</StackPanel>
 
-					<StackPanel id="content"
+					<StackPanel
+						id="content"
 						style={{ backgroundColor: "whitesmoke", height: "75vh" }}>
 						{children}
 					</StackPanel>
 
-					<StackPanel id="footer"
+					<StackPanel
+						id="footer"
 						style={{ height: "10vh" }}>
 
 					</StackPanel>
@@ -673,7 +680,7 @@ describe("CORE MODULE", () => {
 				props: { orientation: "horizontal" },
 				children: [
 					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: CommandBox, children: ["Hello"], props: {} },
+					{ type: HoverBox, children: ["Hello"], props: {} },
 					{ type: "a", props: {} },
 				]
 			}

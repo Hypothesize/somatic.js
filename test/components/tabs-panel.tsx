@@ -1,9 +1,9 @@
 import { hasValue } from '@sparkwave/standard'
 
-import { createElement, } from '../core'
+import { createElement, } from '../../dist/core'
 import { View, ViewProps } from './view'
 import { StackPanel } from './stack-panel'
-import { HtmlProps, Component, CSSProperties } from '../types'
+import { HtmlProps, Component, CSSProperties } from '../../dist/types'
 
 export const TabsPanel: Component<Props> = async function* (props) {
 	const { headers, headerItemStyle, headerItemTemplate, headerStyle, selectedHeaderItemStyle, selectedIndex, children, } = props

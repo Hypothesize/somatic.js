@@ -12,7 +12,7 @@ let daemon: NodeJS.Timeout | undefined = undefined
 
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
-	return { type, props: props ?? {}, children: flatten(children) }
+	return { type, props: props ?? {}, children: [...flatten(children)] }
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */

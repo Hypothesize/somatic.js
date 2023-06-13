@@ -1,5 +1,5 @@
-import { createElement } from '../core'
-import { Component, PanelProps, HtmlProps, CSSLength } from '../types'
+import { createElement } from '../../dist/core'
+import { Component, PanelProps, HtmlProps, CSSLength } from '../../dist/types'
 import { isArray } from '@sparkwave/standard/utility'
 
 type RowOrColumnInfo = CSSLength | "none" | "auto" | "max-content" | "min-content" | "initial" | "inherit"
