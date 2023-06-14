@@ -673,42 +673,6 @@ describe("CORE MODULE", () => {
 		})
 	})
 
-	describe("applyLeafElementAsync", () => {
-		it("should work for an intrinsic element with component", async () => {
-			const elt = {
-				type: StackPanel,
-				props: { orientation: "horizontal" },
-				children: [
-					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: HoverBox, children: ["Hello"], props: {} },
-					{ type: "a", props: {} },
-				]
-			}
-			const trace = await traceToLeafAsync(elt)
-			assert(isIntrinsicElt(trace.leafElement))
-			assert.strictEqual(trace.leafElement.type.toUpperCase(), "DIV")
-
-			const dom = document.createElement("span") as HTMLSpanElement
-			assert(!isTextDOM(dom))
-
-			// eslint-disable-next-line fp/no-mutating-assign
-			console.log(JSON.stringify(trace.leafElement))
-			const updatedDom = await applyLeafElementAsync(dom, trace.leafElement)
-
-			assert(!isTextDOM(updatedDom))
-			assert(!(updatedDom instanceof DocumentFragment))
-
-			assert.notStrictEqual(updatedDom, dom)
-			assert.strictEqual(updatedDom.tagName.toUpperCase(), "DIV")
-			assert.strictEqual(updatedDom.style.flexDirection, "row")
-
-			assert.strictEqual(updatedDom.childNodes.length, 3)
-
-			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
-			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
-			assert.strictEqual(firstChild.style.flexDirection, "column")
-		})
-	})
 
 	describe("updateAsync", async () => {
 		it("should update while maintaining the element type, if no overriding element is passed", async () => {

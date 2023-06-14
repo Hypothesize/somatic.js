@@ -1,6 +1,6 @@
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
-import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
+import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
 import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
 import { selfClosingTags } from "./common"
@@ -94,20 +94,9 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
  * @returns The updated DOM element, which is updated in-place
  */
 export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
-	const invocationId = cuid()
-
-	// console.log(`UpdateAsync ${invocationId} starting...`)
-	// console.log(`UpdateAsync ${invocationId}: dom=${dom}`)
-	// console.log(`UpdateAsync ${invocationId}: elt=${String(elt)}`)
-	/*console.log(`UpdateAsync ${invocationId}: elt.type=${isEltProper(elt)
-		? typeof elt.type === "string"
-			? `"${elt.type}"`
-			: elt.type.name
-		: String(undefined)}`
-	)*/
-	if (isTextDOM(dom))
+	if (isTextDOM(dom)) {
 		throw `UpdateAsync: Dom ${dom} is text`
-
+	}
 	// console.log(`Applying intrinsic leaf element ${stringify(eltLeaf)} to dom ${dom}}`)
 
 	const newTrace = elt === undefined
@@ -124,15 +113,15 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 		const updatedDOM = updateDomShallow(dom, newTrace.leafElement)
 		// console.log(`UpdateAsync ${invocationId}: Dom updated with new trace leaf: ${updatedDOM}`)
 
-		if (updatedDOM !== dom)
+		if (updatedDOM !== dom) {
 			throw `UpdateAsync: updatedDOM !== dom`
-
+		}
 		if (isIntrinsicElt(newTrace.leafElement) && !isTextDOM(updatedDOM)) {
 			const _children = getChildren(newTrace.leafElement)
 			const domWithChildren = await updateChildrenAsync(updatedDOM, _children)
-			if (domWithChildren !== updatedDOM)
+			if (domWithChildren !== updatedDOM) {
 				throw `UpdateAsync: domWithChildren !== updatedDOM`
-
+			}
 			// if (domWithChildren.childNodes.length !== _children.length)
 			// throw `UpdateAsync ${invocationId}: domWithChildren.childNodes.length !== _children.length`
 
@@ -153,9 +142,9 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 			: Object.assign(updatedDOM, { renderTrace: newTrace }) as DOMAugmented
 	}
 	else {
-		if (elt === undefined)
+		if (elt === undefined) {
 			throw `UpdateAsync: elt !== undefined`
-
+		}
 		// console.log(`UpdateAsync: dom and elt are NOT compatible, replacing dom with new render`)
 		const replacement = await renderAsync(elt!)
 		// console.log(`UpdateAsync ${invocationId}: New rendered dom to replace ${dom} = ${(replacement)}`)
@@ -199,15 +188,15 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 /** Update children of an DOM element and return it; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	const domChildren = [...eltDOM.childNodes]
-	const flatten = (_children: UIElement[]): UIElement[] => (_children
+	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
-				? flatten(getChildren(c))
+				? flattenChildren(getChildren(c))
 				: c
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(flatten(children).map((child, index) => {
+	const newDomChildren = await Promise.all(flattenChildren(children).map((child, index) => {
 		const matchingNode: ChildNode | undefined = (index < domChildren.length && matching(domChildren[index], child, true))
 			? domChildren[index]
 			: domChildren.find((c, i) => matching(c, child, i === index))
@@ -219,8 +208,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
-			if (_ instanceof DocumentFragment && _.children.length === 0)
+			if (_ instanceof DocumentFragment && _.children.length === 0) {
 				console.warn(`updateChildrenAsync: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
+			}
 		})
 
 		return updated
@@ -232,9 +222,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		eltDOM.append(child)
 	})
 
-	if (eltDOM.childNodes.length !== newDomChildren.length)
+	if (eltDOM.childNodes.length !== newDomChildren.length) {
 		throw `updateChildrenAsync: eltDOM.childNodes.length (${eltDOM.childNodes.length}) !== newDomChildren.length (${newDomChildren.length})`
-
+	}
 	return eltDOM
 
 	// const fragment = new DocumentFragment()
@@ -252,7 +242,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		// 	: undefined
 
 		const eltKey = isComponentElt(elt)
-			? elt?.props?.key
+			? elt.props.key
 			: undefined
 
 		return sameIndex
