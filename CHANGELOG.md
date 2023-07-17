@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.3.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.3.0...v2.3.1) (2023-07-17)
+
+
+### Bug Fixes
+
+* (97) Cleanup dependencies and update linting ([8564266](https://www.github.com/Hypothesize/somatic.js/commit/8564266cdc147edd3782f2ddf0c8b902cec28e78)), closes [#97](https://www.github.com/Hypothesize/somatic.js/issues/97)
+
 ## [2.3.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.2.0...v2.3.0) (2023-06-06)
 
 
