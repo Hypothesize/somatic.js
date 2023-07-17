@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { createElement } from '../core'
-import { Component, PanelProps, HtmlProps, CSSLength } from '../types'
+
+import { createElement } from '../../dist/core'
+import { Component, PanelProps, HtmlProps, CSSLength } from '../../dist/types'
 
 export type StackPanelProps = PanelProps & HtmlProps & {
 
@@ -49,7 +47,8 @@ export const StackPanel: Component<StackPanelProps> = function (props) {
 		}
 	}
 
-	return <div {...htmlProps}
+	return <div
+		{...htmlProps}
 		style={{
 			...style,
 			display: "flex",

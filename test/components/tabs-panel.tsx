@@ -1,12 +1,9 @@
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { hasValue } from '@sparkwave/standard'
 
-import { createElement, } from '../core'
+import { createElement, } from '../../dist/core'
 import { View, ViewProps } from './view'
 import { StackPanel } from './stack-panel'
-import { HtmlProps, Component, CSSProperties } from '../types'
+import { HtmlProps, Component, CSSProperties } from '../../dist/types'
 
 export const TabsPanel: Component<Props> = async function* (props) {
 	const { headers, headerItemStyle, headerItemTemplate, headerStyle, selectedHeaderItemStyle, selectedIndex, children, } = props
@@ -14,21 +11,23 @@ export const TabsPanel: Component<Props> = async function* (props) {
 
 	const _children = (!hasValue(children)) ? [] : Array.isArray(children) ? children.flat() : [children]
 
-	while (true) yield <StackPanel orientation={"vertical"}>
-		<View
-			orientation={"horizontal"}
-			sourceData={headers}
-			itemStyle={headerItemStyle}
-			selectedItemStyle={selectedHeaderItemStyle}
-			itemsPanel={StackPanel}
-			itemTemplate={headerItemTemplate}
-		/>
+	while (true) {
+		yield <StackPanel orientation={"vertical"}>
+			<View
+				orientation={"horizontal"}
+				sourceData={headers}
+				itemStyle={headerItemStyle}
+				selectedItemStyle={selectedHeaderItemStyle}
+				itemsPanel={StackPanel}
+				itemTemplate={headerItemTemplate}
+			/>
 
-		<div>{_children[selectedIndex || 0]}</div>
-	</StackPanel>
+			<div>{_children[_selectedIndex || 0]}</div>
+		</StackPanel>
+	}
 }
 
-export type Props<THeader = any> = HtmlProps & {
+export type Props<THeader = unknown> = HtmlProps & {
 	headers: Array<THeader>
 	headerStyle?: CSSProperties
 	headerItemTemplate?: ViewProps<THeader>["itemTemplate"]

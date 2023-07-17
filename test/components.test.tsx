@@ -1,14 +1,4 @@
-/* eslint-disable prefer-const */
-/* eslint-disable fp/no-let */
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable fp/no-mutation */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable init-declarations */
-
-import * as assert from "assert"
+//import * as assert from "assert"
 // import { describe, it, beforeEach, afterEach } from 'mocha'
 
 import '../dist/index.js'
@@ -49,8 +39,7 @@ const theme = {
 }
 
 describe("Components", () => {
-	// eslint-disable-next-line fp/no-let
-	let container: HTMLDivElement | null
+	let container: HTMLDivElement | null = null
 
 	beforeEach(() => {
 		container = document.createElement('div')
@@ -58,8 +47,7 @@ describe("Components", () => {
 	})
 
 	afterEach(() => {
-		// eslint-disable-next-line no-unused-expressions
-		if (container) container?.remove()
+		if (container) container.remove()
 		container = null
 	})
 

@@ -1,6 +1,3 @@
-/* eslint-disable fp/no-mutation */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/ban-types */
 import { keys, skip, hasValue, indexesOf, first } from "@sparkwave/standard"
 
 import { stringifyStyle } from "./html"
@@ -27,7 +24,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 				// avoids setting className directly, since that works better for SVG elements,
 				// avoids a type error, since Typescript (incorrectly) types className as read-only 
 				element.setAttribute('class', attributeValue)
-				//ToDo: Check if setAttributeNS is better to use above and in similar calls
 			}
 			else {
 				console.warn(`Ignored setting class on <${element.tagName}> to non-string value ${attributeValue}`)
@@ -49,7 +45,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 		else if (typeof attributeValue === 'function' && isEventKey(attributeName)) {
 			// const eventName = eventNames[key.toUpperCase() as keyof typeof eventNames];
 			(element as any)[attributeName.toLowerCase()] = attributeValue
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			// element.addEventListener(eventName, value as any)
 			// element.addEventListener("unload", () => {
 			// 	console.warn(`onloading element ${element}...`)
@@ -96,7 +91,6 @@ export function setAttribute(element: DOMElement, attributeName: string, attribu
 
 /** Create a shallow DOM element based on the passed intrinsic element or primitive value.
  * @returns A non-text DOM element (without children) when passed an intrinsic element (that possibly has children)
- * @returns A text DOM element when passed a primitive value
  */
 export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragment | Text {
 	if (isIntrinsicElt(eltUI)) {
@@ -106,10 +100,10 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
 			? document.createElementNS('http://www.w3.org/2000/svg', eltUI.type)
 			: eltUI.type === "" ? document.createDocumentFragment()
 				: document.createElement(eltUI.type)
-		const props = eltUI.props ?? {}
-		if (!(dom instanceof DocumentFragment))
+		const props = eltUI.props
+		if (!(dom instanceof DocumentFragment)) {
 			Object.keys(props).forEach(key => setAttribute(dom, key, props[key]))
-
+		}
 		return dom
 	}
 	else {
@@ -121,12 +115,12 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
  * If passed an intrinsic element with the same tag as the existing DOM, the DOM is updated to match the intrinsic element
  * Else the existing DOM is replaced (with respect to its parent) with a new shallow DOM based on the intrinsic element
  * If passed a primitive value, the original DOM is replaced with a new text element with content set to the value
- * @returns: The original or new DOM element according to the above rules
+ * @returns The original or new DOM element according to the above rules
  */
 export function updateDomShallow(eltDOM: DOMElement, eltUI: LeafElement) {
 	if ("attributes" in eltDOM && isIntrinsicElt(eltUI) && eltUI.type.toUpperCase() === eltDOM.tagName.toUpperCase()) {
 		[...eltDOM.attributes].forEach(attrib => eltDOM.removeAttribute(attrib.name))
-		const props = eltUI.props ?? {}
+		const props = eltUI.props
 		Object.keys(props).forEach(key => setAttribute(eltDOM, key, props[key]))
 		return eltDOM
 	}
@@ -146,27 +140,24 @@ export function truncateChildNodes(node: Node, newLength: number) {
 export function emptyContainer(container: Node) {
 	container.textContent = ""
 }
-
-function detachedUpdate(dom: Node, fn: (dom: Node) => any) {
-	const parent = dom.parentNode
+/* function detachedUpdate(dom: Node, fn: (dom: Node) => any) {
+		const parent = dom.parentNode
 	if (parent) {
 		const index = first(indexesOf(parent.childNodes.entries(), { value: dom }))
 		parent.removeChild(dom)
 		fn(dom)
 		parent.insertBefore(dom, parent.childNodes.item(index))
 	}
-}
+} */
 
 /** Get ids of peak DOM elements among a list of elements in a tree */
 export function getApexElementIds(elementIds: string[]): string[] {
 	return elementIds.filter(id => {
-		// eslint-disable-next-line fp/no-let
 		let parent = document.getElementById(id)?.parentElement
-		// eslint-disable-next-line fp/no-loops
 		while (parent) {
-			if (elementIds.includes(parent.id))
+			if (elementIds.includes(parent.id)) {
 				return false
-			// eslint-disable-next-line fp/no-mutation
+			}
 			parent = parent.parentElement
 		}
 		return true
@@ -174,13 +165,11 @@ export function getApexElementIds(elementIds: string[]): string[] {
 }
 export function getApexElements(elements: DOMElement[]): DOMElement[] {
 	return elements.filter(elt => {
-		// eslint-disable-next-line fp/no-let
 		let parent = elt.parentElement
-		// eslint-disable-next-line fp/no-loops
 		while (parent) {
-			if (elements.includes(parent))
+			if (elements.includes(parent)) {
 				return false
-			// eslint-disable-next-line fp/no-mutation
+			}
 			parent = parent.parentElement
 		}
 		return true

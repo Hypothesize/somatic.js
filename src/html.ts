@@ -38,7 +38,7 @@ export function stringifyAttributes<E>(props: HTMLAttributes<any> & E): string {
 export function stringifyStyle(style: CSSProperties, important = false): string {
 	if (typeof style === "object") {
 		return Object.keys(style)
-			.map((key) => `${toDashCase(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
+			.map(key => `${toDashCase(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
 			.join("; ")
 		// .concat(";")
 	}
@@ -50,7 +50,7 @@ export function stringifyStyle(style: CSSProperties, important = false): string 
 
 /** Encode html string */
 export function encodeHTML(str: string): string {
-	return str.replace(/[&<>"']/g, (match) => {
+	return str.replace(/[&<>"']/g, match => {
 		switch (match) {
 			case "&":
 				return "&amp;"

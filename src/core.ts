@@ -1,19 +1,6 @@
-/* eslint-disable fp/no-mutating-assign */
-/* eslint-disable brace-style */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/ban-types */
-// import * as chalk from "chalk"
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-
-// import *  as morphdom from "morphdom"
-// const morphdom = require("morphdom")
-// const x = import("morpdom")
-
-import * as cuid from "cuid"
-import { String, hasValue } from "@sparkwave/standard"
+import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
-import { getApexElementIds, createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
+import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
 import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
 import { selfClosingTags } from "./common"
@@ -21,11 +8,11 @@ import { selfClosingTags } from "./common"
 export const Fragment = ""
 export type Fragment = typeof Fragment
 
+let daemon: NodeJS.Timeout | undefined = undefined
+
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
-	if (!type) console.warn(`Type argument mising in call to createElement`)
-
-	return { type, props: props ?? {}, children: (children ?? []).flat() }
+	return { type, props: props ?? {}, children: [...flatten(children)] }
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
@@ -80,14 +67,14 @@ export async function renderToIntrinsicAsync(elt: UIElement/*, injectedProps?: O
 export async function renderToStringAsync(elt: UIElement): Promise<string> {
 	if (hasValue(elt) && typeof elt === "object" && "props" in elt && "children" in elt && typeof elt.type === "undefined") {
 		console.warn(`Object appearing to represent proper element has no type member\nThis is likely an error arising from creating an element with an undefined component`)
-		return globalThis.String(elt)
+		return String(elt)
 	}
 
 	const trace = await traceToLeafAsync(elt)
 	const leaf = trace.leafElement
 	if (isIntrinsicElt(leaf)) {
 		const children = getChildren(leaf)
-		const attributesHtml = new String(stringifyAttributes(leaf.props)).prependSpaceIfNotEmpty().toString()
+		const attributesHtml = new String__(stringifyAttributes(leaf.props)).prependSpaceIfNotEmpty().toString()
 		const childrenHtml = () => Promise.all(children.map(renderToStringAsync)).then(arr => arr.join(""))
 		return hasValue(leaf.type)
 			? selfClosingTags.includes(leaf.type.toUpperCase()) && children.length === 0
@@ -97,7 +84,7 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
 
 	}
 	else {
-		return globalThis.String(leaf ?? "")
+		return String(leaf ?? "")
 	}
 }
 
@@ -107,20 +94,9 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
  * @returns The updated DOM element, which is updated in-place
  */
 export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
-	const invocationId = cuid()
-
-	// console.log(`UpdateAsync ${invocationId} starting...`)
-	// console.log(`UpdateAsync ${invocationId}: dom=${dom}`)
-	// console.log(`UpdateAsync ${invocationId}: elt=${String(elt)}`)
-	/*console.log(`UpdateAsync ${invocationId}: elt.type=${isEltProper(elt)
-		? typeof elt.type === "string"
-			? `"${elt.type}"`
-			: elt.type.name
-		: String(undefined)}`
-	)*/
-	if (isTextDOM(dom))
+	if (isTextDOM(dom)) {
 		throw `UpdateAsync: Dom ${dom} is text`
-
+	}
 	// console.log(`Applying intrinsic leaf element ${stringify(eltLeaf)} to dom ${dom}}`)
 
 	const newTrace = elt === undefined
@@ -137,15 +113,15 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 		const updatedDOM = updateDomShallow(dom, newTrace.leafElement)
 		// console.log(`UpdateAsync ${invocationId}: Dom updated with new trace leaf: ${updatedDOM}`)
 
-		if (updatedDOM !== dom)
+		if (updatedDOM !== dom) {
 			throw `UpdateAsync: updatedDOM !== dom`
-
+		}
 		if (isIntrinsicElt(newTrace.leafElement) && !isTextDOM(updatedDOM)) {
 			const _children = getChildren(newTrace.leafElement)
 			const domWithChildren = await updateChildrenAsync(updatedDOM, _children)
-			if (domWithChildren !== updatedDOM)
+			if (domWithChildren !== updatedDOM) {
 				throw `UpdateAsync: domWithChildren !== updatedDOM`
-
+			}
 			// if (domWithChildren.childNodes.length !== _children.length)
 			// throw `UpdateAsync ${invocationId}: domWithChildren.childNodes.length !== _children.length`
 
@@ -166,9 +142,9 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 			: Object.assign(updatedDOM, { renderTrace: newTrace }) as DOMAugmented
 	}
 	else {
-		if (elt === undefined)
+		if (elt === undefined) {
 			throw `UpdateAsync: elt !== undefined`
-
+		}
 		// console.log(`UpdateAsync: dom and elt are NOT compatible, replacing dom with new render`)
 		const replacement = await renderAsync(elt!)
 		// console.log(`UpdateAsync ${invocationId}: New rendered dom to replace ${dom} = ${(replacement)}`)
@@ -212,15 +188,15 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 /** Update children of an DOM element and return it; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	const domChildren = [...eltDOM.childNodes]
-	const flatten = (_children: UIElement[]): UIElement[] => (_children
+	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
-				? flatten(getChildren(c))
+				? flattenChildren(getChildren(c))
 				: c
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(flatten(children).map((child, index) => {
+	const newDomChildren = await Promise.all(flattenChildren(children).map((child, index) => {
 		const matchingNode: ChildNode | undefined = (index < domChildren.length && matching(domChildren[index], child, true))
 			? domChildren[index]
 			: domChildren.find((c, i) => matching(c, child, i === index))
@@ -232,8 +208,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
-			if (_ instanceof DocumentFragment && _.children.length === 0)
+			if (_ instanceof DocumentFragment && _.children.length === 0) {
 				console.warn(`updateChildrenAsync: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
+			}
 		})
 
 		return updated
@@ -245,9 +222,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		eltDOM.append(child)
 	})
 
-	if (eltDOM.childNodes.length !== newDomChildren.length)
+	if (eltDOM.childNodes.length !== newDomChildren.length) {
 		throw `updateChildrenAsync: eltDOM.childNodes.length (${eltDOM.childNodes.length}) !== newDomChildren.length (${newDomChildren.length})`
-
+	}
 	return eltDOM
 
 	// const fragment = new DocumentFragment()
@@ -257,7 +234,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 
 	function matching(dom: Node, elt: UIElement, sameIndex: boolean) {
 		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
-			? dom.renderTrace.leafElement.props?.key
+			? dom.renderTrace.leafElement.props.key
 			: undefined
 
 		// const domKey = isAugmentedDOM(dom) && dom.renderTrace.componentElts.length > 0
@@ -265,16 +242,19 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		// 	: undefined
 
 		const eltKey = isComponentElt(elt)
-			? elt?.props?.key
+			? elt.props.key
 			: undefined
 
 		return sameIndex
 			? domKey === eltKey
-			: domKey !== undefined && eltKey !== undefined && domKey === eltKey
+			: (Boolean(domKey)) && (Boolean(eltKey)) && domKey === eltKey
 	}
 }
 
 
+interface IUInvalidatedEvent extends Event {
+	detail?: { invalidatedElementIds: string[] }
+}
 /** Convenience method to mount the entry point dom node of a client app */
 export async function mountElement(element: UIElement, container: Element) {
 	/** Library-specific DOM update/refresh interval */
@@ -288,30 +268,30 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-async function invalidationHandler(eventInfo: Event) {
+async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 	const invalidatedElementIds: string[] = []
 
-	let daemon: NodeJS.Timeout | undefined = undefined
+	//let daemon: NodeJS.Timeout | undefined = undefined
 
 	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-	const _invalidatedElementIds: string[] = (eventInfo as any).detail?.invalidatedElementIds ?? []
-	// eslint-disable-next-line fp/no-mutating-methods, @typescript-eslint/no-explicit-any
+	const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
 	invalidatedElementIds.push(..._invalidatedElementIds)
-	// eslint-disable-next-line fp/no-mutation
-	if (daemon === undefined) daemon = setInterval(async () => {
-		if (invalidatedElementIds.length === 0 && daemon) {
-			clearInterval(daemon)
-			// eslint-disable-next-line fp/no-mutation
-			daemon = undefined
-		}
-		// eslint-disable-next-line fp/no-mutating-methods
-		const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-		await Promise.all(idsToProcess.map(id => {
-			// console.log(`Updating "${id}" dom element...`)
-			const elt = document.getElementById(id)
-			if (elt)
-				updateAsync(elt as DOMAugmented)
-		}))
-	}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+	if (daemon === undefined) {
+		daemon = setInterval(async () => {
+			if (invalidatedElementIds.length === 0 && daemon) {
+				clearInterval(daemon)
+				daemon = undefined
+			}
+			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
+			await Promise.all(idsToProcess.map(id => {
+				// console.log(`Updating "${id}" dom element...`)
+				const elt = document.getElementById(id)
+				if (elt) {
+					return updateAsync(elt as DOMAugmented)
+				}
+				return undefined
+			}))
+		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+	}
 }

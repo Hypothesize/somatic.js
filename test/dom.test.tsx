@@ -17,7 +17,7 @@ import {
 	isTextDOM
 } from '../dist/dom'
 import { traceToLeafAsync, isIntrinsicElt } from "../dist/element"
-import { StackPanel, CommandBox, View } from "../dist/components"
+import { StackPanel, HoverBox, View } from "./components"
 
 
 import { Set, except } from '@sparkwave/standard'
@@ -104,7 +104,7 @@ describe("DOM MODULE", () => {
 					viewBox: "0 0 122.88 78.97"
 				},
 				children: [
-					{ type: "title", children: ["logo"] },
+					{ type: "title", children: ["logo"], props: {} },
 					{
 						type: "path",
 						props: {
@@ -326,7 +326,7 @@ describe("DOM MODULE", () => {
 				props: { orientation: "horizontal" },
 				children: [
 					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: CommandBox, children: ["Hello"] },
+					{ type: HoverBox, children: ["Hello"] },
 					{ type: "a" },
 				]
 			})

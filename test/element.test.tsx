@@ -1,12 +1,10 @@
-/* eslint-disable fp/no-loops */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as assert from "assert"
 import { isAsyncGenerator, isGenerator, pick, unique } from "@sparkwave/standard"
 import { UIElement, RenderingTrace, ComponentElt, Component, IntrinsicElement, CSSProperties } from '../dist/types'
 import { isEltProper, isIntrinsicElt, isComponentElt, updateResultAsync, traceToLeafAsync, updateTraceAsync, getChildren } from '../dist/element'
 import { stringify } from '../dist/common'
 import { createElement } from '../dist/core'
-import { StackPanel } from '../dist/components'
+import { StackPanel } from './components'
 
 interface User {
 	id: string

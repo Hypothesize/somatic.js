@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-namespace */
 
 import {
 	UIElement,
@@ -12,7 +9,7 @@ import {
 	SVGAttributes,
 	HtmlHTMLAttributes,
 	AnchorHTMLAttributes,
-	AudioHTMLAttributes,
+	MediaHTMLAttributes,
 	ButtonHTMLAttributes,
 	CanvasHTMLAttributes,
 	FormHTMLAttributes,
@@ -42,7 +39,7 @@ declare global {
 
 		/** This interface declaration is important for type-checking JSX children properly */
 		interface ElementChildrenAttribute {
-			children: {}; // specify children name to use
+			children: {} // specify children name to use
 		}
 
 		type Intrinsic<T> = T & {
@@ -55,7 +52,7 @@ declare global {
 		interface IntrinsicElements {
 			/** Represents the root (top-level element) of an HTML document, so it is also referred to as the root element. 
 			 * All other elements must be descendants of this element.
-			 * */
+			 */
 			html: Intrinsic<HtmlHTMLAttributes<HTMLHtmlElement>>
 			/** Represents the content of an HTML document. There can be only one <body> element in a document. */
 			body: HTMLAttributes<HTMLBodyElement>
@@ -68,13 +65,13 @@ declare global {
 			/** Specifies relationships between the current document and an external resource. 
 			 * This element is most commonly used to link to CSS, but is also used to establish site icons 
 			 * (both "favicon" style icons and icons for the home screen and apps on mobile devices) among other things. 
-			 * */
+			 */
 			link: LinkHTMLAttributes<HTMLLinkElement>
 			/** Represents Metadata that cannot be represented by other HTML meta-related elements, like base, link, script, style or title. */
 			meta: MetaHTMLAttributes<HTMLMetaElement>
 			/** Contains style information for a document, or part of a document. 
 			 * It contains CSS, which is applied to the contents of the document containing the <style> element. 
-			 * */
+			 */
 			style: Intrinsic<StyleHTMLAttributes<HTMLStyleElement>>
 			/** Defines the document's title that is shown in a Browser's title bar or a page's tab. 
 			 * It only contains text; tags within the element are ignored. 
@@ -94,7 +91,7 @@ declare global {
 			/** Represents a portion of a document whose content is only indirectly related to the document's main content. 
 			 * Asides are frequently presented as sidebars or call-out boxes. 
 			 */
-			aside: HTMLAttributes<HTMLElement>;
+			aside: HTMLAttributes<HTMLElement>
 			/** Represents introductory content, typically a group of introductory or navigational aids. 
 			 * It may contain some heading elements but also a logo, a search form, an author name, and other elements. 
 			 */
@@ -280,7 +277,7 @@ declare global {
 			sub: HTMLAttributes<HTMLElement>
 			/** Specifies inline text which is to be displayed as superscript for solely typographical reasons.
 			 * Superscripts are usually rendered with a raised baseline using smaller text
-			*/
+			 */
 			sup: HTMLAttributes<HTMLElement>
 			/** The <time> HTML element represents a specific period in time. 
 			 * It may include the datetime attribute to translate dates into machine-readable format, 
@@ -313,15 +310,15 @@ declare global {
 			 * It may contain one or more audio sources, represented using the src attribute or the source element: the browser will choose the most suitable one. 
 			 * It can also be the destination for streamed media, using a MediaStream.
 			 */
-			audio: AudioHTMLAttributes<HTMLAudioElement>
+			audio: MediaHTMLAttributes<HTMLAudioElement>
 			/** Embeds a media player which supports video playback into the document. 
 			 * You can use <video> for audio content as well, but the audio element may provide a more appropriate user experience.
 			 */
 			video: Intrinsic<HTMLAttributes<HTMLVideoElement> & {
-				height?: number | string;
-				width?: number | string;
-				controls?: boolean;
-				poster?: string;
+				height?: number | string
+				width?: number | string
+				controls?: boolean
+				poster?: string
 			}>
 			/** Used as a child of the media elements: audio and video. 
 			 * It lets you specify timed text tracks (or time-based data), for example to automatically handle subtitles. 
@@ -336,7 +333,7 @@ declare global {
 			/** Embeds external content at the specified point in the document. 
 			 * This content is provided by an external application or other source of interactive content such as a browser plug-in. 
 			 */
-			embed: HTMLAttributes<HTMLElement>;
+			embed: HTMLAttributes<HTMLElement>
 			/** Represents a nested browsing context, embedding another HTML page into the current one. */
 			iframe: HTMLAttributes<HTMLElement>
 			/** Represents an external resource, which can be treated as an image, a nested browsing context, or a resource to be handled by a plugin. */
@@ -379,9 +376,9 @@ declare global {
 
 			//#region Interactive elements
 			details: HTMLAttributes<HTMLElement>
-			dialog: HTMLAttributes<HTMLElement>;
-			menu: HTMLAttributes<HTMLElement>;
-			summary: HTMLAttributes<HTMLElement>;
+			dialog: HTMLAttributes<HTMLElement>
+			menu: HTMLAttributes<HTMLElement>
+			summary: HTMLAttributes<HTMLElement>
 			//#endregion
 
 			//#region Forms
@@ -462,6 +459,6 @@ declare global {
 export { createElement, Fragment, renderAsync, renderToStringAsync, renderToIntrinsicAsync, updateAsync, mountElement, invalidateUI, } from './core'
 export { getChildren, normalizeChildren, isEltProper, isIntrinsicElt, isComponentElt } from "./element"
 export { stringifyAttributes, stringifyStyle } from "./html"
-export * from './components'
+//export * from './components'
 export * from './types'
 export { colorConstants, colorLuminance } from "./common"
