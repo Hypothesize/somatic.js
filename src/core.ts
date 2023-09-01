@@ -1,3 +1,4 @@
+import morphdom from 'morphdom'
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
@@ -36,7 +37,6 @@ export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | Docum
 		return domWithChildren instanceof DocumentFragment
 			? domWithChildren
 			: Object.assign(domWithChildren, { renderTrace: trace })
-
 	}
 	else {
 		return dom
@@ -205,7 +205,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 			? updateAsync(matchingNode, child)
 			// : (console.log(`updateChildrenAsync "${updateAsyncInvocationId}": Getting child dom by render`), renderAsync(child))
 			: renderAsync(child)
-
+		if (matchingNode) {
+			updateDOM(matchingNode, child)
+		}
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -217,14 +219,15 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
 	// const newDomChildrenFlat = newDomChildren.map(c => c instanceof DocumentFragment ? [...c.children] as DOMElement[] : c).flat()
-	emptyContainer(eltDOM)
-	newDomChildren.forEach(child => {
-		eltDOM.append(child)
-	})
+	// emptyContainer(eltDOM)
+	// newDomChildren.forEach(child => {
+	// 	eltDOM.append(child)
+	// })
 
 	if (eltDOM.childNodes.length !== newDomChildren.length) {
 		throw `updateChildrenAsync: eltDOM.childNodes.length (${eltDOM.childNodes.length}) !== newDomChildren.length (${newDomChildren.length})`
 	}
+
 	return eltDOM
 
 	// const fragment = new DocumentFragment()
@@ -251,6 +254,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}
 }
 
+export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
 
 interface IUInvalidatedEvent extends Event {
 	detail?: { invalidatedElementIds: string[] }
