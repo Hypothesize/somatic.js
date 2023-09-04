@@ -1,4 +1,4 @@
-import morphdom from 'morphdom'
+const morphdom = require('morphdom').default
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
@@ -187,7 +187,8 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 
 /** Update children of an DOM element and return it; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
-	const domChildren = [...eltDOM.childNodes]
+	// updatedDOM is a copy of the eltDOM that will be updated with the new children
+	const updatedDOM = eltDOM.cloneNode(false) as DOMElement
 	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
@@ -196,18 +197,10 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(flattenChildren(children).map((child, index) => {
-		const matchingNode: ChildNode | undefined = (index < domChildren.length && matching(domChildren[index], child, true))
-			? domChildren[index]
-			: domChildren.find((c, i) => matching(c, child, i === index))
-		const updated = matchingNode && isAugmentedDOM(matchingNode)
-			// ? (console.log(`updateChildrenAsync "${updateAsyncInvocationId}": Getting child dom by update of ${matchingNode} with ${stringify(child)}`), updateAsync(matchingNode, child))
-			? updateAsync(matchingNode, child)
-			// : (console.log(`updateChildrenAsync "${updateAsyncInvocationId}": Getting child dom by render`), renderAsync(child))
-			: renderAsync(child)
-		if (matchingNode) {
-			updateDOM(matchingNode, child)
-		}
+	const newDomChildren = await Promise.all(children.map(async (child, index) => {
+		const updated: Promise<DOMAugmented | DocumentFragment | Text> = renderAsync(child)
+
+		// TODO: Does this render the components twice?
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -219,13 +212,17 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
 	// const newDomChildrenFlat = newDomChildren.map(c => c instanceof DocumentFragment ? [...c.children] as DOMElement[] : c).flat()
-	// emptyContainer(eltDOM)
+	//emptyContainer(eltDOM)
 	// newDomChildren.forEach(child => {
 	// 	eltDOM.append(child)
 	// })
 
-	if (eltDOM.childNodes.length !== newDomChildren.length) {
-		throw `updateChildrenAsync: eltDOM.childNodes.length (${eltDOM.childNodes.length}) !== newDomChildren.length (${newDomChildren.length})`
+	// We insert the newDomChildren into the updatedDOM, in the same order as the domChildren
+	updatedDOM.append(...newDomChildren)
+
+	// If eltDOM is an existing DOM, we morph it with its new version
+	if (!(eltDOM instanceof DocumentFragment)) {
+		updateDOM(eltDOM, updatedDOM)
 	}
 
 	return eltDOM
@@ -272,9 +269,9 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
+const invalidatedElementIds: string[] = []
 async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
-	const invalidatedElementIds: string[] = []
 
 	//let daemon: NodeJS.Timeout | undefined = undefined
 

@@ -19,7 +19,6 @@
 			"esnext.asynciterable"
 		],
 		"jsx": "react",
-		"esModuleInterop": true,
 		"jsxFactory": "createElement",
 		"preserveConstEnums": true,
 		"experimentalDecorators": true,
