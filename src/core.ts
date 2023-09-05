@@ -216,7 +216,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
 	// We remove from the DOM all children that are not in the new children
-	domChildren.filter(c => !childrenAfterUpdate.includes(c as DOMAugmented)).forEach(c => c.remove())
+	domChildren.filter(c => childrenAfterUpdate.find(cau => matching(c, cau, true)) === undefined).forEach(c => c.remove())
 
 	// We gather the children that didn't exist before
 	const newDomChildren = childrenAfterUpdate.filter((child, index) => findMatchingNode(child, domChildren, index) === undefined)
