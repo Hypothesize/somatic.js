@@ -491,8 +491,9 @@ export type PanelProps = Partial<{
 }>
 export type ViewProps<TData = unknown> = {
 	sourceData: Iterable<TData>
-	itemTemplate?: (itemInfo: { item: TData, index: number }) => JSX.Element
+	itemTemplate?: (itemInfo: { value: TData, index: number }) => JSX.Element
 	itemStyle?: CSSProperties
+	style?: CSSProperties
 }
 
 export type IconProps = Partial<{

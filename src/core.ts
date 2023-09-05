@@ -1,4 +1,3 @@
-const morphdom = require('morphdom').default
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
@@ -37,6 +36,7 @@ export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | Docum
 		return domWithChildren instanceof DocumentFragment
 			? domWithChildren
 			: Object.assign(domWithChildren, { renderTrace: trace })
+
 	}
 	else {
 		return dom
@@ -187,8 +187,7 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 
 /** Update children of an DOM element and return it; has side effects */
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
-	// updatedDOM is a copy of the eltDOM that will be updated with the new children
-	const updatedDOM = eltDOM.cloneNode(false) as DOMElement
+	const domChildren = [...eltDOM.childNodes]
 	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
@@ -197,10 +196,15 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(children.map(async (child, index) => {
-		const updated: Promise<DOMAugmented | DocumentFragment | Text> = renderAsync(child)
+	const childrenAfterUpdate = await Promise.all(flattenChildren(children).map((child, index) => {
+		const matchingNode = findMatchingNode(child, domChildren, index)
 
-		// TODO: Does this render the components twice?
+		const updated = matchingNode && isAugmentedDOM(matchingNode)
+			// ? (console.log(`updateChildrenAsync "${updateAsyncInvocationId}": Getting child dom by update of ${matchingNode} with ${stringify(child)}`), updateAsync(matchingNode, child))
+			? updateAsync(matchingNode, child)
+			// : (console.log(`updateChildrenAsync "${updateAsyncInvocationId}": Getting child dom by render`), renderAsync(child))
+			: renderAsync(child)
+
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -211,27 +215,29 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
-	// const newDomChildrenFlat = newDomChildren.map(c => c instanceof DocumentFragment ? [...c.children] as DOMElement[] : c).flat()
-	//emptyContainer(eltDOM)
-	// newDomChildren.forEach(child => {
-	// 	eltDOM.append(child)
-	// })
+	// We remove from the DOM all children that are not in the new children
+	domChildren.filter(c => !childrenAfterUpdate.includes(c as DOMAugmented)).forEach(c => c.remove())
 
-	// We insert the newDomChildren into the updatedDOM, in the same order as the domChildren
-	updatedDOM.append(...newDomChildren)
+	// We gather the children that didn't exist before
+	const newDomChildren = childrenAfterUpdate.filter((child, index) => findMatchingNode(child, domChildren, index) === undefined)
 
-	// If eltDOM is an existing DOM, we morph it with its new version
-	if (!(eltDOM instanceof DocumentFragment)) {
-		updateDOM(eltDOM, updatedDOM)
+	// We append them to the DOM
+	newDomChildren.forEach(child => {
+		eltDOM.append(child)
+	})
+
+	if (eltDOM.childNodes.length !== childrenAfterUpdate.length) {
+		throw `updateChildrenAsync: eltDOM.childNodes.length (${eltDOM.childNodes.length}) !== childrenAfterUpdate.length (${newDomChildren.length})`
 	}
-
 	return eltDOM
 
-	// const fragment = new DocumentFragment()
-	// fragment.append(...newChildren)
-	// eltDOM.replaceChildren(fragment)
-	// return eltDOM
+	function findMatchingNode(domToFind: UIElement, doms: ChildNode[], index: number): ChildNode | undefined {
+		return (index < doms.length && matching(doms[index], domToFind, true))
+			? doms[index]
+			: doms.find((c, i) => matching(c, domToFind, i === index))
+	}
 
+	// Returns whether a physical DOM node matches a UIElement
 	function matching(dom: Node, elt: UIElement, sameIndex: boolean) {
 		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
 			? dom.renderTrace.leafElement.props.key
@@ -251,7 +257,6 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}
 }
 
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
 
 interface IUInvalidatedEvent extends Event {
 	detail?: { invalidatedElementIds: string[] }
@@ -269,9 +274,9 @@ export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
 
-const invalidatedElementIds: string[] = []
 async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
+	const invalidatedElementIds: string[] = []
 
 	//let daemon: NodeJS.Timeout | undefined = undefined
 
