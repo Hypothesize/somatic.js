@@ -197,10 +197,9 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(children.map(async (child, index) => {
+	const newDomChildren = await Promise.all(children.map(async child => {
 		const updated: Promise<DOMAugmented | DocumentFragment | Text> = renderAsync(child)
 
-		// TODO: Does this render the components twice?
 		updated.then(_ => {
 			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -211,12 +210,6 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		return updated
 	}))
 
-	// const newDomChildrenFlat = newDomChildren.map(c => c instanceof DocumentFragment ? [...c.children] as DOMElement[] : c).flat()
-	//emptyContainer(eltDOM)
-	// newDomChildren.forEach(child => {
-	// 	eltDOM.append(child)
-	// })
-
 	// We insert the newDomChildren into the updatedDOM, in the same order as the domChildren
 	updatedDOM.append(...newDomChildren)
 
@@ -226,29 +219,6 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}
 
 	return eltDOM
-
-	// const fragment = new DocumentFragment()
-	// fragment.append(...newChildren)
-	// eltDOM.replaceChildren(fragment)
-	// return eltDOM
-
-	function matching(dom: Node, elt: UIElement, sameIndex: boolean) {
-		const domKey = isAugmentedDOM(dom) && isIntrinsicElt(dom.renderTrace.leafElement)
-			? dom.renderTrace.leafElement.props.key
-			: undefined
-
-		// const domKey = isAugmentedDOM(dom) && dom.renderTrace.componentElts.length > 0
-		// 	? dom.renderTrace.componentElts[0].props?.key
-		// 	: undefined
-
-		const eltKey = isComponentElt(elt)
-			? elt.props.key
-			: undefined
-
-		return sameIndex
-			? domKey === eltKey
-			: (Boolean(domKey)) && (Boolean(eltKey)) && domKey === eltKey
-	}
 }
 
 export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
