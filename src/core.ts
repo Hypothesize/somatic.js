@@ -1,4 +1,5 @@
-import { String as String__, hasValue, flatten, Tuple } from "@sparkwave/standard"
+import { default as morphdom } from 'morphdom'
+import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"

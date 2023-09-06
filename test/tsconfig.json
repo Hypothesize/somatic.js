@@ -4,7 +4,7 @@
 		"module": "commonjs",
 		"jsx": "react",
 		"jsxFactory": "createElement",
-		// "esModuleInterop": true,
+		"esModuleInterop": true,
 		"strict": true
 	},
 	"include": [

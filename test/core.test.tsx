@@ -1,6 +1,6 @@
-import * as assert from "assert"
+import { default as assert } from "assert"
 import { expect, use } from "chai"
-import * as chaiHTML from "chai-html"
+import { default as chaiHTML } from "chai-html"
 const cleanup = require('jsdom-global')()
 
 import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'

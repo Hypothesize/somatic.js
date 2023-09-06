@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('jsdom-global')()
-import * as assert from "assert"
+import { default as assert} from "assert"
 import { IntrinsicElement } from "../dist/types"
 import { renderAsync } from "../dist/core"
 import {

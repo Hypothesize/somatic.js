@@ -1,4 +1,4 @@
-import * as cuid from "cuid"
+import { default as cuid } from "cuid"
 import { Obj } from "@sparkwave/standard/utility"
 
 /** Names of DOM events. */
