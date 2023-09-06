@@ -1,4 +1,4 @@
-//import * as assert from "assert"
+//import { default as assert} from "assert"
 // import { describe, it, beforeEach, afterEach } from 'mocha'
 
 import '../dist/index.js'

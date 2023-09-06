@@ -1,4 +1,4 @@
-const morphdom = require('morphdom').default
+import { default as morphdom } from 'morphdom'
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"

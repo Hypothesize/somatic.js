@@ -1,5 +1,5 @@
 // import { deepMerge, noop, promisify } from '@sparkwave/standard'
-import * as cuid from "cuid"
+import { default as cuid } from "cuid"
 import { ArgsType } from "@sparkwave/standard"
 import { createElement, invalidateUI } from '../../dist/core'
 import { PanelProps, HtmlProps, Component, CSSProperties, Children } from '../../dist/types'
