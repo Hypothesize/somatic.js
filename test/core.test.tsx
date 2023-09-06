@@ -60,8 +60,60 @@ describe("CORE MODULE", () => {
 
 			const updatedDom = await updateChildrenAsync(dom, [])
 			assert.strictEqual(updatedDom.childNodes.length, 0)
-
 		})
+
+		it("should be able to remove, update and insert elements at the same time", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [
+					{ type: "span", props: { style: { display: "inline-block" } } },
+					"val",
+					{ type: "div", props: { style: { display: "inline-block" } } }
+				]
+			})
+
+			const newChildren = [
+				{ type: "div", props: { style: { display: "inline-block" } } },
+				{ type: "span", props: { style: { display: "inline-block" } } },
+				{ type: "span", props: { style: { display: "inline-block" } } },
+				{ type: "span", props: { style: { display: "inline-block" } } }
+			]
+			assert(!isTextDOM(dom))
+
+			const updatedDom = await updateChildrenAsync(dom, newChildren)
+			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
+			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
+			const secondChild = updatedDom.childNodes.item(1) as HTMLElement
+			assert.strictEqual(secondChild.tagName.toUpperCase(), "SPAN")
+			const fourthChild = updatedDom.childNodes.item(3) as HTMLElement
+			assert.strictEqual(fourthChild.tagName.toUpperCase(), "SPAN")
+		})
+
+		it("should not touch elements that have a matching key", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [
+					{ type: "span", props: { style: { display: "inline-block" } } },
+					"val",
+					{ type: "input", props: { key: "myInput" } }
+				]
+			})
+			const targetInput = dom.childNodes.item(2) as HTMLInputElement
+			// We assign a value to that input
+			targetInput.value = "test"
+
+			const newChildren = [
+				{ type: "input", props: { key: "myInput" } },
+			]
+			assert(!isTextDOM(dom))
+
+			const updatedDom = await updateChildrenAsync(dom, newChildren)
+			const firstChild = updatedDom.childNodes.item(0) as HTMLInputElement
+			assert.strictEqual(firstChild.value, "test")
+		})
+
 		it("should work for component children", async () => {
 			const intrinsic: IntrinsicElement = {
 				type: "div",
