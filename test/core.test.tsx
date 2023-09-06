@@ -108,10 +108,11 @@ describe("CORE MODULE", () => {
 				{ type: "input", props: { key: "myInput" } },
 			]
 			assert(!isTextDOM(dom))
+			const thirdChild = dom.childNodes.item(2)
 
 			const updatedDom = await updateChildrenAsync(dom, newChildren)
-			const firstChild = updatedDom.childNodes.item(0) as HTMLInputElement
-			assert.strictEqual(firstChild.value, "test")
+			const updatedFirstChild = updatedDom.childNodes.item(0) as HTMLInputElement
+			assert.ok(thirdChild === updatedFirstChild)
 		})
 
 		it("should work for component children", async () => {
