@@ -189,6 +189,14 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	// updatedDOM is a copy of the eltDOM that will be updated with the new children
 	const updatedDOM = eltDOM.cloneNode(false) as DOMElement
+	
+	if (eltDOM instanceof HTMLElement && updatedDOM instanceof HTMLElement) {
+		// We copy the attributes of eltDOM to updatedDOM
+		for (const attr of eltDOM.attributes) {
+			updatedDOM.setAttribute(attr.name, attr.value)
+		}
+	}
+
 	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
@@ -197,7 +205,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(children.map(async child => {
+	const newDomChildren = await Promise.all(flattenChildren(children).map(async child => {
 		const updated: Promise<DOMAugmented | DocumentFragment | Text> = renderAsync(child)
 
 		updated.then(_ => {
@@ -221,7 +229,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	return eltDOM
 }
 
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node, { getNodeKey: () => undefined }) }
+export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
 
 interface IUInvalidatedEvent extends Event {
 	detail?: { invalidatedElementIds: string[] }
