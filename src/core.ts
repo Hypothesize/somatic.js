@@ -189,7 +189,7 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
 	// updatedDOM is a copy of the eltDOM that will be updated with the new children
 	const updatedDOM = eltDOM.cloneNode(false) as DOMElement
-	
+
 	if (eltDOM instanceof HTMLElement && updatedDOM instanceof HTMLElement) {
 		// We copy the attributes of eltDOM to updatedDOM
 		for (const attr of eltDOM.attributes) {
@@ -229,7 +229,20 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	return eltDOM
 }
 
-export function updateDOM(rootElement: Element, node: Node) { morphdom(rootElement, node) }
+export function updateDOM(rootElement: Element, node: Node) {
+	try {
+		console.log("innerHTML sent to morphdom")
+		console.log((node as HTMLElement).innerHTML)
+
+		console.log("node sent to morphdom")
+		console.log(JSON.stringify(node))
+	}
+	catch (err) {
+		console.error(`Logging error: ${err}`)
+	}
+
+	morphdom(rootElement, node)
+}
 
 interface IUInvalidatedEvent extends Event {
 	detail?: { invalidatedElementIds: string[] }
