@@ -177,9 +177,10 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 	const rendersAugmented = await Promise.all(rendersAugmentedPromises) as ComponentEltAugmented[]
 
 	const lastRendersAugmented = last(rendersAugmented)
-	if (typeof lastRendersAugmented === "object") {
+	if (typeof lastRendersAugmented === "object" && typeof lastRendersAugmented.type === "undefined") {
 		console.error("lastRendersAugmented is object but has no type property value, in updateTraceAsync")
 	}
+
 	const _trace = await traceToLeafAsync(lastRendersAugmented)
 	return {
 		componentElts: [...union([rendersAugmented, skip(_trace.componentElts, 1)])],

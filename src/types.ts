@@ -504,7 +504,7 @@ export type IconProps = Partial<{
 
 //#region Attributes
 export interface Attributes { key?: string | number | symbol }
-export type DOMAttributes<T> = {
+export type DOMAttributes<T> = Attributes & {
 	//childrenx?: Somatic.VNode[];
 	// dangerouslySetInnerHTML?: {
 	// 	__html: string;

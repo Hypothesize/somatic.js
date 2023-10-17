@@ -3,8 +3,10 @@ import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
-import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
+import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented, ComponentEltAugmented } from "./types"
 import { selfClosingTags } from "./common"
+import { clear } from 'console'
+import { clearScreenDown } from 'readline'
 
 export const Fragment = ""
 export type Fragment = typeof Fragment
@@ -33,10 +35,10 @@ export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | Docum
 	const dom = createDOMShallow(leaf)
 
 	if (!isTextDOM(dom)) {
-		const domWithChildren = await updateChildrenAsync(dom, getChildren(leaf))
-		return domWithChildren instanceof DocumentFragment
-			? domWithChildren
-			: Object.assign(domWithChildren, { renderTrace: trace })
+		await populateWithChildren(dom, getChildren(leaf))
+		return dom instanceof DocumentFragment
+			? dom
+			: Object.assign(dom, { renderTrace: trace })
 	}
 	else {
 		return dom
@@ -93,77 +95,47 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
  * @param elt A UI (JSX) element that is used as the overriding starting point of the re-render, if passed
  * @returns The updated DOM element, which is updated in-place
  */
-export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
-	if (isTextDOM(dom)) {
-		throw `UpdateAsync: Dom ${dom} is text`
+export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIElement) {
+	if (isTextDOM(initialDOM)) {
+		throw `UpdateAsync: Dom ${initialDOM} is text`
 	}
 	// console.log(`Applying intrinsic leaf element ${stringify(eltLeaf)} to dom ${dom}}`)
 
 	const newTrace = elt === undefined
-		? await updateTraceAsync(dom.renderTrace)
-		: areCompatible(dom, elt)
+		? await updateTraceAsync(initialDOM.renderTrace)
+		: areCompatible(initialDOM, elt)
 			? isComponentElt(elt)
-				? await updateTraceAsync(dom.renderTrace, elt)
+				? await updateTraceAsync(initialDOM.renderTrace, elt)
 				: { componentElts: [], leafElement: elt }
 			: undefined
 
 	if (newTrace) {
 		// console.log(`UpdateAsync ${invocationId}: Leaf of new trace for updating ${(dom)} = ${stringify(newTrace.leafElement)}`)
 
-		const updatedDOM = updateDomShallow(dom, newTrace.leafElement)
+		const updatedDOM = createDOMShallow(newTrace.leafElement)
 		// console.log(`UpdateAsync ${invocationId}: Dom updated with new trace leaf: ${updatedDOM}`)
 
-		if (updatedDOM !== dom) {
-			throw `UpdateAsync: updatedDOM !== dom`
-		}
 		if (isIntrinsicElt(newTrace.leafElement) && !isTextDOM(updatedDOM)) {
 			const _children = getChildren(newTrace.leafElement)
-			const domWithChildren = await updateChildrenAsync(updatedDOM, _children)
-			if (domWithChildren !== updatedDOM) {
-				throw `UpdateAsync: domWithChildren !== updatedDOM`
-			}
-			// if (domWithChildren.childNodes.length !== _children.length)
-			// throw `UpdateAsync ${invocationId}: domWithChildren.childNodes.length !== _children.length`
+			await populateWithChildren(updatedDOM, _children)
 
-			// console.log(`UpdateAsync ${invocationId}: Dom updated with children: ${updatedDOM}`)
-			// console.log(`UpdateAsync ${invocationId}: Updated dom's childNodes: ${updatedDOM.childNodes}; length=${updatedDOM.childElementCount}`)
-			/*if (updatedDOM.childElementCount > 0) {
-				const first = updatedDOM.children.item(0)!
-				console.log(`UpdateAsync ${invocationId}: Updated dom's first child: ${first}`)
-				console.log(`UpdateAsync ${invocationId}: Updated dom's first child nodeType: ${first.nodeType}`)
-				if (first && first.hasChildNodes()) {
-					console.log(`UpdateAsync ${invocationId}: Updated dom's first child's child node: ${first.childNodes}`)
+			morphdom(initialDOM, updatedDOM, {
+				getNodeKey: node => (node as DOMAugmented & { key: string })["key"],
+				onBeforeElUpdated: node => {
+					console.log(`Updated node: ${node}`)
+					return node.tagName !== "INPUT"
 				}
-			}*/
+			})
 		}
-
-		return (updatedDOM instanceof DocumentFragment) || (updatedDOM instanceof Text)
-			? updatedDOM
-			: Object.assign(updatedDOM, { renderTrace: newTrace }) as DOMAugmented
 	}
 	else {
 		if (elt === undefined) {
 			throw `UpdateAsync: elt !== undefined`
 		}
-		// console.log(`UpdateAsync: dom and elt are NOT compatible, replacing dom with new render`)
 		const replacement = await renderAsync(elt!)
-		// console.log(`UpdateAsync ${invocationId}: New rendered dom to replace ${dom} = ${(replacement)}`)
-
-		return (dom.replaceWith(replacement)), replacement
+		initialDOM.replaceWith(replacement)
 	}
 
-	/** Update input DOM element to reflect input leaf UI element (type, props, and children)
-	 * Posibly mutates the input node
-	 */
-	/*async function applyLeafElementAsync(dom: DOMElement, eltLeaf: RenderingTrace["leafElement"]): Promise<DOMAugmented | Text> {
-		const updatedDOM = updateDomShallow(dom, eltLeaf)
-		console.assert(updatedDOM === dom)
-		if (isIntrinsicElt(eltLeaf) && !isTextDOM(updatedDOM)) {
-			const domWithChildren = await updateChildrenAsync(updatedDOM, getChildren(eltLeaf))
-			console.assert(domWithChildren === updatedDOM)
-		}
-		return updatedDOM
-	}*/
 	/** Checks for compatibility between a DOM and UI element */
 	function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 		if (isTextDOM(_dom)) return false // DOM element is just a text element
@@ -186,17 +158,7 @@ export async function updateAsync(dom: DOMAugmented/* | Text*/, elt?: UIElement)
 }
 
 /** Update children of an DOM element and return it; has side effects */
-export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment, children: UIElement[])/*: Promise<typeof eltDOM>*/ {
-	// updatedDOM is a copy of the eltDOM that will be updated with the new children
-	const updatedDOM = eltDOM.cloneNode(false) as DOMElement
-
-	if (eltDOM instanceof HTMLElement && updatedDOM instanceof HTMLElement) {
-		// We copy the attributes of eltDOM to updatedDOM
-		for (const attr of eltDOM.attributes) {
-			updatedDOM.setAttribute(attr.name, attr.value)
-		}
-	}
-
+export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragment, children: UIElement[]) {
 	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
@@ -209,9 +171,8 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 		const updated: Promise<DOMAugmented | DocumentFragment | Text> = renderAsync(child)
 
 		updated.then(_ => {
-			// const op = matchingNode && isAugmentedDOM(matchingNode) ? updateAsync : renderAsync
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
-				console.warn(`updateChildrenAsync: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
+				console.warn(`populateWithChildren: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
 			}
 		})
 
@@ -219,29 +180,7 @@ export async function updateChildrenAsync(eltDOM: DOMElement | DocumentFragment,
 	}))
 
 	// We insert the newDomChildren into the updatedDOM, in the same order as the domChildren
-	updatedDOM.append(...newDomChildren)
-
-	// If eltDOM is an existing DOM, we morph it with its new version
-	if (!(eltDOM instanceof DocumentFragment)) {
-		updateDOM(eltDOM, updatedDOM)
-	}
-
-	return eltDOM
-}
-
-export function updateDOM(rootElement: Element, node: Node) {
-	try {
-		console.log("innerHTML sent to morphdom")
-		console.log((node as HTMLElement).innerHTML)
-
-		console.log("node sent to morphdom")
-		console.log(JSON.stringify(node))
-	}
-	catch (err) {
-		console.error(`Logging error: ${err}`)
-	}
-
-	morphdom(rootElement, node)
+	emptyDOM.append(...newDomChildren)
 }
 
 interface IUInvalidatedEvent extends Event {
@@ -280,7 +219,7 @@ async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 				// console.log(`Updating "${id}" dom element...`)
 				const elt = document.getElementById(id)
 				if (elt) {
-					return updateAsync(elt as DOMAugmented)
+					updateAsync(elt as DOMAugmented)
 				}
 				return undefined
 			}))

@@ -4,7 +4,7 @@ import { default as chaiHTML } from "chai-html"
 const cleanup = require('jsdom-global')()
 
 import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, updateChildrenAsync, updateAsync, mountElement } from '../dist/core'
+import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
 import { StackPanel, View, HoverBox } from './components'
@@ -14,7 +14,7 @@ import { normalizeHTML } from './utils'
 describe("CORE MODULE", () => {
 	use(chaiHTML)
 
-	describe("updateChildren", () => {
+	describe("populateWithChildren", () => {
 		it("should work for a single value child", async () => {
 			const intrinsic: IntrinsicElement = {
 				type: "div",
@@ -27,8 +27,8 @@ describe("CORE MODULE", () => {
 			const dom = createDOMShallow(intrinsic)
 			assert(!isTextDOM(dom))
 
-			const updatedDom = await updateChildrenAsync(dom, getChildren(trace.leafElement))
-			assert.strictEqual(updatedDom.childNodes.length, 1)
+			await populateWithChildren(dom, getChildren(trace.leafElement))
+			assert.strictEqual(dom.childNodes.length, 1)
 		})
 		it("should work for with multiple intrinsic children", async () => {
 			const intrinsic: IntrinsicElement = {
@@ -42,77 +42,12 @@ describe("CORE MODULE", () => {
 			const dom = createDOMShallow(intrinsic)
 			assert(!isTextDOM(dom))
 
-			const updatedDom = await updateChildrenAsync(dom, getChildren(trace.leafElement))
-			assert.strictEqual(updatedDom.childNodes.length, 2)
-
-			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
-			assert.strictEqual(firstChild.tagName.toUpperCase(), "SPAN")
-			assert.strictEqual(firstChild.style.display, "inline-block")
-		})
-		it("should remove children from input dom element if input children array is empty", async () => {
-			const dom = await renderAsync({
-				type: "div",
-				props: { className: "clss", style: { backgroundColor: "blue" } },
-				children: [{ type: "span", props: { style: { display: "inline-block" } } }, "val"]
-			})
-			assert(!isTextDOM(dom))
+			await populateWithChildren(dom, getChildren(trace.leafElement))
 			assert.strictEqual(dom.childNodes.length, 2)
 
-			const updatedDom = await updateChildrenAsync(dom, [])
-			assert.strictEqual(updatedDom.childNodes.length, 0)
-		})
-
-		it("should be able to remove, update and insert elements at the same time", async () => {
-			const dom = await renderAsync({
-				type: "div",
-				props: { className: "clss", style: { backgroundColor: "blue" } },
-				children: [
-					{ type: "span", props: { style: { display: "inline-block" } } },
-					"val",
-					{ type: "div", props: { style: { display: "inline-block" } } }
-				]
-			})
-
-			const newChildren = [
-				{ type: "div", props: { style: { display: "inline-block" } } },
-				{ type: "span", props: { style: { display: "inline-block" } } },
-				{ type: "span", props: { style: { display: "inline-block" } } },
-				{ type: "span", props: { style: { display: "inline-block" } } }
-			]
-			assert(!isTextDOM(dom))
-
-			const updatedDom = await updateChildrenAsync(dom, newChildren)
-			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
-			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
-			const secondChild = updatedDom.childNodes.item(1) as HTMLElement
-			assert.strictEqual(secondChild.tagName.toUpperCase(), "SPAN")
-			const fourthChild = updatedDom.childNodes.item(3) as HTMLElement
-			assert.strictEqual(fourthChild.tagName.toUpperCase(), "SPAN")
-		})
-
-		it("should not touch elements that have a matching key", async () => {
-			const dom = await renderAsync({
-				type: "div",
-				props: { className: "clss", style: { backgroundColor: "blue" } },
-				children: [
-					{ type: "span", props: { style: { display: "inline-block" } } },
-					"val",
-					{ type: "input", props: { key: "myInput" } }
-				]
-			})
-			const targetInput = dom.childNodes.item(2) as HTMLInputElement
-			// We assign a value to that input
-			targetInput.value = "test"
-
-			const newChildren = [
-				{ type: "input", props: { key: "myInput" } },
-			]
-			assert(!isTextDOM(dom))
-			const thirdChild = dom.childNodes.item(2)
-
-			const updatedDom = await updateChildrenAsync(dom, newChildren)
-			const updatedFirstChild = updatedDom.childNodes.item(0) as HTMLInputElement
-			assert.ok(thirdChild === updatedFirstChild)
+			const firstChild = dom.childNodes.item(0) as HTMLElement
+			assert.strictEqual(firstChild.tagName.toUpperCase(), "SPAN")
+			assert.strictEqual(firstChild.style.display, "inline-block")
 		})
 
 		it("should work for component children", async () => {
@@ -129,10 +64,10 @@ describe("CORE MODULE", () => {
 			const dom = createDOMShallow(intrinsic)
 			assert(!isTextDOM(dom))
 
-			const updatedDom = await updateChildrenAsync(dom, getChildren(trace.leafElement))
-			assert.strictEqual(updatedDom.childNodes.length, 2)
+			await populateWithChildren(dom, getChildren(trace.leafElement))
+			assert.strictEqual(dom.childNodes.length, 2)
 
-			const firstChild = updatedDom.childNodes.item(0) as HTMLElement
+			const firstChild = dom.childNodes.item(0) as HTMLElement
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
 			assert.strictEqual(firstChild.style.flexDirection, "column")
 		})
@@ -244,28 +179,6 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should render SVG elements properly", async () => {
-
-			type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
-			const MakeIcon = (svgElement: JSX.Element): FontIcon =>
-				// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
-				function (props) {
-					const elt = svgElement as any
-					// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
-					return <svg
-						preserveAspectRatio='xMidYMid meet'
-						{...elt.props}
-						style={props.style}
-						// width={props.size || (props.style || {}).width || undefined}
-						// height={props.size || (props.style || {}).height || undefined}
-
-						color={props.color || (props.style || {}).color || undefined}
-						stroke={props.color || (props.style || {}).color || undefined}
-						fill='currentColor'>
-
-						{elt.children}
-					</svg>
-				}
-
 			const VytalsLogo = MakeIcon(
 				<svg
 					id="Layer_1"
@@ -573,27 +486,6 @@ describe("CORE MODULE", () => {
 
 		it("should render SVG elements properly", async () => {
 
-			type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
-			const MakeIcon = (svgElement: JSX.Element): FontIcon =>
-				// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
-				function (props) {
-					const elt = svgElement as any
-					// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
-					return <svg
-						preserveAspectRatio='xMidYMid meet'
-						{...elt.props}
-						style={props.style}
-						// width={props.size || (props.style || {}).width || undefined}
-						// height={props.size || (props.style || {}).height || undefined}
-
-						color={props.color || (props.style || {}).color || undefined}
-						stroke={props.color || (props.style || {}).color || undefined}
-						fill='currentColor'>
-
-						{elt.children}
-					</svg>
-				}
-
 			const VytalsLogo = MakeIcon(
 				<svg
 					id="Layer_1"
@@ -629,25 +521,7 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should return a string representation of a complex page component", async () => {
-			type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
-			const MakeIcon = (svgElement: JSX.Element): FontIcon => {
-				return function (props) {
-					const elt = svgElement as any
-					return <svg
-						preserveAspectRatio='xMidYMid meet'
-						{...elt.props}
-						style={props.style}
-						// width={props.size || (props.style || {}).width || undefined}
-						// height={props.size || (props.style || {}).height || undefined}
 
-						color={props.color || (props.style || {}).color || undefined}
-						stroke={props.color || (props.style || {}).color || undefined}
-						fill='currentColor'>
-
-						{elt.children}
-					</svg>
-				}
-			}
 			const VytalsLogo = MakeIcon(
 				<svg
 					id="Layer_1"
@@ -738,17 +612,82 @@ describe("CORE MODULE", () => {
 			assert(!isTextDOM(dom))
 			assert(!(dom instanceof DocumentFragment))
 
-			const updatedDom = await updateAsync(dom)
+			await updateAsync(dom)
 
-			assert(!isTextDOM(updatedDom))
-			assert(!(updatedDom instanceof DocumentFragment))
-			assert.strictEqual(updatedDom.tagName, dom.tagName)
+			assert(!isTextDOM(dom))
+			assert(!(dom instanceof DocumentFragment))
+		})
+
+		it("should remove children from input dom element if input children array is empty", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [{ type: "span", props: { style: { display: "inline-block" } } }, "val"]
+			})
+			assert(!isTextDOM(dom))
+			assert.strictEqual(dom.childNodes.length, 2)
+
+			await updateAsync(dom as DOMAugmented, <div></div>)
+			assert.strictEqual(dom.childNodes.length, 0)
+		})
+
+		it("should be able to remove, update and insert elements at the same time", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [
+					{ type: "span", props: { style: { display: "inline-block" } } },
+					"val",
+					{ type: "div", props: { style: { display: "inline-block" } } }
+				]
+			})
+			const newDiv = <div>
+				<div style={{ display: "inline-block" }}></div>
+				<span style={{ display: "inline-block" }}></span>
+				<span style={{ display: "inline-block" }}></span>
+				<span style={{ display: "inline-block" }}></span>
+			</div>
+
+			assert(!isTextDOM(dom))
+
+			await updateAsync(dom as DOMAugmented, newDiv)
+			const firstChild = dom.childNodes.item(0) as HTMLElement
+			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
+			const secondChild = dom.childNodes.item(1) as HTMLElement
+			assert.strictEqual(secondChild.tagName.toUpperCase(), "SPAN")
+			const fourthChild = dom.childNodes.item(3) as HTMLElement
+			assert.strictEqual(fourthChild.tagName.toUpperCase(), "SPAN")
+		})
+
+		it("should not touch elements that have a matching key", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [
+					{ type: "span", props: { style: { display: "inline-block" } } },
+					"val",
+					{ type: "input", props: { key: "myInput" } }
+				]
+			})
+			const targetInput = dom.childNodes.item(2) as HTMLInputElement
+			// We assign a value to that input
+			targetInput.value = "test"
+
+			const newChildren = <div>
+				<input key="myInput" />
+			</div>
+
+			assert(!isTextDOM(dom))
+			const thirdChild = dom.childNodes.item(2)
+
+			await updateAsync(dom as DOMAugmented, newChildren)
+			const updatedFirstChild = dom.childNodes.item(0) as HTMLInputElement
+			assert.ok(thirdChild === updatedFirstChild)
 		})
 	})
 
 	describe("mountElement", async () => {
 		it("should work", async () => {
-			const div = document.createElement("div")
 			await mountElement(<View<string>
 				id={"test_view_id"}
 				sourceData={["a", "b", "c"]}
@@ -793,3 +732,24 @@ describe("CORE MODULE", () => {
 // const stack = <StackPanel itemsAlignH="start"><div /></StackPanel>
 
 // cleanup()
+type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
+
+const MakeIcon = (svgElement: JSX.Element): FontIcon =>
+	// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
+	function (props) {
+		const elt = svgElement as any
+		// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
+		return <svg
+			preserveAspectRatio='xMidYMid meet'
+			{...elt.props}
+			style={props.style}
+			// width={props.size || (props.style || {}).width || undefined}
+			// height={props.size || (props.style || {}).height || undefined}
+
+			color={props.color || (props.style || {}).color || undefined}
+			stroke={props.color || (props.style || {}).color || undefined}
+			fill='currentColor'>
+
+			{elt.children}
+		</svg>
+	}
