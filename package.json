@@ -48,7 +48,8 @@
 	"dependencies": {
 		"@sparkwave/standard": "^2.33.0",
 		"cuid": "2.1.8",
-		"morphdom": "^2.7.0"
+		"morphdom": "^2.7.0",
+		"nanomorph": "^5.4.3"
 	},
 	"devDependencies": {
 		"@types/chai": "4.2.22",

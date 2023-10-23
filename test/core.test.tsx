@@ -1,7 +1,9 @@
 import { default as assert } from "assert"
 import { expect, use } from "chai"
 import { default as chaiHTML } from "chai-html"
-const cleanup = require('jsdom-global')()
+import { deepMerge, mergeDeep } from "@sparkwave/standard"
+require('jsdom-global')()
+const nanomorph = require('nanomorph')
 
 import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
 import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
@@ -612,10 +614,10 @@ describe("CORE MODULE", () => {
 			assert(!isTextDOM(dom))
 			assert(!(dom instanceof DocumentFragment))
 
-			await updateAsync(dom)
+			const updatedDOM = await updateAsync(dom)
 
-			assert(!isTextDOM(dom))
-			assert(!(dom instanceof DocumentFragment))
+			assert(!isTextDOM(updatedDOM))
+			assert(!(updatedDOM instanceof DocumentFragment))
 		})
 
 		it("should remove children from input dom element if input children array is empty", async () => {
@@ -627,8 +629,8 @@ describe("CORE MODULE", () => {
 			assert(!isTextDOM(dom))
 			assert.strictEqual(dom.childNodes.length, 2)
 
-			await updateAsync(dom as DOMAugmented, <div></div>)
-			assert.strictEqual(dom.childNodes.length, 0)
+			const updatedDOM = await updateAsync(dom as DOMAugmented, <div></div>)
+			assert.strictEqual(updatedDOM.childNodes.length, 0)
 		})
 
 		it("should be able to remove, update and insert elements at the same time", async () => {
@@ -650,23 +652,23 @@ describe("CORE MODULE", () => {
 
 			assert(!isTextDOM(dom))
 
-			await updateAsync(dom as DOMAugmented, newDiv)
-			const firstChild = dom.childNodes.item(0) as HTMLElement
+			const updatedDOM = await updateAsync(dom as DOMAugmented, newDiv)
+			const firstChild = updatedDOM.childNodes.item(0) as HTMLElement
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
-			const secondChild = dom.childNodes.item(1) as HTMLElement
+			const secondChild = updatedDOM.childNodes.item(1) as HTMLElement
 			assert.strictEqual(secondChild.tagName.toUpperCase(), "SPAN")
-			const fourthChild = dom.childNodes.item(3) as HTMLElement
+			const fourthChild = updatedDOM.childNodes.item(3) as HTMLElement
 			assert.strictEqual(fourthChild.tagName.toUpperCase(), "SPAN")
 		})
 
-		it("should not touch elements that have a matching key", async () => {
+		it("should not morph elements that have a matching id, when used in conjunction with nanomorph", async () => {
 			const dom = await renderAsync({
 				type: "div",
 				props: { className: "clss", style: { backgroundColor: "blue" } },
 				children: [
 					{ type: "span", props: { style: { display: "inline-block" } } },
 					"val",
-					{ type: "input", props: { key: "myInput" } }
+					{ type: "input", props: { id: "myInput" } }
 				]
 			})
 			const targetInput = dom.childNodes.item(2) as HTMLInputElement
@@ -674,15 +676,59 @@ describe("CORE MODULE", () => {
 			targetInput.value = "test"
 
 			const newChildren = <div>
-				<input key="myInput" />
+				<input id="myInput" />
 			</div>
 
 			assert(!isTextDOM(dom))
 			const thirdChild = dom.childNodes.item(2)
 
-			await updateAsync(dom as DOMAugmented, newChildren)
+			const updatedDOM = await updateAsync(dom as DOMAugmented, newChildren)
+			nanomorph(dom, updatedDOM)
 			const updatedFirstChild = dom.childNodes.item(0) as HTMLInputElement
 			assert.ok(thirdChild === updatedFirstChild)
+		})
+
+		it("should keep the state of every element", async () => {
+			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+				const defaultProps = {}
+				let props = deepMerge(defaultProps, _props)
+				const { id } = props
+
+				const state = {
+					iteratedVal: 0
+				}
+
+				while (true) {
+					const { iteratedVal } = state
+					const newProps = yield <div id={id}>
+						<h1>Playground</h1>
+						<div>
+							<button
+								id={"myButton"}
+								onClick={() => {
+									state.iteratedVal++
+								}}>TEST</button>
+						</div>
+						<div id={"valueKeeper"}>
+							Iterated value: {iteratedVal}
+						</div>
+					</div>
+
+					props = mergeDeep()(
+						props,
+						newProps ?? {}
+					)
+				}
+			}
+			const dom = await renderAsync(<div><MainComponent id={"test-component"} /></div>) as DOMAugmented
+			document.body.appendChild(dom)
+
+			const button = dom.querySelector("#myButton") as HTMLButtonElement
+			button.click()
+			button.click()
+			const updatedDOM = await updateAsync(dom) as HTMLElement
+			const valueKeeper = updatedDOM.querySelector("#valueKeeper") as HTMLButtonElement
+			assert.strictEqual(valueKeeper.textContent, "Iterated value: 2")
 		})
 	})
 
