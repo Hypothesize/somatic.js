@@ -687,8 +687,51 @@ describe("CORE MODULE", () => {
 			const updatedFirstChild = dom.childNodes.item(0) as HTMLInputElement
 			assert.ok(thirdChild === updatedFirstChild)
 		})
+		it("should keep the state of updated elements", async () => {
+			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+				const defaultProps = {}
+				let props = deepMerge(defaultProps, _props)
+				const { id } = props
 
-		it("should keep the state of every element", async () => {
+				const state = {
+					iteratedVal: 0
+				}
+
+				while (true) {
+					const { iteratedVal } = state
+					console.log(`Re-rendering main component, iteratedVal: ${iteratedVal}`)
+					const newProps = yield <div id={id}>
+						<h1>Playground</h1>
+						<div>
+							<button
+								id={"myButton"}
+								onClick={() => {
+									state.iteratedVal++
+								}}>TEST</button>
+						</div>
+						<div id={"valueKeeper"}>
+							Iterated value: {iteratedVal}
+						</div>
+					</div>
+
+					props = mergeDeep()(
+						props,
+						newProps ?? {}
+					)
+				}
+			}
+			const dom = await renderAsync(<MainComponent id={"test-component"} />) as DOMAugmented
+			document.body.appendChild(dom)
+
+			const button = dom.querySelector("#myButton") as HTMLButtonElement
+			button.click()
+			button.click()
+			const updatedDOM = await updateAsync(dom) as HTMLElement
+			const valueKeeper = updatedDOM.querySelector("#valueKeeper") as HTMLButtonElement
+			assert.strictEqual(valueKeeper.textContent, "Iterated value: 2")
+		})
+
+		it("should keep the state of updated elements' children", async () => {
 			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
 				const defaultProps = {}
 				let props = deepMerge(defaultProps, _props)

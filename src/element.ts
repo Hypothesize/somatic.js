@@ -18,9 +18,9 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElt<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-		const nextInfo = await generator.next(newProps)
+		let nextInfo = await generator.next(newProps)
 		// If new props were passed, call next() on generator again so latest props is used
-		//if (hasValue(newProps)) nextInfo = await generator.next()
+		if (hasValue(newProps)) nextInfo = await generator.next()
 
 		const next: UIElement | undefined = (nextInfo.done === true)
 			? undefined
