@@ -744,7 +744,6 @@ describe("CORE MODULE", () => {
 
 				while (true) {
 					const { iteratedVal } = state
-					console.log(`Rendering main component, iteratedVal: ${iteratedVal}`)
 
 					const newProps = yield <div id={id}>
 						<h1>Playground</h1>
