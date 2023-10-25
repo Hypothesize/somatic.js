@@ -112,26 +112,17 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 		if (isIntrinsicElt(newTrace.leafElement) && !isTextDOM(updatedDOM)) {
 			const _children = getChildren(newTrace.leafElement)
 			await populateWithChildren(updatedDOM, _children)
-
-			const updatedElementsWithIds = updatedDOM.querySelectorAll("[id]")
-			updatedElementsWithIds.forEach(updatedElement => {
-				const id = updatedElement.getAttribute("id")
-				if (id !== null) {
-					const initialDOMElement = initialDOM.querySelector(`[id="${id}"]`)
-					if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
-						initialDOMElement.renderTrace = updatedElement.renderTrace
-					}
-				}
-			})
 		}
 		return updatedDOM
 	}
 	else {
-		if (elt === undefined) {
+		if (elt === undefined || elt === null) {
 			throw `UpdateAsync: elt !== undefined`
 		}
+
 		const replacement = await renderAsync(elt)
 		initialDOM.replaceWith(replacement)
+
 		return initialDOM
 	}
 }
@@ -179,7 +170,7 @@ export async function mountElement(element: UIElement, container: Element) {
 	container.replaceChildren(await renderAsync(element))
 }
 
-/** Invalidate UI */
+/** Invalidate UI, and returns once the event completed */
 export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
@@ -204,8 +195,23 @@ async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 				// console.log(`Updating "${id}" dom element...`)
 				const elt = document.getElementById(id)
 				if (elt) {
-					const updatedElt = await updateAsync(elt as DOMAugmented)
+					console.log(`Updating "${id}" dom element...`)
+					const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
 					nanomorph(elt, updatedElt)
+					const updatedElementsWithIds = updatedElt.querySelectorAll("[id]")
+					await Promise.all([...updatedElementsWithIds].map(updatedElement => new Promise<void>(resolve => {
+						const elId = updatedElement.getAttribute("id")
+						if (elId !== null) {
+							const initialDOMElement = elt.querySelector(`[id="${elId}"]`)
+							if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
+								initialDOMElement.renderTrace = updatedElement.renderTrace
+								console.log(`Updated render trace for "${elId}" dom element`)
+							}
+						}
+						resolve()
+					})
+					))
+					console.log(`Update finished for "${id}" dom element`)
 				}
 				return undefined
 			}))

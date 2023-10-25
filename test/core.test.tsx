@@ -699,7 +699,6 @@ describe("CORE MODULE", () => {
 
 				while (true) {
 					const { iteratedVal } = state
-					console.log(`Re-rendering main component, iteratedVal: ${iteratedVal}`)
 					const newProps = yield <div id={id}>
 						<h1>Playground</h1>
 						<div>
@@ -732,6 +731,8 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should keep the state of updated elements' children", async () => {
+			document.body.innerHTML = ""
+
 			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
 				const defaultProps = {}
 				let props = deepMerge(defaultProps, _props)
@@ -743,6 +744,8 @@ describe("CORE MODULE", () => {
 
 				while (true) {
 					const { iteratedVal } = state
+					console.log(`Rendering main component, iteratedVal: ${iteratedVal}`)
+
 					const newProps = yield <div id={id}>
 						<h1>Playground</h1>
 						<div>
