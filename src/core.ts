@@ -170,7 +170,7 @@ export async function mountElement(element: UIElement, container: Element) {
 	container.replaceChildren(await renderAsync(element))
 }
 
-/** Invalidate UI, and returns once the event completed */
+/** Invalidate UI */
 export function invalidateUI(invalidatedElementIds?: string[]) {
 	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
 }
@@ -195,7 +195,6 @@ async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 				// console.log(`Updating "${id}" dom element...`)
 				const elt = document.getElementById(id)
 				if (elt) {
-					console.log(`Updating "${id}" dom element...`)
 					const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
 					nanomorph(elt, updatedElt)
 					const updatedElementsWithIds = updatedElt.querySelectorAll("[id]")
@@ -205,13 +204,11 @@ async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 							const initialDOMElement = elt.querySelector(`[id="${elId}"]`)
 							if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
 								initialDOMElement.renderTrace = updatedElement.renderTrace
-								console.log(`Updated render trace for "${elId}" dom element`)
 							}
 						}
 						resolve()
 					})
 					))
-					console.log(`Update finished for "${id}" dom element`)
 				}
 				return undefined
 			}))
