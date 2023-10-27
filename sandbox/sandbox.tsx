@@ -17,26 +17,26 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
     let props = deepMerge(defaultProps, _props)
 
     const state = {
-        iteratedVal: 0
+        parentValue: 0
     }
 
     while (true) {
-        const { iteratedVal } = state
-        const newProps = yield <div id={componentId}>
-            <h1>Playground</h1>
+        const { parentValue } = state
+        const newProps = yield <div
+            id={componentId}
+            style={{ border: "solid 1px gray" }}
+        >
+            <h3>Parent component</h3>
             <div>
                 <button onClick={() => {
-                    state.iteratedVal++
+                    state.parentValue++
                     invalidateUI([componentId])
                 }}>TEST</button>
             </div>
             <div>
-                Iterated value: {iteratedVal}
+                Parent component value (passed as props to Child component): {parentValue}
             </div>
-            <div>
-                <h3>Child component</h3>
-                <ChildComponent iteratedVal={iteratedVal} />
-            </div>
+            <ChildComponent parentValue={parentValue} />
         </div>
 
         props = mergeDeep()(
@@ -45,68 +45,81 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
         )
     }
 }
-export const ChildComponent: Component<{ iteratedVal: number }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+export const ChildComponent: Component<{ parentValue: number }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
     const componentId = "child-component";
 
-    (window as any).invocationId = (window as any).invocationId !== undefined ? (window as any).invocationId + 1 : 0
-    const invocationId = (window as any).invocationId
+    // (window as any).invocationId = (window as any).invocationId !== undefined ? (window as any).invocationId + 1 : 0
+    // const invocationId = (window as any).invocationId
 
-    console.log(`invocationId: ${(window as any).invocationId}`)
+    // console.log(`invocationId: ${(window as any).invocationId}`)
 
     console.log(`props received from the parent on initial render: ${JSON.stringify(_props)}`)
     const defaultProps = {
-        iteratedVal: 0
+        parentValue: 0
     }
+    let props = deepMerge(defaultProps, _props)
+
     const state = {
-        stateIteratedNumber: _props.iteratedVal as number,
+        childValue: props.parentValue as number,
         inputValue: ""
     }
 
     while (true) {
-        let props = deepMerge(defaultProps, _props)
-        const { iteratedVal } = props
-        const { stateIteratedNumber, inputValue } = state
+        const { parentValue } = props
+        const { childValue, inputValue } = state
 
         console.log(`props at re-render time: ${JSON.stringify(props)}`)
 
         // const newProps = yield <div id={componentId}>
-        yield <div id={componentId}>
+        const newProps = yield <div
+            id={componentId}
+            style={{ background: "#ddd", margin: "1rem" }}>
             <div>
-                <p>Iterated value received from props: {iteratedVal}</p>
-                <p>Iterated value from state: {stateIteratedNumber}</p>
+                <h3>Child component</h3>
+                <p>Props value received from parent: {parentValue}</p>
+                <p>State value of child component: {childValue}</p>
             </div>
             <button onClick={() => {
                 invalidateUI([componentId])
             }}>
-                Click me to re-render myself
+                Re-render child component
             </button>
-            <input id="myInput"
-                value={inputValue}
-                type={"text"}
-                onInput={ev => {
-                    state.inputValue = ev.currentTarget.value
-                    state.stateIteratedNumber = (stateIteratedNumber as number) + 1
+            <p>
+                <input id="myInput"
+                    value={inputValue}
+                    style={{ width: "400px" }}
+                    placeholder={"Typing will increase child state value, re-render, and keep focus"}
+                    type={"text"}
+                    onInput={ev => {
+                        state.inputValue = ev.currentTarget.value
+                        state.childValue = childValue + 1
+                        invalidateUI([componentId])
+                    }}></input>
+            </p>
+            <p>
+                <button onClick={() => {
+                    console.log(props)
+                    state.childValue = childValue + 1
                     invalidateUI([componentId])
-                }}></input>
-            <button onClick={() => {
-                console.log(props)
-                state.stateIteratedNumber = (stateIteratedNumber as number) + 1
-                invalidateUI([componentId])
-            }}>
-                Click me to re-render myself
-            </button>
-            <button onClick={() => {
-                console.log(props)
-                state.stateIteratedNumber = (stateIteratedNumber as number) + 1
-                invalidateUI([componentId])
-            }}>
-                Click me to re-render myself
-            </button>
+                }}>
+                    Increase state value
+                </button>
+            </p>
+            <p>
+                <button onClick={() => {
+                    console.log(props)
+                    state.childValue = childValue + 1
+                    invalidateUI([componentId])
+                }}>
+
+                    Also increase state value
+                </button>
+            </p>
         </div>
 
-        // globalProps[componentId] = mergeDeep()(
-        //     globalProps[componentId],
-        //     newProps ?? {}
-        // )
+        props = mergeDeep()(
+            props,
+            newProps ?? {}
+        )
     }
 }
