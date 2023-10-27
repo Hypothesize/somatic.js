@@ -197,11 +197,11 @@ async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
 				if (elt) {
 					const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
 					nanomorph(elt, updatedElt)
-					const updatedElementsWithIds = updatedElt.querySelectorAll("[id]")
-					await Promise.all([...updatedElementsWithIds].map(updatedElement => new Promise<void>(resolve => {
+					const childrenWithIds = updatedElt.querySelectorAll("[id]")
+					await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
 						const elId = updatedElement.getAttribute("id")
 						if (elId !== null) {
-							const initialDOMElement = elt.querySelector(`[id="${elId}"]`)
+							const initialDOMElement = document.querySelector(`[id="${elId}"]`)
 							if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
 								initialDOMElement.renderTrace = updatedElement.renderTrace
 							}

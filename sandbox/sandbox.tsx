@@ -37,6 +37,7 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
                 Parent component value (passed as props to Child component): {parentValue}
             </div>
             <ChildComponent parentValue={parentValue} />
+            <IndependantChildComponent id={"independant-child-component"} />
         </div>
 
         props = mergeDeep()(
@@ -46,7 +47,7 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
     }
 }
 export const ChildComponent: Component<{ parentValue: number }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
-    const componentId = "child-component";
+    const componentId = "child-component"
 
     // (window as any).invocationId = (window as any).invocationId !== undefined ? (window as any).invocationId + 1 : 0
     // const invocationId = (window as any).invocationId
@@ -75,7 +76,7 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
             id={componentId}
             style={{ background: "#ddd", margin: "1rem" }}>
             <div>
-                <h3>Child component</h3>
+                <h3>Child component (props derived from the parent's state)</h3>
                 <p>Props value received from parent: {parentValue}</p>
                 <p>State value of child component: {childValue}</p>
             </div>
@@ -121,5 +122,34 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
             props,
             newProps ?? {}
         )
+    }
+}
+
+export const IndependantChildComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+    const componentId = _props.id
+
+    const state = {
+        childValue: 0
+    }
+
+    while (true) {
+        const { childValue } = state
+
+        yield <div
+            id={componentId}
+            style={{ background: "#ddd", margin: "1rem" }}>
+            <div>
+                <h3>Independant child component (doesn't receive any props from the parent)</h3>
+                <p>State value of independant component: {childValue}</p>
+            </div>
+            <p>
+                <button onClick={() => {
+                    state.childValue = childValue + 1
+                    invalidateUI([componentId])
+                }}>
+                    Increase state value
+                </button>
+            </p>
+        </div>
     }
 }
