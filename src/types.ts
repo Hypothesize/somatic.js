@@ -489,6 +489,12 @@ export type PanelProps = Partial<{
 	itemsAlignV: "start" | "end" | "center" | "stretch" | "uniform" | "dock",
 	orientation: "vertical" | "horizontal"
 }>
+export type ViewProps<TData = unknown> = {
+	sourceData: Iterable<TData>
+	itemTemplate?: (itemInfo: { value: TData, index: number }) => JSX.Element
+	itemStyle?: CSSProperties
+	style?: CSSProperties
+}
 
 export type IconProps = Partial<{
 	color: string | null | undefined
@@ -498,7 +504,7 @@ export type IconProps = Partial<{
 
 //#region Attributes
 export interface Attributes { key?: string | number | symbol }
-export type DOMAttributes<T> = {
+export type DOMAttributes<T> = Attributes & {
 	//childrenx?: Somatic.VNode[];
 	// dangerouslySetInnerHTML?: {
 	// 	__html: string;

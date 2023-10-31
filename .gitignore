@@ -25,4 +25,9 @@ workspace.xml
 
 *.tgz
 
+# Test files #
+/sandbox/*.*
+!sandbox/sandbox.html
+!sandbox/sandbox.tsx
+!sandbox/tsconfig.json
 

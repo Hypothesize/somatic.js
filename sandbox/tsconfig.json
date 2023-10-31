@@ -27,13 +27,8 @@
 		"skipDefaultLibCheck": true,
 		"skipLibCheck": true,
 		"incremental": true,
-		"outDir": "./dist"
 	},
 	"include": [
-		"./src",
-	],
-	"exclude": [
-		"./node_modules",
-		"node_modules"
+		"./"
 	]
 }

@@ -1,4 +1,4 @@
-import * as assert from "assert"
+import { default as assert} from "assert"
 import { isEventKey } from '../dist/common'
 
 describe("isEventKey", () => {

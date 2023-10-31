@@ -1,4 +1,4 @@
-import * as cuid from 'cuid'
+import { default as cuid } from 'cuid'
 import { deepMerge, first } from '@sparkwave/standard'
 import { createElement } from '../../dist/core'
 import { stringifyStyle } from '../../dist/html'
