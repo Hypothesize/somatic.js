@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.3.1...v2.4.0) (2023-10-31)
+
+
+### Features
+
+* 104: Retention of DOM state of unchanged elements ([0512050](https://www.github.com/Hypothesize/somatic.js/commit/0512050bc01e1bbc4f3787aad25d9633094d369c)), closes [#104](https://www.github.com/Hypothesize/somatic.js/issues/104)
+
 ### [2.3.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.3.0...v2.3.1) (2023-07-17)
 
 
