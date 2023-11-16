@@ -113,7 +113,9 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 			const _children = getChildren(newTrace.leafElement)
 			await populateWithChildren(updatedDOM, _children)
 		}
-		return updatedDOM
+		return updatedDOM instanceof DocumentFragment
+			? updatedDOM
+			: Object.assign(updatedDOM, { renderTrace: newTrace })
 	}
 	else {
 		if (elt === undefined || elt === null) {
