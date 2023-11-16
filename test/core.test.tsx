@@ -687,6 +687,32 @@ describe("CORE MODULE", () => {
 			const updatedFirstChild = dom.childNodes.item(0) as HTMLInputElement
 			assert.ok(thirdChild === updatedFirstChild)
 		})
+
+		it("should ensure that updated DOM elements have a renderTrace property", async () => {
+			const dom = await renderAsync({
+				type: "div",
+				props: { className: "clss", style: { backgroundColor: "blue" } },
+				children: [
+					{ type: "span", props: { style: { display: "inline-block" } } },
+					"val",
+					{ type: "input", props: { id: "myInput" } }
+				]
+			}) as DOMAugmented
+			const targetInput = dom.childNodes.item(2) as HTMLInputElement
+			// We assign a value to that input
+			targetInput.value = "test"
+
+			const newChildren = <div>
+				<input id="myInput" />
+			</div>
+
+			assert(!isTextDOM(dom))
+
+			const updatedDOM = await updateAsync(dom as DOMAugmented, newChildren) as DOMAugmented
+			nanomorph(dom, updatedDOM)
+			assert.ok(updatedDOM.renderTrace !== undefined)
+		})
+
 		it("should keep the state of updated elements", async () => {
 			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
 				const defaultProps = {}
@@ -739,11 +765,11 @@ describe("CORE MODULE", () => {
 				const { id } = props
 
 				const state = {
-					iteratedVal: 0
+					valueToKeep: 0
 				}
 
 				while (true) {
-					const { iteratedVal } = state
+					const { valueToKeep } = state
 
 					const newProps = yield <div id={id}>
 						<h1>Playground</h1>
@@ -751,11 +777,11 @@ describe("CORE MODULE", () => {
 							<button
 								id={"myButton"}
 								onClick={() => {
-									state.iteratedVal++
+									state.valueToKeep++
 								}}>TEST</button>
 						</div>
 						<div id={"valueKeeper"}>
-							Iterated value: {iteratedVal}
+							Iterated value: {valueToKeep}
 						</div>
 					</div>
 
