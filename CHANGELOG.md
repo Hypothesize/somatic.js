@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.0...v2.4.1) (2023-11-20)
+
+
+### Bug Fixes
+
+* Assign render trace correctly ([7400b67](https://www.github.com/Hypothesize/somatic.js/commit/7400b67b62b8e844211fc53fc6428e0c33a67d98))
+
 ## [2.4.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.3.1...v2.4.0) (2023-10-31)
 
 
