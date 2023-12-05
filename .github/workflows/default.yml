@@ -33,7 +33,7 @@ jobs:
         run: pnpm run deps
         
       - name: Build
-        run: pnpm run compile --if-present
+        run: pnpm run compile
         
       - name: Run Lint Check
         run: pnpm run lintci
