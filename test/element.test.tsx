@@ -1,6 +1,6 @@
-import { default as assert} from "assert"
+import { default as assert } from "assert"
 import { isAsyncGenerator, isGenerator, pick, unique } from "@sparkwave/standard"
-import { UIElement, RenderingTrace, ComponentElt, Component, IntrinsicElement, CSSProperties } from '../dist/types'
+import { UIElement, RenderingTrace, ComponentElement, Component, IntrinsicElement, CSSProperties } from '../dist/types'
 import { isEltProper, isIntrinsicElt, isComponentElt, updateResultAsync, traceToLeafAsync, updateTraceAsync, getChildren } from '../dist/element'
 import { stringify } from '../dist/common'
 import { createElement } from '../dist/core'
@@ -66,24 +66,24 @@ describe("ELEMENT MODULE", () => {
 
 	describe("updateResultAsync", () => {
 		it("should not mutate input element", async () => {
-			const elt: ComponentElt = <SplashPage /> as any
+			const elt: ComponentElement = <SplashPage /> as any
 			const augmented = await updateResultAsync(elt)
 			assert.notStrictEqual(elt, augmented)
 		})
 		it("should retain original non-result members in augmented object returned", async () => {
-			const elt: ComponentElt = <SplashPage /> as any
+			const elt: ComponentElement = <SplashPage /> as any
 			const membersOrig = pick(elt as any, "children", "type", "props")
 			const augmented = await updateResultAsync(elt)
 			const membersNew = pick(augmented as any, "children", "type", "props")
 			assert.deepStrictEqual(membersOrig, membersNew)
 		})
 		it("should change an already existing result member for a stateless component", async () => {
-			const elt: ComponentElt = <SplashPage /> as any
+			const elt: ComponentElement = <SplashPage /> as any
 			const augmented = await updateResultAsync(elt)
 			assert.notStrictEqual(augmented.result, (await updateResultAsync(augmented)).result)
 		})
 		it("should return correct result member for a regular function component", async () => {
-			const elt = <SplashPage /> as ComponentElt
+			const elt = <SplashPage /> as ComponentElement
 			const componentResult = (await updateResultAsync(elt)).result
 			assert(!("generator" in componentResult), `Regular function component result has "generator" member`)
 			// assert(!isAsyncIterable(componentResult))
@@ -113,7 +113,7 @@ describe("ELEMENT MODULE", () => {
 			const elt = <Selector selectedStyle={{ color: "orange" }}>
 				<SplashPage />
 				<div>Hello</div>
-			</Selector> as ComponentElt
+			</Selector> as ComponentElement
 
 			const updatedResult = (await updateResultAsync(elt)).result
 			assert("generator" in updatedResult, `Element result missing 'generator' property`)

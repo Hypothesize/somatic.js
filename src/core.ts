@@ -1,15 +1,13 @@
 const nanomorph = require('nanomorph')
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
-import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
+import { createDOMShallow, isTextDOM, isAugmentedDOM } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
-import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented, RenderingTrace } from "./types"
+import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
 import { selfClosingTags } from "./common"
 
 export const Fragment = ""
 export type Fragment = typeof Fragment
-
-let daemon: NodeJS.Timeout | undefined = undefined
 
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
@@ -173,50 +171,65 @@ export async function mountElement(element: UIElement, container: Element) {
 }
 
 /** Invalidate UI */
-export function invalidateUI(invalidatedElementIds?: string[]) {
-	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
-}
-
-const invalidatedElementIds: string[] = []
-async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
-	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
-
-	//let daemon: NodeJS.Timeout | undefined = undefined
-
-	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-	const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
-	invalidatedElementIds.push(..._invalidatedElementIds)
-	if (daemon === undefined) {
-		daemon = setInterval(async () => {
-			if (invalidatedElementIds.length === 0 && daemon) {
-				clearInterval(daemon)
-				daemon = undefined
+export function invalidateUI(invalidatedElementIds?: string[], reason?: string) {
+	const ev = new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } })
+	if (document.readyState === "complete") {
+		document.dispatchEvent(ev)
+	}
+	else {
+		// console.log(`\ndocument.readyState: ${document.readyState}`)
+		document.onreadystatechange = async event => {
+			// console.log(`\ndocument.readyState changed to: ${document.readyState}`)
+			if (document.readyState === "complete") {
+				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementIds}" after document loading complete\n`)
+				document.dispatchEvent(ev)
 			}
-			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-			await Promise.all(idsToProcess.map(async id => {
-				// console.log(`Updating "${id}" dom element...`)
-				const elt = document.getElementById(id)
-				if (elt) {
-					const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
-					nanomorph(elt, updatedElt)
-					const childrenWithIds = updatedElt.querySelectorAll("[id]")
-					await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
-						const elId = updatedElement.getAttribute("id")
-						if (elId !== null) {
-							const initialDOMElement = document.querySelector(`[id="${elId}"]`)
-							if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
-								initialDOMElement.renderTrace = updatedElement.renderTrace
-							}
-						}
-						resolve()
-					})
-					))
-				}
-				return undefined
-			}))
-		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+		}
 	}
 }
+
+const invalidationHandler = (() => {
+	let daemon: NodeJS.Timeout | undefined = undefined
+	const invalidatedElementIds: string[] = []
+
+	return async function (eventInfo: IUInvalidatedEvent) {
+		const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
+
+		// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
+		const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
+		invalidatedElementIds.push(..._invalidatedElementIds)
+		if (daemon === undefined) {
+			daemon = setInterval(async () => {
+				if (invalidatedElementIds.length === 0 && daemon) {
+					clearInterval(daemon)
+					daemon = undefined
+				}
+				const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
+				await Promise.all(idsToProcess.map(async id => {
+					// console.log(`Updating "${id}" dom element...`)
+					const elt = document.getElementById(id)
+					if (elt) {
+						const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
+						nanomorph(elt, updatedElt)
+						const childrenWithIds = updatedElt.querySelectorAll("[id]")
+						await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
+							const elId = updatedElement.getAttribute("id")
+							if (elId !== null) {
+								const initialDOMElement = document.querySelector(`[id="${elId}"]`)
+								if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
+									initialDOMElement.renderTrace = updatedElement.renderTrace
+								}
+							}
+							resolve()
+						})
+						))
+					}
+					return undefined
+				}))
+			}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+		}
+	}
+})()
 
 /** Checks for compatibility between a DOM and UI element */
 function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {

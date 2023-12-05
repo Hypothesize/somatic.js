@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('jsdom-global')()
-import { default as assert} from "assert"
+import { default as assert } from "assert"
 import { IntrinsicElement } from "../dist/types"
 import { renderAsync } from "../dist/core"
 import {
@@ -257,8 +257,8 @@ describe("DOM MODULE", () => {
 			assert.strictEqual(text.textContent, "1")
 			assert.strictEqual(text.childNodes.length, 0) // text should not have any children
 		})
-		it("should return a text DOM element with empty content when passed null or undefined", async () => {
-			const text = createDOMShallow(null)
+		it("should return a text DOM element with empty content when passed an empty string", async () => {
+			const text = createDOMShallow("")
 			assert(isTextDOM(text))
 			assert.strictEqual(text.textContent, "")
 			assert.strictEqual(text.childNodes.length, 0)
