@@ -1076,7 +1076,7 @@ interface _CSSProperties {
 		| "anywhere"
 	)
 	/** Controls how text inside an element is wrapped */
-	textWrap: (
+	textWrap?: (
 		/** Text is wrapped across lines at appropriate characters (for example spaces, in languages like English that use space separators) to minimize overflow. 
 		 * This is the default value. 
 		 */
@@ -1230,7 +1230,7 @@ type CSSEasingFunction = (
 	| `cubic-bezier(${number},${number},${number},${number})`
 )
 type CSSTime = `${number}${("ms" | "s")}`
-type CSSColor = (
+export type CSSColor = (
 	// | string
 	| keyof typeof colorConstants
 	| "currentcolor"
@@ -1239,7 +1239,7 @@ type CSSColor = (
 	| `rgb(${number},${number},${number})`
 	| `rgba(${number}, ${number}, ${number}, ${number})`
 )
-type CSSLength = `${number}${CSSLengthUnit}` | `calc(${string})`
+export type CSSLength = `${number}${CSSLengthUnit}` | `calc(${string})`
 type CSSLengthUnit = (
 	| "%"
 	| "px" // Pixels (1px = 1/96th of 1in)
@@ -1261,7 +1261,7 @@ type CSSLengthUnit = (
 	| "vmin" // 1% of the viewport's smaller dimension.
 	| "vmax" // 1% of the viewport's larger dimension.
 )
-type SpaceRepeated<S extends string, Max extends DigitNonZero> = Max extends 1 ? S : S | `${S} ${SpaceRepeated<S, Dec<Max>>}`
+// type SpaceRepeated<S extends string, Max extends DigitNonZero> = Max extends 1 ? S : S | `${S} ${SpaceRepeated<S, Dec<Max>>}`
 type Dec<N extends DigitNonZero> = (N extends 9 ? 8
 	: N extends 8 ? 7
 	: N extends 7 ? 6

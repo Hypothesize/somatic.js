@@ -1,9 +1,9 @@
 const nanomorph = require('nanomorph')
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
-import { createDOMShallow, updateDomShallow, isTextDOM, isAugmentedDOM, emptyContainer } from "./dom"
+import { createDOMShallow, isTextDOM, isAugmentedDOM } from "./dom"
 import { isFragmentElt, isComponentElt, isIntrinsicElt, isEltProper, getChildren, getLeafAsync, traceToLeafAsync, updateTraceAsync } from "./element"
-import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented, RenderingTrace } from "./types"
+import { Component, DOMElement, UIElement, ValueElement, IntrinsicElement, DOMAugmented } from "./types"
 import { selfClosingTags } from "./common"
 
 export const Fragment = ""
@@ -188,11 +188,10 @@ export function invalidateUI(invalidatedElementIds?: string[], reason?: string) 
 	}
 }
 
-
 const invalidationHandler = (() => {
 	let daemon: NodeJS.Timeout | undefined = undefined
 	const invalidatedElementIds: string[] = []
-	
+
 	return async function (eventInfo: IUInvalidatedEvent) {
 		const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 
@@ -231,8 +230,6 @@ const invalidationHandler = (() => {
 		}
 	}
 })()
-
-
 
 /** Checks for compatibility between a DOM and UI element */
 function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
