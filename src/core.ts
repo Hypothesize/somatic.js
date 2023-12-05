@@ -9,8 +9,6 @@ import { selfClosingTags } from "./common"
 export const Fragment = ""
 export type Fragment = typeof Fragment
 
-let daemon: NodeJS.Timeout | undefined = undefined
-
 /** JSX is transformed into calls of this function */
 export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
 	return { type, props: props ?? {}, children: [...flatten(children)] }
@@ -190,46 +188,51 @@ export function invalidateUI(invalidatedElementIds?: string[], reason?: string) 
 	}
 }
 
-const invalidatedElementIds: string[] = []
-async function invalidationHandler(eventInfo: IUInvalidatedEvent) {
-	const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 
-	//let daemon: NodeJS.Timeout | undefined = undefined
+const invalidationHandler = (() => {
+	let daemon: NodeJS.Timeout | undefined = undefined
+	const invalidatedElementIds: string[] = []
+	
+	return async function (eventInfo: IUInvalidatedEvent) {
+		const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 
-	// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-	const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
-	invalidatedElementIds.push(..._invalidatedElementIds)
-	if (daemon === undefined) {
-		daemon = setInterval(async () => {
-			if (invalidatedElementIds.length === 0 && daemon) {
-				clearInterval(daemon)
-				daemon = undefined
-			}
-			const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-			await Promise.all(idsToProcess.map(async id => {
-				// console.log(`Updating "${id}" dom element...`)
-				const elt = document.getElementById(id)
-				if (elt) {
-					const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
-					nanomorph(elt, updatedElt)
-					const childrenWithIds = updatedElt.querySelectorAll("[id]")
-					await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
-						const elId = updatedElement.getAttribute("id")
-						if (elId !== null) {
-							const initialDOMElement = document.querySelector(`[id="${elId}"]`)
-							if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
-								initialDOMElement.renderTrace = updatedElement.renderTrace
-							}
-						}
-						resolve()
-					})
-					))
+		// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
+		const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
+		invalidatedElementIds.push(..._invalidatedElementIds)
+		if (daemon === undefined) {
+			daemon = setInterval(async () => {
+				if (invalidatedElementIds.length === 0 && daemon) {
+					clearInterval(daemon)
+					daemon = undefined
 				}
-				return undefined
-			}))
-		}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+				const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
+				await Promise.all(idsToProcess.map(async id => {
+					// console.log(`Updating "${id}" dom element...`)
+					const elt = document.getElementById(id)
+					if (elt) {
+						const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
+						nanomorph(elt, updatedElt)
+						const childrenWithIds = updatedElt.querySelectorAll("[id]")
+						await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
+							const elId = updatedElement.getAttribute("id")
+							if (elId !== null) {
+								const initialDOMElement = document.querySelector(`[id="${elId}"]`)
+								if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
+									initialDOMElement.renderTrace = updatedElement.renderTrace
+								}
+							}
+							resolve()
+						})
+						))
+					}
+					return undefined
+				}))
+			}, DEFAULT_UPDATE_INTERVAL_MILLISECONDS)
+		}
 	}
-}
+})()
+
+
 
 /** Checks for compatibility between a DOM and UI element */
 function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {

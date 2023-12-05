@@ -1,7 +1,7 @@
 module.exports = {
 	"root": true,
 	"parser": "@typescript-eslint/parser",
-	"parserOptions": { project: ['./tsconfig.json', './test/tsconfig.json'] },
+	"parserOptions": { project: ['./tsconfig.json'] },
 	"plugins": ["@typescript-eslint", "sonarjs", "jsdoc", "react"],
 	"env": { "browser": true, "node": true },
 	"extends": [
@@ -27,19 +27,8 @@ module.exports = {
 		"no-async-promise-executor": "error",
 		"for-direction": "error",
 		"no-unreachable": "error",
+		"no-constant-binary-expression": "error",
 		"@typescript-eslint/switch-exhaustiveness-check": "warn",
-		"sonarjs/no-all-duplicated-branches": "error", //All branches in a conditional structure should not have exactly the same implementation
-		"sonarjs/no-element-overwrite": "error", // Collection elements should not be replaced unconditionally
-		"sonarjs/no-empty-collection": "error", // Empty collections should not be accessed or iterated
-		"sonarjs/no-extra-arguments": "error", // Function calls should not pass extra arguments
-		"sonarjs/no-identical-conditions": "error", // Related "if/else if" statements should not have the same condition
-		"sonarjs/no-identical-expressions": "error", // Identical expressions used on both sides of a binary operator
-		"sonarjs/no-collection-size-mischeck": "error", // Testing array/collection size/length is greater than or equal to zero doesn't make sense
-		"sonarjs/no-ignored-return": "error", // Return values from functions without side effects should not be ignored
-		"sonarjs/no-one-iteration-loop": "error", // Loops with at most one iteration should be refactored
-		"sonarjs/no-use-of-empty-return-value": "error", // The output of functions that don't return anything should not be used
-		"sonarjs/non-existent-operator": "error", // Non-existent operators '=+', '=-' and '=!' should not be used
-
 		"sonarjs/no-all-duplicated-branches": "error", //All branches in a conditional structure should not have exactly the same implementation
 		"sonarjs/no-element-overwrite": "error", // Collection elements should not be replaced unconditionally
 		"sonarjs/no-empty-collection": "error", // Empty collections should not be accessed or iterated
@@ -71,7 +60,7 @@ module.exports = {
 		"@typescript-eslint/no-shadow": ["error", { "ignoreTypeValueShadow": true }],
 		"arrow-parens": ["error", "as-needed"],
 		"prefer-template": "error",
-		"no-template-curly-in-string": "error",
+		"no-template-curly-in-string": "warn",
 		"no-unsafe-negation": "error",
 		"no-import-assign": "error",
 		"no-global-assign": "error", // modifications to read-only global variables
@@ -97,7 +86,7 @@ module.exports = {
 		"sonarjs/no-useless-catch": "error", // "catch" clauses should do more than rethrow
 
 		"camelcase": ["warn", { "properties": "always", "ignoreImports": true }],
-		"no-await-in-loop": "warn",
+		"no-await-in-loop": "off",
 		"require-atomic-updates": "warn",
 		"no-invalid-this": "warn",
 		"sonarjs/no-duplicate-string": "warn", // String literals that are duplicated
@@ -117,7 +106,7 @@ module.exports = {
 		"space-in-parens": ["error", "never"],
 		"block-spacing": ["error", "always"],
 		"arrow-body-style": ["error", "as-needed"], // use of braces around arrow function body
-		"indent": ["warn", "tab", { "SwitchCase": 1 }],
+		"indent": ["off", "tab", { "SwitchCase": 1 }],
 		"no-irregular-whitespace": "warn", // invalid whitespace that is not a normal tab and space
 
 		/* comments */
@@ -139,6 +128,7 @@ module.exports = {
 			"exemptEmptyConstructors": true
 		}],
 		"jsdoc/require-param": "off",
+		"jsdoc/require-yields": "off",
 		"jsdoc/require-param-type": "off",
 		"jsdoc/check-param-names": "off",
 		"jsdoc/require-param-description": "warn",
@@ -146,6 +136,8 @@ module.exports = {
 		"jsdoc/require-returns-type": "off",
 		"jsdoc/multiline-blocks": ["error", { "noZeroLineText": false }],
 		"jsdoc/newline-after-description": "off",
+		"jsdoc/require-yields": "off",
+
 		"no-warning-comments": ["warn", { "terms": ["todo"], "location": "anywhere" }],
 
 		/* jsx */
