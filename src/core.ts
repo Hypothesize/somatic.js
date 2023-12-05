@@ -173,8 +173,21 @@ export async function mountElement(element: UIElement, container: Element) {
 }
 
 /** Invalidate UI */
-export function invalidateUI(invalidatedElementIds?: string[]) {
-	document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } }))
+export function invalidateUI(invalidatedElementIds?: string[], reason?: string) {
+	const ev = new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } })
+	if (document.readyState === "complete") {
+		document.dispatchEvent(ev)
+	}
+	else {
+		// console.log(`\ndocument.readyState: ${document.readyState}`)
+		document.onreadystatechange = async event => {
+			// console.log(`\ndocument.readyState changed to: ${document.readyState}`)
+			if (document.readyState === "complete") {
+				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementIds}" after document loading complete\n`)
+				document.dispatchEvent(ev)
+			}
+		}
+	}
 }
 
 const invalidatedElementIds: string[] = []
