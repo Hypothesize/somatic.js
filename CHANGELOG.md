@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.3](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.2...v2.4.3) (2023-12-05)
+
+
+### Bug Fixes
+
+* Fix to release workflow ([01e16b0](https://www.github.com/Hypothesize/somatic.js/commit/01e16b09222500a3b765e8567a6bc157ceef176f))
+
 ### [2.4.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.1...v2.4.2) (2023-12-05)
 
 
