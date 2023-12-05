@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.1...v2.4.2) (2023-12-05)
+
+
+### Bug Fixes
+
+* 107: Enhancements: CSS typings; Removal of global vars; Fix to invalidateUI fn; Linting ([b44d70b](https://www.github.com/Hypothesize/somatic.js/commit/b44d70b81bd7be2c7639df7772d4728365c582ac))
+
 ### [2.4.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.0...v2.4.1) (2023-11-20)
 
 
