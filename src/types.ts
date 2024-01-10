@@ -827,7 +827,7 @@ interface _CSSProperties {
 	rubyAlign?: "start" | "center" | "space-between" | "space-around"
 	rubyOverhang?: string | null
 	rubyPosition?: "over" | "under" | "alternate" | "inter-character"
-	stopColor?: "currentColor" | CSSColor
+	stopColor?: CSSColor
 	stopOpacity?: number
 	stroke?: string | null
 	strokeDasharray?: "none" | "inherit" | string | CSSLength
@@ -1242,7 +1242,7 @@ type CSSEasingFunction = (
 type CSSTime = `${number}${("ms" | "s")}`
 export type CSSColor = (
 	| keyof typeof colorConstants
-	| "currentcolor"
+	| "currentColor"
 	| "transparent"
 	| `#${string}`
 	| `rgb(${number},${number},${number})`
