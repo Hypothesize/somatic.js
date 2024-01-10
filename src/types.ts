@@ -1,4 +1,4 @@
-import { Obj, Digit, DigitNonZero } from "@sparkwave/standard/utility"
+import { Obj } from "@sparkwave/standard/utility"
 import { colorConstants } from "./common"
 
 /** Main component type */
@@ -209,13 +209,12 @@ interface _CSSProperties {
 		| string
 	)
 	baselineShift?: CSSLength | "sub" | "super"
-	border?: string | null
-	borderBottom?: CSSLength
-	borderBottomColor?: CSSColor
-	borderBottomLeftRadius?: string | number
-	borderBottomRightRadius?: string | number
-	borderBottomStyle?: CSSBorderStyle
-	borderBottomWidth?: CSSLength
+
+	border?: CSSBorder
+	borderSpacing?: string | CSSLength
+	borderStyle?: CSSBorderStyle
+	borderWidth?: string | CSSLength | CSSNamedWidth
+	borderRadius?: CSSLength
 	borderCollapse?: "collapse" | "separate"
 	borderColor?: CSSColor
 	borderImage?: (| `url(${string}) ${number} ${string}` | string)
@@ -223,25 +222,32 @@ interface _CSSProperties {
 	borderImageRepeat?: "stretch" | "repeat" | "round" | "space"
 	borderImageSlice?: string | number | CSSLength
 	borderImageSource?: "none" | `url(${string})`
-	borderImageWidth?: string | number | CSSLength
-	borderLeft?: string | CSSLength
+	borderImageWidth?: | number | CSSLength
+
+	borderBottom?: CSSBorder
+	borderBottomColor?: CSSColor
+	borderBottomLeftRadius?: string | number
+	borderBottomRightRadius?: string | number
+	borderBottomStyle?: CSSBorderStyle
+	borderBottomWidth?: CSSLength | CSSNamedWidth
+
+	borderLeft?: CSSBorder
 	borderLeftColor?: CSSColor
 	borderLeftStyle?: CSSBorderStyle
 	borderLeftWidth?: CSSNamedWidth | CSSLength
-	borderRadius?: string | CSSLength
-	borderRight?: string | CSSLength
+
+	borderRight?: CSSBorder
 	borderRightColor?: CSSColor
 	borderRightStyle?: CSSBorderStyle
 	borderRightWidth?: CSSNamedWidth | CSSLength
-	borderSpacing?: string | CSSLength
-	borderStyle?: CSSBorderStyle
-	borderTop?: CSSLength | CSSNamedWidth | CSSBorderStyle
+
+	borderTop?: CSSBorder
 	borderTopColor?: CSSColor
 	borderTopLeftRadius?: string | CSSLength
 	borderTopRightRadius?: string | CSSLength
 	borderTopStyle?: CSSBorderStyle
-	borderTopWidth?: CSSBorderStyle | CSSLength
-	borderWidth?: string | CSSLength
+	borderTopWidth?: CSSNamedWidth | CSSLength
+
 	bottom?: CSSLength | "auto"
 	boxShadow?: string | null
 	boxSizing?: "border-box" | "content-box"
@@ -872,8 +878,11 @@ interface _CSSProperties {
 	/** Kind of decoration that is used on text in an element, such as an underline or overline */
 	textDecorationLine?: 'none' | 'underline' | 'overline' | 'line-through' | 'underline overline' | 'underline line-through'
 
-	/** Stroke thickness of the decoration line that is used on text in an element, such as a line-through, underline, or overline. */
-	textDecorationThickness?: CSSLength
+	/** Stroke thickness of the decoration line that is used on text in an element, such as a line-through, underline, or overline. 
+	 * The from-font value means: If the font file includes info about a preferred thickness, use that value;
+	 * If not, behave as if auto was set, with the browser choosing an appropriate thickness.
+	*/
+	textDecorationThickness?: CSSLength | "from-font"
 
 	/** Color of decorations added to text by text-decoration-line. */
 	textDecorationColor?: CSSColor
@@ -1141,28 +1150,29 @@ interface _CSSProperties {
 	gridAutoColumns?: string
 
 	/** Specifies the gap between the grid rows */
-	rowGap?: string | null
+	rowGap?: CSSLength | null
 
 	/** Specifies the gap between the columns */
-	columnGap?: string | null
+	columnGap?: CSSLength | null
 
 	/** A shorthand property for the grid-row-gap and grid-column-gap properties
 	 * Either a single CSS length value to both row and column gap
 	 * Or two CSS length values specifying the grid-row-gap grid-column-gap
 	 */
-	gridGap?: string | null
+	gridGap?: CSSLength | null
 
 	/** A shorthand property for the row-gap and the column-gap properties
 	 * Either a single CSS length value for both row and column gap
 	 * Or two CSS length values specifying the row-gap and column-gap
 	 */
-	gap?: string | null
+	gap?: CSSLength | null
 
 	objectFit?: string
 }
 
 type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
 type CSSNamedWidth = (| "thin" | "medium" | "thick")
+type CSSBorder = `${CSSNamedWidth} ${CSSBorderStyle} ${CSSColor}`
 type CSSBorderStyle = (
 	| "none"
 	| "hidden"
@@ -1231,7 +1241,6 @@ type CSSEasingFunction = (
 )
 type CSSTime = `${number}${("ms" | "s")}`
 export type CSSColor = (
-	// | string
 	| keyof typeof colorConstants
 	| "currentcolor"
 	| "transparent"
@@ -1239,7 +1248,7 @@ export type CSSColor = (
 	| `rgb(${number},${number},${number})`
 	| `rgba(${number}, ${number}, ${number}, ${number})`
 )
-export type CSSLength = `${number}${CSSLengthUnit}` | `calc(${string})`
+export type CSSLength = 0 | `${number}${CSSLengthUnit}` | `calc(${string})`
 type CSSLengthUnit = (
 	| "%"
 	| "px" // Pixels (1px = 1/96th of 1in)
@@ -1260,17 +1269,6 @@ type CSSLengthUnit = (
 	| "vh" // 1% of the viewport's height.
 	| "vmin" // 1% of the viewport's smaller dimension.
 	| "vmax" // 1% of the viewport's larger dimension.
-)
-// type SpaceRepeated<S extends string, Max extends DigitNonZero> = Max extends 1 ? S : S | `${S} ${SpaceRepeated<S, Dec<Max>>}`
-type Dec<N extends DigitNonZero> = (N extends 9 ? 8
-	: N extends 8 ? 7
-	: N extends 7 ? 6
-	: N extends 6 ? 5
-	: N extends 5 ? 4
-	: N extends 4 ? 3
-	: N extends 3 ? 2
-	: N extends 2 ? 1
-	: 1
 )
 
 export type HtmlProps = Partial<HTMLAttributes<HTMLElement>>
