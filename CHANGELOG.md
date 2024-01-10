@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.4](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.3...v2.4.4) (2024-01-10)
+
+
+### Bug Fixes
+
+* 116: Further enhancements to typings ([afd9100](https://www.github.com/Hypothesize/somatic.js/commit/afd910085f1a11cc8762f07885d9b676d644269f))
+
 ### [2.4.3](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.2...v2.4.3) (2023-12-05)
 
 
