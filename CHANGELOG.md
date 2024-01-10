@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.5](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.4...v2.4.5) (2024-01-10)
+
+
+### Bug Fixes
+
+* 116: Further enhancements typings (2) ([998da63](https://www.github.com/Hypothesize/somatic.js/commit/998da634953a62ef3101f4fa4b877f0f50180584))
+
 ### [2.4.4](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.3...v2.4.4) (2024-01-10)
 
 
