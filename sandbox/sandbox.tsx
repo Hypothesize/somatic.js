@@ -37,7 +37,12 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
                 Parent component value (passed as props to Child component): {parentValue}
             </div>
             <ChildComponent parentValue={parentValue} />
-            <IndependantChildComponent id={"independant-child-component"} />
+            <IndependantChildComponent
+                id={"independant-child-component"}
+                onMessageForParent={() => {
+                    console.log(`Message received from independant child component. Parent value: ${state.parentValue}`)
+                }}
+            />
         </div>
 
         props = mergeDeep()(
@@ -125,8 +130,8 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
     }
 }
 
-export const IndependantChildComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
-    const componentId = _props.id
+export const IndependantChildComponent: Component<{ id: string, onMessageForParent: () => void }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+    const { onMessageForParent, id } = _props
 
     const state = {
         childValue: 0
@@ -136,7 +141,7 @@ export const IndependantChildComponent: Component<{ id: string }> = async functi
         const { childValue } = state
 
         yield <div
-            id={componentId}
+            id={id}
             style={{ background: "#ddd", margin: "1rem" }}>
             <div>
                 <h3>Independant child component (doesn't receive any props from the parent)</h3>
@@ -145,9 +150,16 @@ export const IndependantChildComponent: Component<{ id: string }> = async functi
             <p>
                 <button onClick={() => {
                     state.childValue = childValue + 1
-                    invalidateUI([componentId])
+                    invalidateUI([id])
                 }}>
                     Increase state value
+                </button>
+            </p>
+            <p>
+                <button onClick={() => {
+                    onMessageForParent()
+                }}>
+                    Message for parent
                 </button>
             </p>
         </div>
