@@ -15,7 +15,7 @@ export function createElement<T extends string | Component>(type: T, props: (typ
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
-export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | DocumentFragment | Text)> {
+export async function renderAsync(elt: UIElement, parentKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
 	if (hasValue(elt)
 		&& typeof elt === "object"
 		&& "props" in elt &&
@@ -24,6 +24,12 @@ export async function renderAsync(elt: UIElement): Promise<(DOMAugmented | Docum
 		console.warn(`Object appearing to represent proper element has no type member\n
 			This is likely an error arising from creating an element with an undefined component`)
 		// return createDOMShallow(JSON.stringify(elt)) as Text
+	}
+	if (isComponentElt(elt)) {
+		elt.props = {
+			...elt.props,
+			key: parentKey !== undefined ? `${parentKey}-${elt.type.name}` : elt.type.name
+		}
 	}
 
 	const trace = await traceToLeafAsync(elt)
@@ -137,14 +143,14 @@ export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragme
 		).flat()
 	)
 
-	const newDomChildren = await Promise.all(flattenChildren(children).map(async child => {
-		const matchingNode = isComponentElt(child) && child.props !== undefined && child.props.id !== undefined
-			? document.getElementById(child.props.id as string) as DOMAugmented | undefined
+	const newDomChildren = await Promise.all(flattenChildren(children).map(async (child, i) => {
+		const matchingNode = isComponentElt(child) && child.props !== undefined && child.props.key !== undefined
+			? document.querySelector(`[key="${child.props.key as string}"]`) as DOMAugmented | undefined
 			: undefined
 
 		const updated = matchingNode
 			? updateAsync(matchingNode, child)
-			: renderAsync(child)
+			: renderAsync(child, "key" in emptyDOM && typeof emptyDOM.key === "string" ? `${emptyDOM.key}-${i}` : undefined)
 
 		updated.then(_ => {
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -160,7 +166,7 @@ export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragme
 }
 
 interface IUInvalidatedEvent extends Event {
-	detail?: { invalidatedElementIds: string[] }
+	detail?: { invalidatedElementKeys: string[] }
 }
 /** Convenience method to mount the entry point dom node of a client app */
 export async function mountElement(element: UIElement, container: Element) {
@@ -171,8 +177,8 @@ export async function mountElement(element: UIElement, container: Element) {
 }
 
 /** Invalidate UI */
-export function invalidateUI(invalidatedElementIds?: string[], reason?: string) {
-	const ev = new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } })
+export function invalidateUI(invalidatedElementKeys?: string[], reason?: string) {
+	const ev = new CustomEvent('UIInvalidated', { detail: { invalidatedElementKeys } })
 	if (document.readyState === "complete") {
 		document.dispatchEvent(ev)
 	}
@@ -181,7 +187,7 @@ export function invalidateUI(invalidatedElementIds?: string[], reason?: string) 
 		document.onreadystatechange = async event => {
 			// console.log(`\ndocument.readyState changed to: ${document.readyState}`)
 			if (document.readyState === "complete") {
-				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementIds}" after document loading complete\n`)
+				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementKeys}" after document loading complete\n`)
 				document.dispatchEvent(ev)
 			}
 		}
@@ -190,32 +196,32 @@ export function invalidateUI(invalidatedElementIds?: string[], reason?: string) 
 
 const invalidationHandler = (() => {
 	let daemon: NodeJS.Timeout | undefined = undefined
-	const invalidatedElementIds: string[] = []
+	const invalidatedElementKeys: string[] = []
 
 	return async function (eventInfo: IUInvalidatedEvent) {
 		const DEFAULT_UPDATE_INTERVAL_MILLISECONDS = 14
 
 		// console.log(`UIInvalidated fired with detail: ${stringify((eventInfo as any).detail)}`)
-		const _invalidatedElementIds: string[] = (eventInfo).detail?.invalidatedElementIds ?? []
-		invalidatedElementIds.push(..._invalidatedElementIds)
+		const _invalidatedElementKeys: string[] = (eventInfo).detail?.invalidatedElementKeys ?? []
+		invalidatedElementKeys.push(..._invalidatedElementKeys)
 		if (daemon === undefined) {
 			daemon = setInterval(async () => {
-				if (invalidatedElementIds.length === 0 && daemon) {
+				if (invalidatedElementKeys.length === 0 && daemon) {
 					clearInterval(daemon)
 					daemon = undefined
 				}
-				const idsToProcess = invalidatedElementIds.splice(0, invalidatedElementIds.length)
-				await Promise.all(idsToProcess.map(async id => {
+				const keysToProcess = invalidatedElementKeys.splice(0, invalidatedElementKeys.length)
+				await Promise.all(keysToProcess.map(async key => {
 					// console.log(`Updating "${id}" dom element...`)
-					const elt = document.getElementById(id)
+					const elt = document.querySelector(`[key="${key}"]`)
 					if (elt) {
 						const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
 						nanomorph(elt, updatedElt)
-						const childrenWithIds = updatedElt.querySelectorAll("[id]")
-						await Promise.all([...childrenWithIds, updatedElt].map(updatedElement => new Promise<void>(resolve => {
-							const elId = updatedElement.getAttribute("id")
-							if (elId !== null) {
-								const initialDOMElement = document.querySelector(`[id="${elId}"]`)
+						const childrenWithKeys = updatedElt.querySelectorAll("[key]")
+						await Promise.all([...childrenWithKeys, updatedElt].map(updatedElement => new Promise<void>(resolve => {
+							const elKey = updatedElement.getAttribute("key")
+							if (elKey !== null) {
+								const initialDOMElement = document.querySelector(`[key="${elKey}"]`)
 								if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
 									initialDOMElement.renderTrace = updatedElement.renderTrace
 								}

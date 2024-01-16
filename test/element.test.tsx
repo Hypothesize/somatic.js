@@ -127,7 +127,7 @@ describe("ELEMENT MODULE", () => {
 			assert.strictEqual(updatedResult.element.type, StackPanel, `Result element is not a 'StackPanel' element`)
 			assert.strictEqual(getChildren(updatedResult.element).length, 2)
 			assert.deepStrictEqual(updatedResult.element.props, {
-				// id: "root",
+				key: undefined,
 				orientation: "vertical",
 				style: { padding: 0, margin: 0 }
 			})

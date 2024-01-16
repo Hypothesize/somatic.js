@@ -18,13 +18,21 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-		let nextInfo = await generator.next(newProps)
+		
+		// We pass the key as a props to be used in the component generator
+		let nextInfo = await generator.next({ ...newProps, key: elt.props.key })
+
 		// If new props were passed, call next() on generator again so latest props is used
 		if (hasValue(newProps)) nextInfo = await generator.next()
 
 		const next: UIElement | undefined = (nextInfo.done === true)
 			? undefined
 			: nextInfo.value
+
+		// We attach the key to the element
+		if (typeof next === "object" && "props" in next && typeof next.props === "object") {
+			next.props = { ...next.props, key: elt.props.key }
+		}
 		return next !== undefined ? { generator, element: next } : undefined
 	}
 
