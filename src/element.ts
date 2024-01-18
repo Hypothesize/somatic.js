@@ -18,7 +18,7 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-		
+
 		// We pass the key as a props to be used in the component generator
 		let nextInfo = await generator.next({ ...newProps, key: elt.props.key })
 
@@ -29,9 +29,29 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 			? undefined
 			: nextInfo.value
 
-		// We attach the key to the element
+		// We re-attach the key to the element
 		if (typeof next === "object" && "props" in next && typeof next.props === "object") {
 			next.props = { ...next.props, key: elt.props.key }
+
+			// We re-attach the keys to its children
+			if ("children" in next && Array.isArray(next.children)) {
+				next.children = next.children.map((child: UIElement, i) => {
+					if (isComponentElt(child)) {
+						const explicitChildKey = child.props.key
+						const eltResultElement = elt.result?.element
+						const keyInTheSamePlace = eltResultElement !== undefined && isIntrinsicElt(eltResultElement) && Array.isArray(eltResultElement.children) && eltResultElement.children[i]?.props.key
+
+						const matchingKey = explicitChildKey ?? keyInTheSamePlace
+						if (matchingKey === undefined) {
+							console.warn(`A child element ${child.type.name} has no explicit key or matching key in the DOM, and will be re-initialized on every update. This is not recommended; a key property should be added to prevent this`)
+						}
+						return { ...child, props: { ...child.props, key: matchingKey } }
+					}
+					else {
+						return child
+					}
+				})
+			}
 		}
 		return next !== undefined ? { generator, element: next } : undefined
 	}
@@ -135,6 +155,7 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 	const rendersAugmentedPromises = await new SequenceAsync(trace.componentElts)
 		.skipAsync(1)
 		.reduceAsync(initialAugElts, async (eltPromisesAccum, eltCurrent) => {
+			debugger
 			const lastEltPromise = last(eltPromisesAccum)
 			if (!(Boolean(lastEltPromise))) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
 				throw new Error(`Last element of accumulated trace is null in reducer`)
@@ -148,7 +169,7 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 					? Promise.resolve(eltCurrent) // no need to update results
 					: updateResultAsync({
 						...eltCurrent,
-						props: eltResult.props,
+						props: { ...eltResult.props, kekeke: 89 },
 						children: eltResult.children
 					})
 				return [...eltPromisesAccum, elt]

@@ -1172,7 +1172,7 @@ interface _CSSProperties {
 
 type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
 type CSSNamedWidth = (| "thin" | "medium" | "thick")
-type CSSBorder = `${CSSNamedWidth} ${CSSBorderStyle} ${CSSColor}`
+type CSSBorder = `${CSSNamedWidth | string} ${CSSBorderStyle} ${CSSColor}`
 type CSSBorderStyle = (
 	| "none"
 	| "hidden"
