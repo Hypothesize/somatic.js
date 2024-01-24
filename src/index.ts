@@ -461,4 +461,4 @@ export { getChildren, normalizeChildren, isEltProper, isIntrinsicElt, isComponen
 export { stringifyAttributes, stringifyStyle } from "./html"
 //export * from './components'
 export * from './types'
-export { colorConstants, colorLuminance } from "./common"
+export { colorConstants } from "./common"
