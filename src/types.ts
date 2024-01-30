@@ -1,9 +1,9 @@
 import { Obj } from "@sparkwave/standard/utility"
+
 import { colorConstants } from "./common"
 
-/** Main component type */
 /** General component */
-export type Component<Props extends Obj = Obj> = ComponentBase<(
+export type Component<Props> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
 	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
 	| Generator<UIElement, UIElement, ComponentArgs<Props>>
@@ -12,24 +12,25 @@ export type Component<Props extends Obj = Obj> = ComponentBase<(
 ), Props>
 
 /** Stateful component */
-export type ComponentStateful<P extends Obj = Obj> = ComponentBase<ElementGenerator<P>, P>
+export type ComponentStateful<P> = ComponentBase<ElementGenerator<P>, P>
 
 /** Async stateful component */
-export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentBase<ElementGeneratorAsync<P>, P>
+export type ComponentAsyncStateful<P> = ComponentBase<ElementGeneratorAsync<P>, P>
 
 /** Generic base component
  * @param props Component-specific properties passed to the component function
  * @param render Callback used for requesting re-rendering
  */
-export type ComponentBase<Ret, Props extends Obj = Obj> =
+export type ComponentBase<Ret, Props> = (
 	((props: ComponentArgs<Props>, render?: () => void) => Ret)
 	& ComponentOptions<Props>
+)
 
-export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
-export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
+export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
+export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
 export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
-export type ComponentOptions<P extends Obj = Obj> = {
+export type ComponentOptions<P> = {
 	name?: string
 	isPure?: boolean
 	defaultProps?: Partial<P>
@@ -41,14 +42,14 @@ export type Children = UIElement | UIElement[] // Children can be of various typ
  * A component element can produce another component element, recursively,
  * until an intrinsic element is obtained, at which point we can generate an actual node from it
  */
-export type UIElement<P extends Obj = Obj> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
+export type UIElement<P> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
 
-export type IntrinsicElement<P extends Obj = Obj> = UIElementBase<P> & { type: string }
-export type ComponentElement<P extends Obj = Obj> = UIElementBase<P> & {
+export type IntrinsicElement<P> = UIElementBase<P> & { type: string }
+export type ComponentElement<P> = UIElementBase<P> & {
 	type: Component<P>,
 	result?: ComponentResult
 }
-export interface ComponentEltAugmented<P extends Obj = Obj> extends ComponentElement<P> {
+export interface ComponentEltAugmented<P> extends ComponentElement<P> {
 	result: ComponentResult
 }
 export type UIElementBase<P = unknown> = { props: P, children?: Children }
@@ -512,6 +513,7 @@ interface _CSSProperties {
 		| `oblique ${number}deg`
 	)
 	fontVariant?: (
+		| "none"
 		| "normal"
 		| "small-caps"
 		| "all-small-caps"
@@ -1185,7 +1187,14 @@ interface _CSSProperties {
 
 type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
 type CSSWidth = (CSSLength | "thin" | "medium" | "thick")
-type CSSBorder = `${CSSWidth} ${CSSBorderStyle} ${CSSColor}`
+type CSSBorder = (
+	| `${CSSWidth}`
+	| `${CSSBorderStyle}`
+	| `${CSSColor}`
+	| `${CSSWidth} ${CSSBorderStyle}`
+	| `${CSSBorderStyle} ${CSSColor}`
+	| `${CSSWidth} ${CSSBorderStyle} ${CSSColor}`
+)
 type CSSBorderStyle = (
 	| "none"
 	| "hidden"
