@@ -50,7 +50,9 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
                         onMessageForParent={() => {
                             console.log(`Message received from independant child component. Parent value: ${state.parentValue}`)
                         }}
-                    />
+                    >
+                        Test
+                    </IndependantChildComponent>
                 )
             }
 
@@ -74,7 +76,6 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
     }
     let props = deepMerge(defaultProps, _props)
     const { key } = props
-    if (key === undefined) { throw new Error("key is undefined") }
 
     const state = {
         childValue: props.parentValue as number,
