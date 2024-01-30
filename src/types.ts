@@ -42,14 +42,14 @@ export type Children = UIElement | UIElement[] // Children can be of various typ
  * A component element can produce another component element, recursively,
  * until an intrinsic element is obtained, at which point we can generate an actual node from it
  */
-export type UIElement<P> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
+export type UIElement<P extends Obj = Obj> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
 
-export type IntrinsicElement<P> = UIElementBase<P> & { type: string }
-export type ComponentElement<P> = UIElementBase<P> & {
+export type IntrinsicElement<P = any> = UIElementBase<P> & { type: string }
+export type ComponentElement<P = any> = UIElementBase<P> & {
 	type: Component<P>,
 	result?: ComponentResult
 }
-export interface ComponentEltAugmented<P> extends ComponentElement<P> {
+export interface ComponentEltAugmented<P = any> extends ComponentElement<P> {
 	result: ComponentResult
 }
 export type UIElementBase<P = unknown> = { props: P, children?: Children }
@@ -2396,7 +2396,7 @@ type TransitionEventHandler<T = Element> = EventHandler<TransitionEvent<T>>
 	props?: ClassAttributes<Elt> & Attr | null,
 	// eslint-disable-next-line fp/no-rest-parameters
 	...children: VNode[]
-) => DOMElement<Attr, Elt>
+ ) => DOMElement<Attr, Elt>
 */
 
 
