@@ -26,18 +26,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install pnpm 
+        run: npm install -g pnpm
+
       - name: Install
-        run: npm ci --no-audit --prefer-offline
+        run: pnpm run deps
         
       - name: Build
-        run: npm run compile --if-present
+        run: pnpm run compile
         
       - name: Run Lint Check
-        run: npm run lintci
+        run: pnpm run lintci
         continue-on-error: true
         
       - name: Run Test Check
-        run: npm run testci
+        run: pnpm run testci
         continue-on-error: true
          
       - name: Annotate code checks

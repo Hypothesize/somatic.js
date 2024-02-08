@@ -1,5 +1,40 @@
 # Changelog
 
+### [2.4.5](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.4...v2.4.5) (2024-01-10)
+
+
+### Bug Fixes
+
+* 116: Further enhancements typings (2) ([998da63](https://www.github.com/Hypothesize/somatic.js/commit/998da634953a62ef3101f4fa4b877f0f50180584))
+
+### [2.4.4](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.3...v2.4.4) (2024-01-10)
+
+
+### Bug Fixes
+
+* 116: Further enhancements to typings ([afd9100](https://www.github.com/Hypothesize/somatic.js/commit/afd910085f1a11cc8762f07885d9b676d644269f))
+
+### [2.4.3](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.2...v2.4.3) (2023-12-05)
+
+
+### Bug Fixes
+
+* Fix to release workflow ([01e16b0](https://www.github.com/Hypothesize/somatic.js/commit/01e16b09222500a3b765e8567a6bc157ceef176f))
+
+### [2.4.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.1...v2.4.2) (2023-12-05)
+
+
+### Bug Fixes
+
+* 107: Enhancements: CSS typings; Removal of global vars; Fix to invalidateUI fn; Linting ([b44d70b](https://www.github.com/Hypothesize/somatic.js/commit/b44d70b81bd7be2c7639df7772d4728365c582ac))
+
+### [2.4.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.0...v2.4.1) (2023-11-20)
+
+
+### Bug Fixes
+
+* Assign render trace correctly ([7400b67](https://www.github.com/Hypothesize/somatic.js/commit/7400b67b62b8e844211fc53fc6428e0c33a67d98))
+
 ## [2.4.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.3.1...v2.4.0) (2023-10-31)
 
 

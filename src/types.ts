@@ -1,199 +1,708 @@
-import { Obj, Digit, DigitNonZero } from "@sparkwave/standard/utility"
+import { Obj } from "@sparkwave/standard/utility"
+import { colorConstants } from "./common"
 
 /** Main component type */
-export type Component<P extends Obj = Obj> = ((props: P & { children?: Children, key?: string }/*, extra: { invalidate: () => void }*/) =>
+/** General component */
+export type Component<Props extends Obj = Obj> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
-	| AsyncGenerator<UIElement, UIElement, typeof props>
-	| Generator<UIElement, UIElement, typeof props>
+	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
+	| Generator<UIElement, UIElement, ComponentArgs<Props>>
 	| Promise<UIElement>
 	| UIElement
-) & ComponentOptions<P>
+), Props>
 
-export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentOptions<P> & (
-	(props: P & { children?: Children, key?: string }) => AsyncGenerator<UIElement, UIElement, typeof props>
-)
+/** Stateful component */
+export type ComponentStateful<P extends Obj = Obj> = ComponentBase<ElementGenerator<P>, P>
 
-export interface ComponentOptions<P extends Obj = Obj> {
+/** Async stateful component */
+export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentBase<ElementGeneratorAsync<P>, P>
+
+/** Generic base component
+ * @param props Component-specific properties passed to the component function
+ * @param render Callback used for requesting re-rendering
+ */
+export type ComponentBase<Ret, Props extends Obj = Obj> =
+	((props: ComponentArgs<Props>, render?: () => void) => Ret)
+	& ComponentOptions<Props>
+
+export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
+export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
+
+export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
+export type ComponentOptions<P extends Obj = Obj> = {
 	name?: string
 	isPure?: boolean
 	defaultProps?: Partial<P>
 }
+export type Children = UIElement | UIElement[] // Children can be of various types, so not meaningful to give them a type
 
-export type Children = UIElement | UIElement[] // Children can be of various types, so not meaningful to give them a generic type
-export interface UIElementBase<P = unknown> { props: P, children?: Children }
-export interface IntrinsicElement<P extends Obj = Obj> extends UIElementBase<P> { type: string }
-// export interface FragmentElement extends UIElementBase<undefined> { type: "" }
-export interface ComponentElt<P extends Obj = Obj> extends UIElementBase<P> { type: Component<P>, result?: ComponentResult }
-
-export type ValueElement = | null | string | number | bigint | symbol | boolean | Object
-
-/** An UI element is, basically, information for a future (component) function invocation,
+/** UI element; basically, information for a future (component) function invocation,
  * I.e., the component function plus the arguments with which to call it
- * A component element produces another component element, recursively,
+ * A component element can produce another component element, recursively,
  * until an intrinsic element is obtained, at which point we can generate an actual node from it
  */
-export type UIElement<P extends Obj = Obj> = ComponentElt<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
+export type UIElement<P extends Obj = Obj> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
+
+export type IntrinsicElement<P extends Obj = Obj> = UIElementBase<P> & { type: string }
+export type ComponentElement<P extends Obj = Obj> = UIElementBase<P> & {
+	type: Component<P>,
+	result?: ComponentResult
+}
+export interface ComponentEltAugmented<P extends Obj = Obj> extends ComponentElement<P> {
+	result: ComponentResult
+}
+export type UIElementBase<P = unknown> = { props: P, children?: Children }
+
+export type ValueElement = | string | number | bigint | symbol | boolean | Object
+
 
 export type ComponentResult = {
 	element: UIElement,
 	generator?: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>
 }
-export interface ComponentEltAugmented<P extends Obj = Obj> extends ComponentElt<P> {
-	result: ComponentResult
-}
+
+export type DOMElement = SVGElement | HTMLElement
+export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace }
 
 export interface RenderingTrace {
 	componentElts: ComponentEltAugmented[],
 	leafElement: IntrinsicElement | ValueElement
 }
-export type DOMElement = SVGElement | HTMLElement
-export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace }
 
-export interface CSSProperties {
-	alignContent?: string | null
-	alignItems?: string | null
-	alignSelf?: string | null
-	alignmentBaseline?: string | null
-	animation?: string | null
-	animationDelay?: string | null
-	animationDirection?: string | null
-	animationDuration?: string | null
-	animationFillMode?: string | null
-	animationIterationCount?: string | null
-	animationName?: string | null
-	animationPlayState?: string | null
-	animationTimingFunction?: string | null
-	backfaceVisibility?: string | null
-	background?: string | null
-	backgroundAttachment?: string | null
-	backgroundClip?: string | null
-	backgroundColor?: string | null
-	backgroundImage?: string | null
-	backgroundOrigin?: string | null
-	backgroundPosition?: string | null
-	backgroundPositionX?: string | null
-	backgroundPositionY?: string | null
-	backgroundRepeat?: string | null
-	backgroundSize?: string | null
-	baselineShift?: string | null
-	border?: string | null
-	borderBottom?: string | null
-	borderBottomColor?: string | null
-	borderBottomLeftRadius?: string | number | null
-	borderBottomRightRadius?: string | number | null
-	borderBottomStyle?: string | null
-	borderBottomWidth?: string | null
-	borderCollapse?: string | null
-	borderColor?: string | null
-	borderImage?: string | null
-	borderImageOutset?: string | null
-	borderImageRepeat?: string | null
-	borderImageSlice?: string | null
-	borderImageSource?: string | null
-	borderImageWidth?: string | number | null
-	borderLeft?: string | number | null
-	borderLeftColor?: string | null
-	borderLeftStyle?: string | null
-	borderLeftWidth?: string | number | null
-	borderRadius?: string | number | null
-	borderRight?: string | null
-	borderRightColor?: string | null
-	borderRightStyle?: string | null
-	borderRightWidth?: string | number | null
-	borderSpacing?: string | null
-	borderStyle?: string | null
-	borderTop?: string | null
-	borderTopColor?: string | null
-	borderTopLeftRadius?: string | number | null
-	borderTopRightRadius?: string | number | null
-	borderTopStyle?: string | null
-	borderTopWidth?: string | number | null
-	borderWidth?: string | number | null
-	bottom?: string | number | null
+export type CSSProperties = { [k in keyof _CSSProperties]: CSSProperty<_CSSProperties[k]> }
+interface _CSSProperties {
+	alignContent?: (
+		| "center"
+		| "start"
+		| "end"
+		| "flex-start"
+		| "flex-end"
+		| "normal"
+		| "baseline"
+		| "first baseline"
+		| "last baseline"
+		| "space-between"
+		| "space-around"
+		| "space-evenly"
+		| "stretch"
+		| "safe center"
+		| "unsafe center"
+	)
+	alignItems?: (
+		| "normal"
+		| "stretch"
+		| "center"
+		| "start"
+		| "end"
+		| "flex-start"
+		| "flex-end"
+		| "baseline"
+		| "first baseline"
+		| "last baseline"
+		| "safe center"
+		| "unsafe center"
+	)
+	alignSelf?: (
+		| "auto"
+		| "normal"
+		| "center"
+		| "start"
+		| "end"
+		| "self-start"
+		| "self-end"
+		| "flex-start"
+		| "flex-end"
+		| "baseline"
+		| "first baseline"
+		| "last baseline"
+		| "stretch"
+		| "safe center"
+		| "unsafe center"
+	)
+	alignmentBaseline?: (
+		| "auto"
+		| "baseline"
+		| "before-edge"
+		| "text-before-edge"
+		| "middle"
+		| "central"
+		| "after-edge"
+		| "text-after-edge"
+		| "ideographic"
+		| "alphabetic"
+		| "hanging"
+		| "mathematical"
+		| "top"
+		| "center"
+		| "bottom"
+	)
+	animation?: (
+		`${string} ${number} ${(
+			| "normal"
+			| "reverse"
+			| "alternate"
+			| "alternate-reverse"
+		)} ${(
+			| "none"
+			| "forward"
+			| "backward"
+			| "both"
+		)} ${(
+			| "running"
+			| "paused"
+		)}`
+	)
+	animationDelay?: string
+	animationDirection?: "normal" | "reverse" | "alternate" | "alternate-reverse"
+	animationDuration?: string
+	animationFillMode?: "none" | "forward" | "backward" | "both"
+	animationIterationCount?: "infinite" | number
+	animationName?: string
+	animationPlayState?: "running" | "paused"
+	animationTimingFunction?: CSSEasingFunction
+	backfaceVisibility?: "visible" | "hidden"
+
+	/** Sets all background style properties at once, such as color, image, origin and size, or repeat method. 
+	 * Component properties not set in the background shorthand property value declaration are set to their default values.
+	 */
+	background?: string
+
+	backgroundAttachment?: "scroll" | "fixed" | "local"
+	backgroundClip?: "border-box" | "padding-box" | "content-box" | "text"
+	backgroundColor?: CSSColor
+	backgroundImage?: `url(${string})`
+	backgroundOrigin?: "border-box" | "padding-box" | "content-box"
+	backgroundPosition?: (
+		| "top"
+		| "right"
+		| "bottom"
+		| "left"
+		| "center"
+		| string
+	)
+	backgroundPositionX?: (
+		| "left"
+		| "center"
+		| "right"
+		| CSSLength
+		| `${"right" | "left"} ${string}`
+	)
+	backgroundPositionY?: (
+		| "left"
+		| "center"
+		| "right"
+		| CSSLength
+		| `${"right" | "left"} ${string}`
+	)
+	backgroundRepeat?: (
+		| "repeat-x"
+		| "repeat-y"
+		| "repeat"
+		| "space"
+		| "round"
+		| "no-repeat"
+	)
+	backgroundSize?: (
+		| "auto"
+		| "cover"
+		| "contain"
+		| string
+	)
+	baselineShift?: CSSLength | "sub" | "super"
+
+	border?: CSSBorder
+	borderSpacing?: string | CSSLength
+	borderStyle?: CSSBorderStyle
+	borderWidth?: string | CSSLength | CSSNamedWidth
+	borderRadius?: CSSLength
+	borderCollapse?: "collapse" | "separate"
+	borderColor?: CSSColor
+	borderImage?: (| `url(${string}) ${number} ${string}` | string)
+	borderImageOutset?: number | string
+	borderImageRepeat?: "stretch" | "repeat" | "round" | "space"
+	borderImageSlice?: string | number | CSSLength
+	borderImageSource?: "none" | `url(${string})`
+	borderImageWidth?: | number | CSSLength
+
+	borderBottom?: CSSBorder
+	borderBottomColor?: CSSColor
+	borderBottomLeftRadius?: string | number
+	borderBottomRightRadius?: string | number
+	borderBottomStyle?: CSSBorderStyle
+	borderBottomWidth?: CSSLength | CSSNamedWidth
+
+	borderLeft?: CSSBorder
+	borderLeftColor?: CSSColor
+	borderLeftStyle?: CSSBorderStyle
+	borderLeftWidth?: CSSNamedWidth | CSSLength
+
+	borderRight?: CSSBorder
+	borderRightColor?: CSSColor
+	borderRightStyle?: CSSBorderStyle
+	borderRightWidth?: CSSNamedWidth | CSSLength
+
+	borderTop?: CSSBorder
+	borderTopColor?: CSSColor
+	borderTopLeftRadius?: string | CSSLength
+	borderTopRightRadius?: string | CSSLength
+	borderTopStyle?: CSSBorderStyle
+	borderTopWidth?: CSSNamedWidth | CSSLength
+
+	bottom?: CSSLength | "auto"
 	boxShadow?: string | null
-	boxSizing?: string | null
-	breakAfter?: string | null
-	breakBefore?: string | null
-	breakInside?: string | null
-	captionSide?: string | null
-	clear?: string | null
+	boxSizing?: "border-box" | "content-box"
+	breakAfter?: (
+		| "auto"
+		| "avoid"
+		| "always"
+		| "all"
+		| "avoid-page"
+		| "page"
+		| "left"
+		| "right"
+		| "recto"
+		| "verso"
+		| "avoid-column"
+		| "region"
+	)
+	breakBefore?: (
+		| "auto"
+		| "avoid"
+		| "always"
+		| "all"
+		| "avoid-page"
+		| "page"
+		| "left"
+		| "right"
+		| "recto"
+		| "verso"
+		| "avoid-column"
+		| "region"
+	)
+	breakInside?: (
+		| "auto"
+		| "avoid"
+		| "avoid-page"
+		| "avoid-column"
+		| "avoid-region"
+	)
+	captionSide?: (
+		| "top"
+		| "bottom"
+		| "block-start"
+		| "block-end"
+		| "inline-start"
+		| "inline-end"
+	)
+	clear?: (
+		| "none"
+		| "left"
+		| "right"
+		| "both"
+		| "inline-start"
+		| "inline-end"
+	)
 	clip?: string | null
-	clipPath?: string | null
-	clipRule?: string | null
-	color?: string | null
+	clipPath?: (
+		| `url(${string})`
+		| "margin-box"
+		| "border-box"
+		| "padding-box"
+		| "content-box"
+		| "fill-box"
+		| "stroke-box"
+		| "view-box"
+		| `inset(${string} ${string})`
+		| `circle(${string} at ${string} ${string})`
+	)
+	clipRule?: "nonzero" | "evenodd" | "inherit"
+	color?: CSSColor
 	colorInterpolationFilters?: string | null
-	columnCount?: any
-	columnFill?: string | null
-	columnRule?: string | null
-	columnRuleColor?: any
-	columnRuleStyle?: string | null
-	columnRuleWidth?: any
-	columnSpan?: string | null
-	columnWidth?: any
-	columns?: string | null
+	columnCount?: "auto" | number
+	columnFill?: "auto" | "balance" | "balance-all"
+	columnRule?: CSSBorderStyle | string
+	columnRuleColor?: CSSColor | string
+	columnRuleStyle?: CSSBorderStyle
+	columnRuleWidth?: CSSBorderStyle | CSSLength
+	columnSpan?: "none" | "all"
+	columnWidth?: "auto" | CSSLength
+	columns?: (
+		| CSSLength
+		| "auto"
+		| number
+		| string
+	)
 	content?: string | null
-	counterIncrement?: string | null
-	counterReset?: string | null
+	counterIncrement?: string | "none"
+	counterReset?: string | "none"
 	cssFloat?: string | null
-	float?: string | null
+	float?: (
+		| "left"
+		| "right"
+		| "none"
+		| "inline-start"
+		| "inline-end"
+	)
 	cssText?: string
-	cursor?: string | null
-	direction?: string | null
-	display?: string | null
-	dominantBaseline?: string | null
-	emptyCells?: string | null
-	enableBackground?: string | null
+	cursor?: (
+		| CSSCursor
+		| `url(${string}), ${CSSCursor}`
+		| `url(${string}) ${number} ${number}, ${CSSCursor}`
+	)
+	direction?: "ltr" | "rtl"
+	display?: (
+		| "block"
+		| "inline"
+		| "inline-block"
+		| "flex"
+		| "inline-flex"
+		| "grid"
+		| "inline-grid"
+		| "flow-root"
+		| "none"
+		| "contents"
+		| "block flow"
+		| "inline flow"
+		| "inline flow-root"
+		| "block flex"
+		| "inline flex"
+		| "block grid"
+		| "inline grid"
+		| "block flow-root"
+		| "table"
+		| "table-row"
+		| "list-item"
+	)
+	dominantBaseline?: (
+		| "auto"
+		| "ideographic"
+		| "alphabetic"
+		| "hanging"
+		| "mathematical"
+		| "central"
+		| "middle"
+		| "text-after-edge"
+		| "text-before-edge"
+		| "text-top"
+	)
+	emptyCells?: "show" | "hide"
+	enableBackground?: "accumulate" | `${number} ${number} ${number} ${number}`
 	fill?: string | null
-	fillOpacity?: string | null
-	fillRule?: string | null
-	filter?: string | null
-	flex?: string | null
-	flexBasis?: string | null
-	flexDirection?: string | null
-	flexFlow?: string | number | null
-	flexGrow?: string | number | null
-	flexShrink?: string | number | null
-	flexWrap?: string | null
-	floodColor?: string | null
-	floodOpacity?: string | number | null
+	fillOpacity?: number | `${number}%`
+	fillRule?: "nonzero" | "evenodd"
+	filter?: (
+		| `url(${string})`
+		| `blur(${CSSLength})`
+		| `brightness(${number})`
+		| `contrast(${number}%)`
+		//| `drop-shadow(${CSSLength} ${CSSLength} ${CSSLength} ${CSSColor})`
+		| `grayscale(${number}%)`
+		| `hue-rotate(${number}deg)`
+		| `invert(${number}%)`
+		| `opacity(${number}%)`
+		| `saturate(${number}%)`
+		| `sepia(${number}%)`
+		| string
+		| "none"
+	)
+	flex?: (
+		| "none"
+		| "auto"
+		| "initial"
+		| number
+		| CSSLength
+		| string
+	)
+	flexBasis?: (
+		| "auto"
+		| CSSLength
+		| "min-content"
+		| "max-content"
+		| "fit-content"
+		| "content"
+	)
+	flexDirection?: (
+		| "row"
+		| "row-reverse"
+		| "column"
+		| "column-reverse"
+	)
+	flexFlow?: (
+		| "row"
+		| "row-reverse"
+		| "column"
+		| "column-reverse"
+		| "nowrap"
+		| "wrap"
+		| "wrap-reverse"
+		//| `${"row" | "row-reverse" | "column" | "column-reverse"} ${"nowrap" | "wrap" | "wrap-reverse"}`
+	)
+	flexGrow?: number
+	flexShrink?: number
+	flexWrap?: "nowrap" | "wrap" | "wrap-reverse"
+	floodColor?: CSSColor
+	floodOpacity?: number | `${number}%`
 	font?: string | null
-	fontFamily?: string | null
-	fontFeatureSettings?: string | null
-	fontSize?: string | null
-	fontSizeAdjust?: string | null
-	fontStretch?: string | null
-	fontStyle?: string | null
-	fontVariant?: string | null
-	fontWeight?: string | number | null
-	glyphOrientationHorizontal?: string | null
-	glyphOrientationVertical?: string | null
-	height?: string | null
-	imeMode?: string | null
-	justifyContent?: string | null
-	kerning?: string | null
-	left?: string | number | null
-	readonly length?: number
-	letterSpacing?: string | null
-	lightingColor?: string | null
-	lineHeight?: string | null
+	fontFamily?: (
+		| "serif"
+		| "sans-serif"
+		| "cursive"
+		| "fantasy"
+		| "monospace"
+		| "system-ui"
+		| "ui-serif"
+		| "ui-sans-serif"
+		| "ui-monospace"
+		| "ui-rounded"
+		| "emoji"
+		| "math"
+		| "fangsong"
+		| string
+		//         | `${string} ${"serif" | "sans-serif" | "cursive" | "fantasy" | "monospace" | "system-ui" | "ui-serif" |
+		// "ui-sans-serif" | "ui-monospace" | "ui-rounded" | "emoji" | "math" | "fangsong"}`
+	)
+	fontFeatureSettings?: (
+		| "normal"
+		| string
+		| `${string} ${"on" | "off" | number}`
+	)
+	fontSize?: (
+		| "xx-small"
+		| "x-small"
+		| "small"
+		| "medium"
+		| "large"
+		| "x-large"
+		| "xx-large"
+		| "xxx-large"
+		| "larger"
+		| "smaller"
+		| CSSLength
+		| "math"
+	)
+	fontSizeAdjust?: (
+		| "none"
+		| number
+		| `${"ex-height" | "cap-height" | "ch-width" | "ic-width" | "ic-height"} ${number}`
+	)
+	fontStretch?: (
+		| "normal"
+		| "ultra-condensed"
+		| "extra-condensed"
+		| "condensed"
+		| "semi-condensed"
+		| "semi-expanded"
+		| "expanded"
+		| "extra-expanded"
+		| "ultra-expanded"
+		| `${number}%`
+	)
+	fontStyle?: (
+		| "normal"
+		| "italic"
+		| "oblique"
+		| `oblique ${number}deg`
+	)
+	fontVariant?: (
+		| "normal"
+		| "small-caps"
+		| "all-small-caps"
+		| "petite-caps"
+		| "all-petite-caps"
+		| "unicase"
+		| "titling-caps"
+		| "lining-nums"
+		| "oldstyle-nums"
+		| "proportional-nums"
+		| "tabular-nums"
+		| "diagonal-fractions"
+		| "stacked-fractions"
+		| "ordinal"
+		| "slashed-zero"
+		| "jis78"
+		| "jis83"
+		| "jis90"
+		| "jis04"
+		| "simplified"
+		| "traditional"
+		| "full-width"
+		| "proportional-width"
+		| "ruby"
+	)
+	fontWeight?: (
+		| "normal"
+		| "bold"
+		| "bolder"
+		| "lighter"
+		| 100
+		| 200
+		| 300
+		| 400
+		| 500
+		| 600
+		| 700
+		| 800
+		| 900
+	)
+	glyphOrientationHorizontal?: `${number} ${"deg" | "grad" | "rad"}`
+	glyphOrientationVertical?: `${number} ${"deg" | "grad" | "rad"}`
+	height?: (
+		| "max-content"
+		| "min-content"
+		//| `fit-content(${CSSLength})`
+		| "auto"
+		| CSSLength
+	)
+	imeMode?: (
+		| "auto"
+		| "normal"
+		| "active"
+		| "inactive"
+		| "disabled"
+	)
+	justifyContent?: (
+		| "center"
+		| "start"
+		| "end"
+		| "flex-start"
+		| "flex-end"
+		| "left"
+		| "right"
+		| "normal"
+		| "space-between"
+		| "space-around"
+		| "space-evenly"
+		| "stretch"
+		| "safe center"
+		| "unsafe center"
+	)
+
+	kerning?: "auto" | number | CSSLength
+	left?: "auto" | CSSLength
+	readonly length?: CSSLength
+	letterSpacing?: "normal" | CSSLength
+	lightingColor?: CSSColor
+	lineHeight?: "normal" | number | CSSLength
 	listStyle?: string | null
-	listStyleImage?: string | null
-	listStylePosition?: string | null
-	listStyleType?: string | null
-	margin?: string | number | null
-	marginBottom?: string | number | null
-	marginLeft?: string | number | null
-	marginRight?: string | number | null
-	marginTop?: string | number | null
+	listStyleImage?: "none" | `url(${string})`
+	listStylePosition?: "inside" | "outside"
+	listStyleType?: (
+		| "none"
+		| string
+		| "disc"
+		| "circle"
+		| "square"
+		| "decimal"
+		| "cjk-decimal"
+		| "decimal-leading-zero"
+		| "lower-roman"
+		| "upper-roman"
+		| "lower-greek"
+		| "lower-alpha"
+		| "lower-latin"
+		| "upper-alpha"
+		| "upper-latin"
+		| "arabic-indic"
+		| "-moz-arabic-indic"
+		| "armenian"
+		| "bengali"
+		| "-moz-bengali"
+		| "cambodian"
+		| "khmer"
+		| "cjk-earthly-branch"
+		| "-moz-cjk-earthly-branch"
+		| "cjk-heavenly-stem"
+		| "-moz-cjk-heavenly-stem"
+		| "cjk-ideographic"
+		| "devanagari"
+		| "-moz-devanagari"
+		| "ethiopic-numeric"
+		| "georgian"
+		| "gujarati"
+		| "-moz-gujarati"
+		| "gurmukhi"
+		| "-moz-gurmukhi"
+		| "hebrew"
+		| "hiragana"
+		| "hiragana-iroha"
+		| "japanese-formal"
+		| "japanese-informal"
+		| "kannada"
+		| "-moz-kannada"
+		| "katakana"
+		| "katakana-iroha"
+		| "korean-hangul-formal"
+		| "korean-hanja-formal"
+		| "korean-hanja-informal"
+		| "lao"
+		| "-moz-lao"
+		| "lower-armenian"
+		| "malayalam"
+		| "-moz-malayalam"
+		| "mongolian"
+		| "myanmar"
+		| "-moz-myanmar"
+		| "oriya"
+		| "-moz-oriya"
+		| "persian"
+		| "-moz-persian"
+		| "simp-chinese-formal"
+		| "simp-chinese-informal"
+		| "tamil"
+		| "-moz-tamil"
+		| "telugu"
+		| "-moz-telugu"
+		| "thai"
+		| "-moz-thai"
+		| "tibetan"
+		| "trad-chinese-formal"
+		| "trad-chinese-informal"
+		| "upper-armenian"
+		| "disclosure-open"
+		| "disclosure-closed"
+	)
+	margin?: (
+		| number
+		| CSSLength
+		| string
+	)
+	marginBottom?: CSSLength | "auto" | `${number}`
+	marginLeft?: CSSLength | "auto" | `${number}`
+	marginRight?: CSSLength | "auto" | `${number}`
+	marginTop?: CSSLength | "auto" | `${number}`
 	marker?: string | null
 	markerEnd?: string | null
 	markerMid?: string | null
 	markerStart?: string | null
 	mask?: string | null
-	maxHeight?: string | null
-	maxWidth?: string | null
-	minHeight?: string | null
-	minWidth?: string | null
+	maxHeight?: (
+		| "max-content"
+		| "min-content"
+		//| `fit-content(${CSSLength})`
+		| "auto"
+		| CSSLength
+	)
+	maxWidth?: (
+		| "max-content"
+		| "min-content"
+		//| `fit-content(${CSSLength})`
+		| "auto"
+		| CSSLength
+	)
+	minHeight?: (
+		| "max-content"
+		| "min-content"
+		//| `fit-content(${CSSLength})`
+		| "auto"
+		| CSSLength
+	)
+	minWidth?: (
+		| "max-content"
+		| "min-content"
+		//| `fit-content(${CSSLength})`
+		| "auto"
+		| CSSLength
+	)
 	msContentZoomChaining?: string | null
 	msContentZoomLimit?: string | null
 	msContentZoomLimitMax?: any
@@ -241,69 +750,242 @@ export interface CSSProperties {
 	msWrapFlow?: string
 	msWrapMargin?: any
 	msWrapThrough?: string
-	opacity?: string | number | null
+	opacity?: number | `${number}%`
 	order?: string | null
-	orphans?: string | null
-	outline?: string | null
-	outlineColor?: string | null
-	outlineStyle?: string | null
-	outlineWidth?: string | null
-	overflow?: string | null
-	overflowX?: string | null
-	overflowY?: string | null
-	padding?: string | number | null
-	paddingBottom?: string | number | null
-	paddingLeft?: string | number | null
-	paddingRight?: string | number | null
-	paddingTop?: string | number | null
-	pageBreakAfter?: string | null
-	pageBreakBefore?: string | null
-	pageBreakInside?: string | null
-	perspective?: string | null
+	orphans?: number
+	outline?: CSSBorderStyle | string
+	outlineColor?: CSSColor | "invert"
+	outlineStyle?: CSSBorderStyle
+	outlineWidth?: CSSNamedWidth | CSSLength
+	overflow?: (
+		| "visible"
+		| "hidden"
+		| "clip"
+		| "scroll"
+		| "auto"
+	)
+	overflowX?: (
+		| "visible"
+		| "hidden"
+		| "clip"
+		| "scroll"
+		| "auto"
+	)
+	overflowY?: (
+		| "visible"
+		| "hidden"
+		| "clip"
+		| "scroll"
+		| "auto"
+	)
+	padding?: number | CSSLength | string
+	paddingBottom?: CSSLength
+	paddingLeft?: CSSLength
+	paddingRight?: CSSLength
+	paddingTop?: CSSLength
+	pageBreakAfter?: (
+		| "auto"
+		| "always"
+		| "avoid"
+		| "left"
+		| "right"
+		| "recto"
+		| "verso"
+	)
+	pageBreakBefore?: (
+		| "auto"
+		| "always"
+		| "avoid"
+		| "left"
+		| "right"
+		| "recto"
+		| "verso"
+	)
+	pageBreakInside?: "auto" | "avoid"
+	perspective?: "none" | CSSLength
 	perspectiveOrigin?: string | null
-	pointerEvents?: string | null
+	pointerEvents?: (
+		| "auto"
+		| "none"
+		| "visiblePainted"
+		| "visibleFill"
+		| "visibleStroke"
+		| "visible"
+		| "painted"
+		| "fill"
+		| "stroke"
+		| "all"
+	)
 	position?: "static" /*default*/ | "fixed" | "absolute" | "relative" | "sticky" | null
-	quotes?: string | null
-	right?: string | number | null
-	rubyAlign?: string | null
+	quotes?: (
+		| "none"
+		| "auto"
+		| `${string} ${string}`
+		| `${string} ${string} ${string} ${string}`
+	)
+	right?: "auto" | CSSLength
+	rubyAlign?: "start" | "center" | "space-between" | "space-around"
 	rubyOverhang?: string | null
-	rubyPosition?: string | null
-	stopColor?: string | null
-	stopOpacity?: string | null
+	rubyPosition?: "over" | "under" | "alternate" | "inter-character"
+	stopColor?: CSSColor
+	stopOpacity?: number
 	stroke?: string | null
-	strokeDasharray?: string | null
-	strokeDashoffset?: string | null
-	strokeLinecap?: string | null
-	strokeLinejoin?: string | null
-	strokeMiterlimit?: string | number | null
-	strokeOpacity?: string | null
-	strokeWidth?: string | number | null
-	tableLayout?: string | null
-	textAlign?: string | null
-	textAlignLast?: string | null
-	textAnchor?: string | null
-	textDecoration?: string | null
-	textIndent?: string | number | null
-	textJustify?: string | null
+	strokeDasharray?: "none" | "inherit" | string | CSSLength
+	strokeDashoffset?: CSSLength
+	strokeLinecap?: "butt" | "round" | "square"
+	strokeLinejoin?: "miter" | "round" | "bevel" | "arcs" | "miter-clip"
+	strokeMiterlimit?: number
+	strokeOpacity?: `${number}%`
+	strokeWidth?: CSSLength
+	tableLayout?: "auto" | "fixed"
+	textAlign?: (
+		| "start"
+		| "end"
+		| "left"
+		| "right"
+		| "center"
+		| "justify"
+		| "justify-all"
+		| "match-parent"
+		| string
+	)
+	textAlignLast?: (
+		| "auto"
+		| "start"
+		| "end"
+		| "left"
+		| "right"
+		| "center"
+		| "justify"
+	)
+	textAnchor?: "start" | "middle" | "end"
+
+	/** The appearance of decorative lines on text. 
+	 * It is a shorthand for text-decoration-line, text-decoration-color, text-decoration-style, and 
+	 * the newer text-decoration-thickness property 
+	 */
+	textDecoration?: (
+		| CSSProperties["textDecorationLine"]
+		| `${CSSProperties["textDecorationLine"]} ${CSSProperties["textDecorationColor"]}`
+		| `${CSSProperties["textDecorationLine"]} ${CSSProperties["textDecorationStyle"]}`
+		| `${CSSProperties["textDecorationLine"]} ${CSSProperties["textDecorationStyle"]} ${CSSProperties["textDecorationColor"]}`
+		// | `${CSSProperties["textDecorationLine"]} ${CSSProperties["textDecorationStyle"]} ${CSSProperties["textDecorationColor"]} ${CSSProperties["s"]}`
+	)
+
+	/** Style of the lines specified by text-decoration-line */
+	textDecorationStyle?: 'solid' | 'double' | 'dotted' | 'dashed' | 'wavy'
+
+	/** Kind of decoration that is used on text in an element, such as an underline or overline */
+	textDecorationLine?: 'none' | 'underline' | 'overline' | 'line-through' | 'underline overline' | 'underline line-through'
+
+	/** Stroke thickness of the decoration line that is used on text in an element, such as a line-through, underline, or overline. 
+	 * The from-font value means: If the font file includes info about a preferred thickness, use that value;
+	 * If not, behave as if auto was set, with the browser choosing an appropriate thickness.
+	*/
+	textDecorationThickness?: CSSLength | "from-font"
+
+	/** Color of decorations added to text by text-decoration-line. */
+	textDecorationColor?: CSSColor
+
+	textIndent?: CSSLength
+	textJustify?: (
+		| "auto"
+		| "none"
+		| "inter-word"
+		| "inter-character"
+	)
 	textKashida?: string | null
 	textKashidaSpace?: string | null
-	textOverflow?: string | null
+	textOverflow?: "clip" | "ellipsis"
 	textShadow?: string | null
-	textTransform?: string | null
-	textUnderlinePosition?: string | null
-	top?: string | number | null
-	touchAction?: string | null
-	transform?: string | null
-	transformOrigin?: string | null
-	transformStyle?: string | null
-	transition?: string | null
-	transitionDelay?: string | null
-	transitionDuration?: string | null
-	transitionProperty?: string | null
-	transitionTimingFunction?: string | null
-	unicodeBidi?: string | null
-	verticalAlign?: string | null
-	visibility?: string | null
+	textTransform?: (
+		| "none"
+		| "capitalize"
+		| "uppercase"
+		| "lowercase"
+		| "full-width"
+		| "full-size-kana"
+	)
+	textUnderlinePosition?: (
+		| "auto"
+		| "under"
+		| "left"
+		| "right"
+		| `${"auto" | "under" | "left" | "right"} ${"auto" | "under" | "left" | "right"}`
+	)
+	top?: "auto" | CSSLength
+	touchAction?: (
+		| "auto"
+		| "none"
+		| "pan-x"
+		| "pan-left"
+		| "pan-right"
+		| "pan-y"
+		| "pan-up"
+		| "pan-down"
+		| "pinch-zoom"
+		| "manipulation"
+	)
+	transform?: (
+		| "none"
+		| string
+		| `matrix(${number}, ${number}, ${number}, ${number}, ${number}, ${number})`
+		| `matrix3d(${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number}, ${number})`
+		| `rotate(${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `rotate3d(${number},${number},${number},${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `rotateX(${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `rotateY(${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `rotateZ(${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `scale(${number | `${number}%`}, ${number | `${number}%`})`
+		| `scale3d(${number}, ${number},${number})`
+		| `scaleX(${number})`
+		| `scaleY(${number})`
+		| `scaleZ(${number})`
+		| `skew(${`${number}${"deg" | "grad" | "rad" | "turn"}` | `${number}${"deg" | "grad" | "rad" | "turn"}, ${number}${"deg" | "grad" | "rad" | "turn"}`})`
+		| `skewX(${number}${"deg" | "grad" | "rad" | "turn"})`
+		| `skewY(${number}${"deg" | "grad" | "rad" | "turn"})`
+	)
+	transformOrigin?: (
+		| CSSLength
+		| "left"
+		| "right"
+		| "center"
+		| "bottom"
+		| string
+	)
+	transformStyle?: "flat" | "preserve-3d"
+	transition?: (
+		// | `${string} ${CSSTime}`
+		// | `${string} ${CSSTime} ${CSSTime}`
+		// | `${string} ${CSSTime} ${CSSEasingFunction}`
+		// | `${string} ${CSSTime} ${CSSEasingFunction} ${CSSTime}`
+		| `all ${CSSTime} ${CSSEasingFunction}`
+		| string
+	)
+	transitionDelay?: CSSTime | string
+	transitionDuration?: CSSTime | string
+	transitionProperty?: "none" | "all" | string
+	transitionTimingFunction?: CSSEasingFunction
+	unicodeBidi?: (
+		| "normal"
+		| "embed"
+		| "isolate"
+		| "bidi-override"
+		| "isolate-override"
+		| "plaintext"
+	)
+	verticalAlign?: (
+		| "baseline"
+		| "sub"
+		| "super"
+		| "text-top"
+		| "text-bottom"
+		| "middle"
+		| "top"
+		| "bottom"
+		| CSSLength
+	)
+	visibility?: "visible" | "hidden" | "collapse"
 	webkitAlignContent?: string | null
 	webkitAlignItems?: string | null
 	webkitAlignSelf?: string | null
@@ -356,7 +1038,7 @@ export interface CSSProperties {
 	webkitFlexWrap?: string | null
 	webkitJustifyContent?: string | null
 	webkitOrder?: string | null
-	webkitPerspective?: string | null
+	webkitPerspective?: "none" | CSSLength | null
 	webkitPerspectiveOrigin?: string | null
 	webkitTapHighlightColor?: string | null
 	webkitTextFillColor?: string | null
@@ -372,38 +1054,75 @@ export interface CSSProperties {
 	webkitUserModify?: string | null
 	webkitUserSelect?: string | null
 	webkitWritingMode?: string | null
-	whiteSpace?: string | null
-	widows?: string | null
-	width?: string | null
-	wordBreak?: string | null
-	wordSpacing?: string | null
-	wordWrap?: string | null
-	writingMode?: string | null
-	zIndex?: string | number | null
-	zoom?: string | null
+	whiteSpace?: (
+		| "normal"
+		| "nowrap"
+		| "pre"
+		| "pre-wrap"
+		| "pre-line"
+		| "break-spaces"
+	)
+	widows?: number
+	width?: (
+		| "auto"
+		| "max-content"
+		| "min-content"
+		| `fit-content(${CSSLength})`
+		| CSSLength
+	)
+	wordBreak?: "normal" | "break-all" | "keep-all" | "break-word"
+	wordSpacing?: "normal" | CSSLength
+	/** Applies to inline elements, setting whether the browser should insert line breaks within an otherwise unbreakable string to prevent text from overflowing its line box. */
+	overflowWrap?: (
+		| "normal"
+		| "break-word"
+		| "anywhere"
+	)
+	/** Alias of overflowWrap */
+	wordWrap?: (
+		| "normal"
+		| "break-word"
+		| "anywhere"
+	)
+	/** Controls how text inside an element is wrapped */
+	textWrap?: (
+		/** Text is wrapped across lines at appropriate characters (for example spaces, in languages like English that use space separators) to minimize overflow. 
+		 * This is the default value. 
+		 */
+		| "wrap"
 
-	/** A shorthand property for the grid-template-rows, grid-template-columns, grid-template-areas, grid-auto-rows, grid-auto-columns, and the grid-auto-flow properties */
+		/** Text does not wrap across lines. It will overflow its containing element rather than breaking onto a new line. */
+		| "nowrap"
+
+		/** Text is wrapped in a way that best balances the number of characters on each line, enhancing layout quality and legibility. Because counting characters and balancing them across multiple lines is computationally expensive, this value is only supported for blocks of text spanning a limited number of lines (the Chromium implementation uses six wrapped lines or less), meaning that it is useful for cases such as headings or pull quotes. */
+		| "balance"
+	)
+	writingMode?: "horizontal-tb" | "vertical-rl" | "vertical-lr"
+	zIndex?: "auto" | number
+	zoom?: "normal" | "reset" | `${number}%` | number
+
+	/** Shorthand property for the grid-template-rows, grid-template-columns, grid-template-areas, grid-auto-rows, grid-auto-columns, and the grid-auto-flow properties */
 	grid?: string
 
-	/** Either specifies a name for the grid item,  or this property is a shorthand property for the 
-	 * grid-row-start, grid-column-start, grid-row-end, and grid-column-end properties 
+	/** Either specifies a name for the grid item,  or this property is a shorthand property for the
+	 * grid-row-start, grid-column-start, grid-row-end, and grid-column-end properties
 	 */
 	gridArea?: string
 
 	/** Defines on which row-line a grid item will start */
-	gridRowStart?:
-	| "auto" // Default value. The item will be placed following the flow
-	| `span ${number}` // the number of rows the item will span
-	| number // row line
-	| "inherit" | "initial" | "revert" | "unset"
-
+	gridRowStart?: (
+		| "auto" // Default value. The item will be placed following the flow
+		| `span ${number}` // the number of rows the item will span
+		| number // row line
+		| "inherit" | "initial" | "revert" | "unset"
+	)
 	/** Defines on which column-line a grid item will start. */
-	gridColumnStart?:
-	| "auto" // Default value. The item will be placed following the flow
-	| `span ${number}` // the number of columns the item will span
-	| number // column-line
-	| "inherit" | "initial" | "revert" | "unset"
-
+	gridColumnStart?: (
+		| "auto" // Default value. The item will be placed following the flow
+		| `span ${number}` // the number of columns the item will span
+		| number // column-line
+		| "inherit" | "initial" | "revert" | "unset"
+	)
 	/** Defines how many rows a grid item will span, or on which row-line the item will end */
 	gridRowEnd?: "auto" | number | `span ${number}` | "inherit" | "initial" | "revert" | "unset"
 
@@ -422,34 +1141,115 @@ export interface CSSProperties {
 	/** Specifies the size of the rows in a grid layout */
 	gridTemplateRows?: string
 
-	/** A shorthand property for the grid-template-rows, grid-template-columns and grid-areas properties 
+	/** A shorthand property for the grid-template-rows, grid-template-columns and grid-areas properties
 	 * Default is none
 	 */
-	gridTemplate?: `${string} / ${string}}` | SpaceRepeated<string | ".", 9> | "none" | "initial" | "inherit"
+	gridTemplate?: string | null,
+
+	gridAutoRows?: string
+	gridAutoColumns?: string
 
 	/** Specifies the gap between the grid rows */
-	rowGap?: CSSLength | "normal" | "initial" | "inherit" | "unset" | "revert"
+	rowGap?: CSSLength | null
 
 	/** Specifies the gap between the columns */
-	columnGap?: CSSLength | "normal" | "initial" | "inherit" | "unset" | "revert"
+	columnGap?: CSSLength | null
 
-	/** A shorthand property for the grid-row-gap and grid-column-gap properties 
+	/** A shorthand property for the grid-row-gap and grid-column-gap properties
 	 * Either a single CSS length value to both row and column gap
 	 * Or two CSS length values specifying the grid-row-gap grid-column-gap
 	 */
-	gridGap?: SpaceRepeated<CSSLength, 2> | "normal" | "initial" | "inherit" | "unset" | "revert"
+	gridGap?: CSSLength | null
 
 	/** A shorthand property for the row-gap and the column-gap properties
 	 * Either a single CSS length value for both row and column gap
 	 * Or two CSS length values specifying the row-gap and column-gap
 	 */
-	gap?: CSSLength | `${CSSLength} ${CSSLength}` | "normal" | "initial" | "inherit"
+	gap?: CSSLength | null
+
+	objectFit?: string
 }
 
-export type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
-export type CSSLength = `${number}${CSSLengthUnit}`
-/** CSS Length units. See https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units */
-export type CSSLengthUnit = (
+type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
+type CSSNamedWidth = (| "thin" | "medium" | "thick")
+type CSSBorder = `${CSSNamedWidth} ${CSSBorderStyle} ${CSSColor}`
+type CSSBorderStyle = (
+	| "none"
+	| "hidden"
+	| "dotted"
+	| "dashed"
+	| "solid"
+	| "double"
+	| "groove"
+	| "ridge"
+	| "inset"
+	| "outset"
+)
+type CSSCursor = (
+	| "auto"
+	| "default"
+	| "none"
+	| "context-menu"
+	| "help"
+	| "pointer"
+	| "progress"
+	| "wait"
+	| "cell"
+	| "crosshair"
+	| "text"
+	| "vertical-text"
+	| "alias"
+	| "copy"
+	| "move"
+	| "no-drop"
+	| "not-allowed"
+	| "grab"
+	| "grabbing"
+	| "all-scroll"
+	| "col-resize"
+	| "row-resize"
+	| "n-resize"
+	| "e-resize"
+	| "s-resize"
+	| "w-resize"
+	| "ne-resize"
+	| "nw-resize"
+	| "se-resize"
+	| "sw-resize"
+	| "ew-resize"
+	| "ns-resize"
+	| "nesw-resize"
+	| "nwse-resize"
+	| "zoom-in"
+	| "zoom-out"
+	| "inherit"
+	| "initial"
+	| "revert"
+	| "unset"
+)
+type CSSEasingFunction = (
+	| "linear"
+	| `linear(${number | CSSLength})`
+	| "ease"
+	| "ease-in"
+	| "ease-out"
+	| "ease-in-out"
+	| "step-start"
+	| "step-end"
+	| `steps(${number} ${"start" | "end" | "jump-start" | "jump-end" | "jump-both" | "jump-none"})`
+	| `cubic-bezier(${number},${number},${number},${number})`
+)
+type CSSTime = `${number}${("ms" | "s")}`
+export type CSSColor = (
+	| keyof typeof colorConstants
+	| "currentColor"
+	| "transparent"
+	| `#${string}`
+	| `rgb(${number},${number},${number})`
+	| `rgba(${number}, ${number}, ${number}, ${number})`
+)
+export type CSSLength = 0 | `${number}${CSSLengthUnit}` | `calc(${string})`
+type CSSLengthUnit = (
 	| "%"
 	| "px" // Pixels (1px = 1/96th of 1in)
 	| "pt" // Points (1pt = 1/72th of 1in)
@@ -460,7 +1260,8 @@ export type CSSLengthUnit = (
 	| "pc" // Picas (1pt = 1/72th of 1in)
 
 	| "rem" // Relative to Font size of the root element.
-	| "em" // Relative to font size of parent, for typographical properties like font-size, and font size of the element itself, of other properties like width.
+	| "em" // Relative to font size of parent, for typographical properties like font-size, and font size of the
+	// element itself, of other properties like width.
 	| "ex" // Relative to x-height of the element's font.
 	| "ch" // Relative to The advance measure (width) of the glyph "0" of the element's font.
 	| "lh" // Relative to Line height of the element.
@@ -468,18 +1269,6 @@ export type CSSLengthUnit = (
 	| "vh" // 1% of the viewport's height.
 	| "vmin" // 1% of the viewport's smaller dimension.
 	| "vmax" // 1% of the viewport's larger dimension.
-)
-
-type SpaceRepeated<S extends string, Max extends DigitNonZero> = Max extends 1 ? S : S | `${S} ${SpaceRepeated<S, Dec<Max>>}`
-type Dec<N extends DigitNonZero> = (N extends 9 ? 8
-	: N extends 8 ? 7
-	: N extends 7 ? 6
-	: N extends 6 ? 5
-	: N extends 5 ? 4
-	: N extends 4 ? 3
-	: N extends 3 ? 2
-	: N extends 2 ? 1
-	: 1
 )
 
 export type HtmlProps = Partial<HTMLAttributes<HTMLElement>>

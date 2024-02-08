@@ -2,21 +2,21 @@ import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, 
 import {
 	Children,
 	ComponentResult, ComponentEltAugmented,
-	ComponentElt, UIElement, ValueElement, IntrinsicElement, /*FragmentElement,*/
+	ComponentElement, UIElement, ValueElement, IntrinsicElement, /*FragmentElement,*/
 	RenderingTrace
 } from "./types"
 
-export const isEltProper = <P extends Obj>(elt?: UIElement<P>): elt is (IntrinsicElement<P> | ComponentElt<P>) =>
+export const isEltProper = <P extends Obj>(elt?: UIElement<P>): elt is (IntrinsicElement<P> | ComponentElement<P>) =>
 	(hasValue(elt) && typeof elt === "object" && "type" in elt && (typeof elt.type === "string" || typeof elt.type === "function"))
 export const isIntrinsicElt = <P extends Obj>(elt: UIElement<P>): elt is IntrinsicElement<P> => isEltProper(elt) && typeof elt.type === "string"
 export const isFragmentElt = (elt: UIElement): boolean /*elt is FragmentElement*/ => isEltProper(elt) && elt.type === ""
 // export const isFragmentElt = (elt: UIElement): elt is FragmentElement => isEltProper(elt) && elt.type === ""
-export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is ComponentElt<P> => isEltProper(elt) && typeof elt.type !== "string"
+export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is ComponentElement<P> => isEltProper(elt) && typeof elt.type !== "string"
 
 /** Return a copy of a component element augmented with its invocation results
  * @param elt The input component element (possibly with a result member, which is recomputed)
  */
-export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElt<P>): Promise<ComponentEltAugmented<P>> {
+export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
 		let nextInfo = await generator.next(newProps)
 		// If new props were passed, call next() on generator again so latest props is used
@@ -110,7 +110,7 @@ export async function getLeafAsync(eltUI: UIElement): Promise<IntrinsicElement |
  * @param eltComp A UI element that, if passed, is used as the starting point of the trace, instead of the trace's 1st element
  * @returns A promise of the updated trace
  */
-export async function updateTraceAsync(trace: RenderingTrace, eltComp?: ComponentElt): Promise<RenderingTrace> {
+export async function updateTraceAsync(trace: RenderingTrace, eltComp?: ComponentElement): Promise<RenderingTrace> {
 	const firstElt = firstOrDefault(trace.componentElts)
 	if (!firstElt) return trace // trace does not contain any component element, i.e., it is already intrinsic
 
