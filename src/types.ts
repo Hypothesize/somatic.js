@@ -3,7 +3,7 @@ import { Obj } from "@sparkwave/standard/utility"
 import { colorConstants } from "./common"
 
 /** General component */
-export type Component<Props> = ComponentBase<(
+export type Component<Props = any> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
 	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
 	| Generator<UIElement, UIElement, ComponentArgs<Props>>
@@ -12,10 +12,10 @@ export type Component<Props> = ComponentBase<(
 ), Props>
 
 /** Stateful component */
-export type ComponentStateful<P> = ComponentBase<ElementGenerator<P>, P>
+export type ComponentStateful<P = any> = ComponentBase<ElementGenerator<P>, P>
 
 /** Async stateful component */
-export type ComponentAsyncStateful<P> = ComponentBase<ElementGeneratorAsync<P>, P>
+export type ComponentAsyncStateful<P = any> = ComponentBase<ElementGeneratorAsync<P>, P>
 
 /** Generic base component
  * @param props Component-specific properties passed to the component function
@@ -42,14 +42,14 @@ export type Children = UIElement | UIElement[] // Children can be of various typ
  * A component element can produce another component element, recursively,
  * until an intrinsic element is obtained, at which point we can generate an actual node from it
  */
-export type UIElement<P> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
+export type UIElement<P extends Obj = Obj> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
 
-export type IntrinsicElement<P> = UIElementBase<P> & { type: string }
-export type ComponentElement<P> = UIElementBase<P> & {
+export type IntrinsicElement<P = any> = UIElementBase<P> & { type: string }
+export type ComponentElement<P = any> = UIElementBase<P> & {
 	type: Component<P>,
 	result?: ComponentResult
 }
-export interface ComponentEltAugmented<P> extends ComponentElement<P> {
+export interface ComponentEltAugmented<P = any> extends ComponentElement<P> {
 	result: ComponentResult
 }
 export type UIElementBase<P = unknown> = { props: P, children?: Children }
@@ -2396,7 +2396,7 @@ type TransitionEventHandler<T = Element> = EventHandler<TransitionEvent<T>>
 	props?: ClassAttributes<Elt> & Attr | null,
 	// eslint-disable-next-line fp/no-rest-parameters
 	...children: VNode[]
-) => DOMElement<Attr, Elt>
+ ) => DOMElement<Attr, Elt>
 */
 
 
