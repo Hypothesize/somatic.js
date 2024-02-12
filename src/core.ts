@@ -28,7 +28,9 @@ export async function renderAsync(elt: UIElement, parentKey?: string): Promise<(
 	if (isComponentElt(elt)) {
 		elt.props = {
 			...elt.props,
-			key: parentKey !== undefined ? `${parentKey}-${elt.type.name}` : elt.type.name
+			key: elt.props.key !== undefined
+				? elt.props.key
+				: parentKey !== undefined ? `${parentKey}-${elt.type.name}` : elt.type.name
 		}
 	}
 
@@ -258,4 +260,8 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 		default:
 			return false
 	}
+}
+
+export function check(condition: unknown, msg?: string): asserts condition {
+	if (condition === false) throw new Error(msg)
 }

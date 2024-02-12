@@ -22,14 +22,13 @@ export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentBase<ElementG
  * @param render Callback used for requesting re-rendering
  */
 export type ComponentBase<Ret, Props extends Obj = Obj> =
-	((props: ComponentKeyedArgs<Props>, render?: () => void) => Ret)
+	((props: ComponentArgs<Props>, /*render?: () => void*/) => Ret)
 	& ComponentOptions<Props>
 
-export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentKeyedArgs<P>>
-export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentKeyedArgs<P>>
+export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
+export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
 export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
-export type ComponentKeyedArgs<Props> = ComponentArgs<Props> & { key: string }
 export type ComponentOptions<P extends Obj = Obj> = {
 	name?: string
 	isPure?: boolean

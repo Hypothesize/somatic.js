@@ -39,7 +39,9 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 					if (isComponentElt(child)) {
 						const explicitChildKey = child.props.key
 						const eltResultElement = elt.result?.element
-						const keyInTheSamePlace = eltResultElement !== undefined && isIntrinsicElt(eltResultElement) && Array.isArray(eltResultElement.children) && eltResultElement.children[i]?.props.key
+						const keyInTheSamePlace = eltResultElement !== undefined && isIntrinsicElt(eltResultElement) && Array.isArray(eltResultElement.children)
+							? eltResultElement.children[i]?.props.key
+							: undefined
 
 						const matchingKey = explicitChildKey ?? keyInTheSamePlace
 						if (matchingKey === undefined) {
@@ -155,7 +157,6 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 	const rendersAugmentedPromises = await new SequenceAsync(trace.componentElts)
 		.skipAsync(1)
 		.reduceAsync(initialAugElts, async (eltPromisesAccum, eltCurrent) => {
-			debugger
 			const lastEltPromise = last(eltPromisesAccum)
 			if (!(Boolean(lastEltPromise))) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
 				throw new Error(`Last element of accumulated trace is null in reducer`)

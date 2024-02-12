@@ -58,7 +58,7 @@ describe("CORE MODULE", () => {
 				props: {},
 				children: [
 					{ type: View, props: { sourceData: [], orientation: "vertical" } },
-					{ type: StackPanel, children: ["Hello"] },
+					{ type: StackPanel, children: ["Hello"], props: {} },
 					//{ type: CommandBox, children: ["Hello"] }
 				]
 			}

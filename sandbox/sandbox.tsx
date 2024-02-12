@@ -1,5 +1,6 @@
 import { deepMerge, mergeDeep } from "@sparkwave/standard"
-import { createElement, Component, mountElement, invalidateUI, CSSProperties } from "../dist/index"
+import { default as cuid } from "cuid"
+import { createElement, ComponentAsyncStateful, mountElement, invalidateUI, check } from "../dist/index"
 
 document.addEventListener("DOMContentLoaded", async (_event) => {
     const rootDom = document.getElementById("sandbox-root")
@@ -11,46 +12,68 @@ document.addEventListener("DOMContentLoaded", async (_event) => {
     )
 })
 
-export const MainComponent: Component = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+export const MainComponent: ComponentAsyncStateful = async function* (_props) {
     const defaultProps = { key: "mainComp" }
     let props = deepMerge(defaultProps, _props) as typeof _props
     const { key } = props
-    if (key === undefined) throw new Error("key is undefined")
+    check(key !== undefined)
+
+    document.addEventListener('grandchildSendsValue', function (event: Event) {
+        if (event instanceof CustomEvent) {
+            state.parentValue = (event as GrandChildEvent).detail.value
+            invalidateUI([key])
+        }
+    })
+
+    document.addEventListener('deleteIndependantComponent', function (event: Event) {
+        if (event instanceof CustomEvent) {
+            const deletedKey = (event as DeleteIndependantEvent).detail.key
+            state.independantStateComponents = state.independantStateComponents.filter(k => k !== deletedKey)
+            invalidateUI([key])
+        }
+    })
 
     const state = {
         parentValue: 0,
-        numberOfIndependantChildComponents: 0
+        independantStateComponents: [] as string[],
+        receivedMsgFromChild: undefined as string | undefined
     }
 
     while (true) {
-        const { parentValue, numberOfIndependantChildComponents } = state
+        const { parentValue, independantStateComponents } = state
         const newProps = yield <div
-            style={{ border: "thin solid gray" }}
+            style={{ border: "thin solid gray", padding: "0.5rem" }}
         >
             <h3>Parent component</h3>
             <div>
                 <button onClick={() => {
                     state.parentValue++
                     invalidateUI([key])
-                }}>TEST</button>
+                }}>INCREMENT VALUE</button>
                 <button onClick={() => {
-                    state.numberOfIndependantChildComponents++
+                    state.independantStateComponents.push(`independant-component-${cuid()}`)
                     invalidateUI([key])
                 }}>
                     Add independant child component
                 </button>
             </div>
-            <div>
-                Parent component value (passed as props to Child component): {parentValue}
-            </div>
-            <ChildComponent parentValue={parentValue} />
+            <p>
+                Value (passed as props to Child component): {parentValue}
+            </p>
+            <ChildComponent
+                parentValue={parentValue}
+                onMessageForParent={(childStateVal) => {
+                    state.receivedMsgFromChild = `Received message 'myStateVal: ${childStateVal}' from child component`
+                    invalidateUI([key])
+                }} />
             {
-                Array.from({ length: numberOfIndependantChildComponents }).map(() =>
-                    <IndependantChildComponent
-                        onMessageForParent={() => {
-                            console.log(`Message received from independant child component. Parent value: ${state.parentValue}`)
-                        }}
-                    >
+                state.receivedMsgFromChild
+                    ? <h3>{state.receivedMsgFromChild}</h3>
+                    : <div />
+            }
+            {
+                independantStateComponents.map(key =>
+                    <IndependantChildComponent key={key}>
                         Test
                     </IndependantChildComponent>
                 )
@@ -64,42 +87,37 @@ export const MainComponent: Component = async function* (_props): AsyncGenerator
         )
     }
 }
-export const ChildComponent: Component<{ parentValue: number }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMessageForParent: (myStateValue: number) => void }> = async function* (_props) {
     // (window as any).invocationId = (window as any).invocationId !== undefined ? (window as any).invocationId + 1 : 0
     // const invocationId = (window as any).invocationId
 
     // console.log(`invocationId: ${(window as any).invocationId}`)
-
-    console.log(`props received from the parent on initial render: ${JSON.stringify(_props)}`)
+    // console.log(`props received from the parent on initial render: ${JSON.stringify(_props)}`)
     const defaultProps = {
         parentValue: 0
     }
     let props = deepMerge(defaultProps, _props)
     const { key } = props
+    check(key !== undefined)
 
     const state = {
-        childValue: props.parentValue as number,
+        myStateValue: props.parentValue as number,
         inputValue: ""
     }
 
     while (true) {
-        const { parentValue } = props
-        const { childValue, inputValue } = state
+        const { parentValue, onMessageForParent } = props
+        const { myStateValue, inputValue } = state
 
         console.log(`props at re-render time: ${JSON.stringify(props)}`)
 
         const newProps = yield <div
-            style={{ background: "#ddd", margin: "1rem" }}>
+            style={{ background: "#ddd", padding: "0.5rem" }}>
             <div>
-                <h3>Child component (props derived from the parent's state)</h3>
+                <h3>Child component</h3>
                 <p>Props value received from parent: {parentValue}</p>
-                <p>State value of child component: {childValue}</p>
+                <p>State value of child component: {myStateValue}</p>
             </div>
-            <button onClick={() => {
-                invalidateUI([key])
-            }}>
-                Re-render child component
-            </button>
             <p>
                 <input
                     value={inputValue}
@@ -108,14 +126,14 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
                     type={"text"}
                     onInput={ev => {
                         state.inputValue = ev.currentTarget.value
-                        state.childValue = childValue + 1
+                        state.myStateValue = myStateValue + 1
                         invalidateUI([key])
                     }}></input>
             </p>
             <p>
                 <button onClick={() => {
                     console.log(props)
-                    state.childValue = childValue + 1
+                    state.myStateValue = myStateValue + 1
                     invalidateUI([key])
                 }}>
                     Increase state value
@@ -124,11 +142,18 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
             <p>
                 <button onClick={() => {
                     console.log(props)
-                    state.childValue = childValue + 1
+                    state.myStateValue = myStateValue + 1
                     invalidateUI([key])
                 }}>
 
                     Also increase state value
+                </button>
+            </p>
+            <p>
+                <button onClick={() => {
+                    onMessageForParent(state.myStateValue)
+                }}>
+                    Message parent
                 </button>
             </p>
         </div>
@@ -140,26 +165,71 @@ export const ChildComponent: Component<{ parentValue: number }> = async function
     }
 }
 
-export const IndependantChildComponent: Component<{ onMessageForParent: () => void }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
-    const { onMessageForParent, key } = _props
+type DeleteIndependantEvent = CustomEvent<{ key: string }>
+export const IndependantChildComponent: ComponentAsyncStateful = async function* (_props) {
+    const { key } = _props
     if (key === undefined) throw new Error("key is undefined")
 
     const state = {
-        childValue: 0
+        myStateValue: 0
+    }
+
+    const dispatchDeleteEvent = (key: string) => {
+        const event: DeleteIndependantEvent = new CustomEvent("deleteIndependantComponent", { detail: { key: key } })
+        document.dispatchEvent(event)
     }
 
     while (true) {
-        const { childValue } = state
+        const { myStateValue } = state
 
         yield <div
             style={{ background: "#ddd", margin: "1rem" }}>
             <div>
-                <h3>Independant child component (doesn't receive any props from the parent)</h3>
-                <p>State value of independant component: {childValue}</p>
+                <h3>Independant child component (no props, uses event)</h3>
+                <p>State value of independant component: {myStateValue}</p>
             </div>
             <p>
                 <button onClick={() => {
-                    state.childValue = childValue + 1
+                    state.myStateValue++
+                    invalidateUI([key])
+                }}>
+                    Increase state value
+                </button>
+            </p>
+            <button onClick={() => {
+                dispatchDeleteEvent(key)
+            }}>Delete</button>
+            <GrandChildComponent />
+        </div>
+    }
+}
+
+type GrandChildEvent = CustomEvent<{ value: number }>
+export const GrandChildComponent: ComponentAsyncStateful = async function* (_props) {
+    const { key } = _props
+    check(key !== undefined)
+
+    const state = {
+        myStateValue: 0
+    }
+
+    const dispatchValueTransferEvent = () => {
+        const event: GrandChildEvent = new CustomEvent("grandchildSendsValue", { detail: { value: state.myStateValue } })
+        document.dispatchEvent(event)
+    }
+
+    while (true) {
+        const { myStateValue } = state
+
+        yield <div
+            style={{ background: "#ddd", margin: "1rem" }}>
+            <div>
+                <h3>Grandchild component (dispatch events to document)</h3>
+                <p>State value: {myStateValue}</p>
+            </div>
+            <p>
+                <button onClick={() => {
+                    state.myStateValue = myStateValue + 1
                     invalidateUI([key])
                 }}>
                     Increase state value
@@ -167,9 +237,9 @@ export const IndependantChildComponent: Component<{ onMessageForParent: () => vo
             </p>
             <p>
                 <button onClick={() => {
-                    onMessageForParent()
+                    dispatchValueTransferEvent()
                 }}>
-                    Message for parent
+                    Dispatch event with state value
                 </button>
             </p>
         </div>
