@@ -167,7 +167,7 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 					? Promise.resolve(eltCurrent) // no need to update results
 					: updateResultAsync({
 						...eltCurrent,
-						props: { ...eltResult.props, kekeke: 89 },
+						props: eltResult.props,
 						children: eltResult.children
 					})
 				return [...eltPromisesAccum, elt]
