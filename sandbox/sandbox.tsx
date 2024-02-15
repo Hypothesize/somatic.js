@@ -1,4 +1,4 @@
-import { deepMerge, mergeDeep } from "@sparkwave/standard"
+import { deepMerge, mergeDeep, sleep } from "@sparkwave/standard"
 import { default as cuid } from "cuid"
 import { createElement, ComponentAsyncStateful, mountElement, invalidateUI, check } from "../dist/index"
 
@@ -109,8 +109,6 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
         const { parentValue, onMessageForParent } = props
         const { myStateValue, inputValue } = state
 
-        console.log(`props at re-render time: ${JSON.stringify(props)}`)
-
         const newProps = yield <div
             style={{ background: "#ddd", padding: "0.5rem" }}>
             <div>
@@ -218,8 +216,18 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
         document.dispatchEvent(event)
     }
 
+    // This tests the problem of updates to elements that have yet to exist in the DOM
+    const immediateUpdate = () => {
+        state.myStateValue = 3
+        invalidateUI([key])
+    }
+    immediateUpdate()
+
     while (true) {
         const { myStateValue } = state
+
+        // To see if the immediate causes problems or not
+        sleep(1000)
 
         yield <div
             style={{ background: "#ddd", margin: "1rem" }}>

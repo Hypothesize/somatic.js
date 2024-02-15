@@ -44,9 +44,6 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 							: undefined
 
 						const matchingKey = explicitChildKey ?? keyInTheSamePlace
-						if (matchingKey === undefined) {
-							console.warn(`A child element ${child.type.name} has no explicit key or matching key in the DOM, and will be re-initialized on every update. This is not recommended; a key property should be added to prevent this`)
-						}
 						return { ...child, props: { ...child.props, key: matchingKey } }
 					}
 					else {
