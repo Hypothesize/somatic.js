@@ -15,7 +15,7 @@ export function createElement<T extends string | Component>(type: T, props: (typ
 }
 
 /** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
-export async function renderAsync(elt: UIElement, parentKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
+export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
 	if (hasValue(elt)
 		&& typeof elt === "object"
 		&& "props" in elt &&
@@ -25,18 +25,22 @@ export async function renderAsync(elt: UIElement, parentKey?: string): Promise<(
 			This is likely an error arising from creating an element with an undefined component`)
 		// return createDOMShallow(JSON.stringify(elt)) as Text
 	}
+
+	// We assign a key automatically, unless one was passed in the component's props.
 	if (isComponentElt(elt)) {
 		elt.props = {
 			...elt.props,
-			key: elt.props.key !== undefined
-				? elt.props.key
-				: parentKey !== undefined ? `${parentKey}-${elt.type.name}` : elt.type.name
+			key: uniqueKey !== undefined ? uniqueKey : elt.type.name
 		}
+		console.log(`assigned key ${uniqueKey !== undefined ? uniqueKey : elt.type.name}`)
 	}
 
 	const trace = await traceToLeafAsync(elt)
+	console.log(`trace: ${JSON.stringify(trace)}`)
 	const leaf = trace.leafElement
+	console.log(`leaf: ${JSON.stringify(leaf)}`)
 	const dom = createDOMShallow(leaf)
+	console.log(`dom: ${JSON.stringify(dom)}`)
 
 	if (!isTextDOM(dom)) {
 		await populateWithChildren(dom, getChildren(leaf))
@@ -136,7 +140,7 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 }
 
 /** Update children of an DOM element and return it; has side effects */
-export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragment, children: UIElement[]) {
+export async function populateWithChildren(emptyElement: DOMElement | DocumentFragment, children: UIElement[]) {
 	const flattenChildren = (_children: UIElement[]): UIElement[] => (_children
 		.map(c =>
 			isFragmentElt(c)
@@ -150,9 +154,12 @@ export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragme
 			? document.querySelector(`[key="${child.props.key as string}"]`) as DOMAugmented | undefined
 			: undefined
 
+		// We assign a unique key, possibly reusing one that was passed in the props
+		const uniqueKey = !isFragmentElt(emptyElement) ? getUniqueKey(child, emptyElement, i) : undefined
+
 		const updated = matchingNode
 			? updateAsync(matchingNode, child)
-			: renderAsync(child, "key" in emptyDOM && typeof emptyDOM.key === "string" ? `${emptyDOM.key}-${i}` : undefined)
+			: renderAsync(child, uniqueKey)
 
 		updated.then(_ => {
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -164,7 +171,7 @@ export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragme
 	}))
 
 	// We insert the newDomChildren into the updatedDOM, in the same order as the domChildren
-	emptyDOM.append(...newDomChildren)
+	emptyElement.append(...newDomChildren)
 }
 
 interface IUInvalidatedEvent extends Event {
@@ -262,6 +269,13 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 	}
 }
 
-export function check(condition: unknown, msg?: string): asserts condition {
-	if (condition === false) throw new Error(msg)
+/** Returns a key for a child element that will be globally unique */
+export const getUniqueKey = (element: UIElement, parentElem?: DOMElement, iteration?: number) => {
+	const parentKey = parentElem && "key" in parentElem && typeof parentElem.key === "string" ? `${parentElem.key}-` : ""
+
+	return isComponentElt(element)
+		? element.props.key !== undefined
+			? `${parentKey}${element.props.key}`
+			: `${parentKey}${element.type.name}${iteration !== undefined ? `-${iteration}` : ""}`
+		: undefined
 }

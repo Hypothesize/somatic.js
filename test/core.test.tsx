@@ -6,7 +6,7 @@ require('jsdom-global')()
 const nanomorph = require('nanomorph')
 
 import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
+import { createElement, renderAsync, getUniqueKey, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
 import { StackPanel, View, HoverBox } from './components'
@@ -396,6 +396,51 @@ describe("CORE MODULE", () => {
 			assert.ok(isEquivalent(fakeDivRender, fakeDivRenderToString))
 		})*/
 
+	})
+
+	describe("getUniqueKey", () => {
+		it("should return am element's name as its key by default", async () => {
+			const el = <StackPanel/>
+			const uniqueKey = getUniqueKey(el)
+			assert.strictEqual(uniqueKey, 'StackPanel')
+		})
+
+		it("should use a component's custom key, if passed", async () => {
+			const el = <StackPanel key="myCustomKey"/>
+			const uniqueKey = getUniqueKey(el)
+			assert.strictEqual(uniqueKey, 'myCustomKey')
+		})
+
+		it("should include a parent's key and iteration, if the component has a parent", async () => {
+			const parentElement = await renderAsync(<StackPanel/>)
+			assert(!isTextDOM(parentElement))
+			assert(!(parentElement instanceof DocumentFragment))
+
+			const child = <StackPanel/>
+			const uniqueKey = getUniqueKey(child, parentElement, 2)
+			assert.strictEqual(uniqueKey, 'StackPanel-StackPanel-2')
+		})
+
+		it("should include a parent's key and iteration + custom key, if the component has a parent and a custom key", async () => {
+			const parentElement = await renderAsync(<StackPanel/>)
+			assert(!isTextDOM(parentElement))
+			assert(!(parentElement instanceof DocumentFragment))
+
+			const child = <StackPanel/>
+			const uniqueKey = getUniqueKey(child, parentElement, 2)
+			assert.strictEqual(uniqueKey, 'StackPanel-StackPanel-2')
+		})
+
+		it("should include a parent's custom key and iteration + its own custom key, if the component has a custom key, and a parent which also has one", async () => {
+			const parentElement = await renderAsync(<StackPanel key="customParentKey"/>)
+			assert(!isTextDOM(parentElement))
+			assert(!(parentElement instanceof DocumentFragment))
+			console.log(JSON.stringify(parentElement))
+
+			const child = <StackPanel key="myStackPanel"/>
+			const uniqueKey = getUniqueKey(child, parentElement, 5)
+			assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel-5')
+		})
 	})
 
 	describe("renderToIntrinsicAsync", () => {

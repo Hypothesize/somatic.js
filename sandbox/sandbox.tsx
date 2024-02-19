@@ -1,6 +1,7 @@
-import { deepMerge, mergeDeep, sleep } from "@sparkwave/standard"
+import { default as assert } from "assert"
 import { default as cuid } from "cuid"
-import { createElement, ComponentAsyncStateful, mountElement, invalidateUI, check } from "../dist/index"
+import { deepMerge, mergeDeep, sleep } from "@sparkwave/standard"
+import { createElement, ComponentAsyncStateful, Component, mountElement, invalidateUI } from "../dist/index"
 
 document.addEventListener("DOMContentLoaded", async (_event) => {
     const rootDom = document.getElementById("sandbox-root")
@@ -16,7 +17,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
     const defaultProps = { key: "mainComp" }
     let props = deepMerge(defaultProps, _props) as typeof _props
     const { key } = props
-    check(key !== undefined)
+    assert(key !== undefined)
 
     document.addEventListener('grandchildSendsValue', function (event: Event) {
         if (event instanceof CustomEvent) {
@@ -98,7 +99,7 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
     }
     let props = deepMerge(defaultProps, _props)
     const { key } = props
-    check(key !== undefined)
+    assert(key !== undefined)
 
     const state = {
         myStateValue: props.parentValue as number,
@@ -198,6 +199,9 @@ export const IndependantChildComponent: ComponentAsyncStateful = async function*
                 dispatchDeleteEvent(key)
             }}>Delete</button>
             <GrandChildComponent />
+            <ExplicitelyKeyedComponent key={"1"} />
+            <ExplicitelyKeyedComponent key={"2"} />
+            <ExplicitelyKeyedComponent key={"3"} />
         </div>
     }
 }
@@ -205,7 +209,7 @@ export const IndependantChildComponent: ComponentAsyncStateful = async function*
 type GrandChildEvent = CustomEvent<{ value: number }>
 export const GrandChildComponent: ComponentAsyncStateful = async function* (_props) {
     const { key } = _props
-    check(key !== undefined)
+    assert(key !== undefined)
 
     const state = {
         myStateValue: 0
@@ -250,6 +254,40 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
                     Dispatch event with state value
                 </button>
             </p>
+        </div>
+    }
+}
+
+export const ExplicitelyKeyedComponent: Component = function (_props) {
+    const { key } = _props
+    assert(key !== undefined)
+
+    while (true) {
+
+        return <div
+            key={key}
+            style={{ border: "1px solid #333", margin: "1rem", padding: "1rem" }}>
+            <div>
+                <h3>Grandchild component (dispatch events to document)</h3>
+                <span style={{ color: "#999" }}>Key: {key}</span>
+            </div>
+        </div>
+    }
+}
+
+/** No key is written in the resulting intrinsic DOM */
+export const AnonymousComponent: Component = function (_props) {
+    const { key } = _props
+    assert(key !== undefined)
+
+    while (true) {
+
+        return <div
+            style={{ border: "1px solid #333", margin: "1rem", padding: "1rem" }}>
+            <div>
+                <h3>Grandchild component (dispatch events to document)</h3>
+                <span style={{ color: "#999" }}>Key: {key}</span>
+            </div>
         </div>
     }
 }

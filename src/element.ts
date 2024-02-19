@@ -1,4 +1,5 @@
 import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync, flatten } from "@sparkwave/standard"
+import { Fragment } from "./core"
 import {
 	Children,
 	ComponentResult, ComponentEltAugmented,
@@ -9,7 +10,7 @@ import {
 export const isEltProper = <P extends Obj>(elt?: UIElement<P>): elt is (IntrinsicElement<P> | ComponentElement<P>) =>
 	(hasValue(elt) && typeof elt === "object" && "type" in elt && (typeof elt.type === "string" || typeof elt.type === "function"))
 export const isIntrinsicElt = <P extends Obj>(elt: UIElement<P>): elt is IntrinsicElement<P> => isEltProper(elt) && typeof elt.type === "string"
-export const isFragmentElt = (elt: UIElement): boolean /*elt is FragmentElement*/ => isEltProper(elt) && elt.type === ""
+export const isFragmentElt = (elt: UIElement): elt is DocumentFragment => isEltProper(elt) && elt.type === ""
 // export const isFragmentElt = (elt: UIElement): elt is FragmentElement => isEltProper(elt) && elt.type === ""
 export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is ComponentElement<P> => isEltProper(elt) && typeof elt.type !== "string"
 
@@ -18,7 +19,6 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-
 		// We pass the key as a props to be used in the component generator
 		let nextInfo = await generator.next({ ...newProps, key: elt.props.key })
 
