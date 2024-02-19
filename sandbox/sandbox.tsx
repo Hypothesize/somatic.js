@@ -28,8 +28,8 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
 
     document.addEventListener('deleteIndependantComponent', function (event: Event) {
         if (event instanceof CustomEvent) {
-            const deletedKey = (event as DeleteIndependantEvent).detail.key
-            state.independantStateComponents = state.independantStateComponents.filter(k => k !== deletedKey)
+            const deletedName = (event as DeleteIndependantEvent).detail.name
+            state.independantStateComponents = state.independantStateComponents.filter(k => k !== deletedName)
             invalidateUI([key])
         }
     })
@@ -52,7 +52,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
                     invalidateUI([key])
                 }}>INCREMENT VALUE</button>
                 <button onClick={() => {
-                    state.independantStateComponents.push(`independant-component-${cuid()}`)
+                    state.independantStateComponents.push(`indep-comp-${cuid()}`)
                     invalidateUI([key])
                 }}>
                     Add independant child component
@@ -74,7 +74,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
             }
             {
                 independantStateComponents.map(key =>
-                    <IndependantChildComponent key={key}>
+                    <IndependantChildComponent key={key} name={key}>
                         Test
                     </IndependantChildComponent>
                 )
@@ -164,17 +164,17 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
     }
 }
 
-type DeleteIndependantEvent = CustomEvent<{ key: string }>
-export const IndependantChildComponent: ComponentAsyncStateful = async function* (_props) {
-    const { key } = _props
+type DeleteIndependantEvent = CustomEvent<{ name: string }>
+export const IndependantChildComponent: ComponentAsyncStateful<{ name: string }> = async function* (_props) {
+    const { key, name } = _props
     if (key === undefined) throw new Error("key is undefined")
 
     const state = {
         myStateValue: 0
     }
 
-    const dispatchDeleteEvent = (key: string) => {
-        const event: DeleteIndependantEvent = new CustomEvent("deleteIndependantComponent", { detail: { key: key } })
+    const dispatchDeleteEvent = (name: string) => {
+        const event: DeleteIndependantEvent = new CustomEvent("deleteIndependantComponent", { detail: { name: name } })
         document.dispatchEvent(event)
     }
 
@@ -182,6 +182,7 @@ export const IndependantChildComponent: ComponentAsyncStateful = async function*
         const { myStateValue } = state
 
         yield <div
+            key={key}
             style={{ background: "#ddd", margin: "1rem" }}>
             <div>
                 <h3>Independant child component (no props, uses event)</h3>
@@ -196,12 +197,12 @@ export const IndependantChildComponent: ComponentAsyncStateful = async function*
                 </button>
             </p>
             <button onClick={() => {
-                dispatchDeleteEvent(key)
+                dispatchDeleteEvent(name)
             }}>Delete</button>
             <GrandChildComponent />
-            <ExplicitelyKeyedComponent key={"1"} />
-            <ExplicitelyKeyedComponent key={"2"} />
-            <ExplicitelyKeyedComponent key={"3"} />
+            <ExplicitelyKeyedComponent key={"key 1"} />
+            <ExplicitelyKeyedComponent key={"key 2"} />
+            <ExplicitelyKeyedComponent key={"key 3"} />
         </div>
     }
 }
@@ -258,6 +259,7 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
     }
 }
 
+/** This is just named like that because it WILL receive an explicit key */
 export const ExplicitelyKeyedComponent: Component = function (_props) {
     const { key } = _props
     assert(key !== undefined)
@@ -265,10 +267,9 @@ export const ExplicitelyKeyedComponent: Component = function (_props) {
     while (true) {
 
         return <div
-            key={key}
             style={{ border: "1px solid #333", margin: "1rem", padding: "1rem" }}>
             <div>
-                <h3>Grandchild component (dispatch events to document)</h3>
+                <h3>Explicitely keyed component (a simple key was passed, and it should be unique through combination with the parent's key)</h3>
                 <span style={{ color: "#999" }}>Key: {key}</span>
             </div>
         </div>

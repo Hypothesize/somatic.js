@@ -68,7 +68,7 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 			}
 		}
 
-		const resultElt = await elt.type({ ...elt.props, children: elt.children }/*, { invalidate: ()=>{} }*/)
+		const resultElt = await elt.type({ ...elt.props, children: elt.children })
 		if (isGenerator(resultElt)) {
 			// No need to inject props again since call to elt.type above already used them
 			const next = await getNextAsync(resultElt)
@@ -92,26 +92,33 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace> {
 	// let ret: RenderingTrace | undefined = undefined
 	if (isComponentElt(eltUI)) {
+		console.log(`eltUI: ${JSON.stringify(eltUI)}`)
+
 		const eltUIAugmented = eltUI.result ? eltUI as ComponentEltAugmented : await updateResultAsync(eltUI)
+		console.log(`eltUIAugmented: ${JSON.stringify(eltUIAugmented)}`)
+
 		const eltResult = eltUIAugmented.result.element
 
 		if (isComponentElt(eltResult)) {
 			const trace = await traceToLeafAsync(eltResult)
+			console.log(`leafElement1: ${JSON.stringify(trace.leafElement ?? "")}`)
 			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement ?? "" }
 		}
 		else { // intrinsic or value element
+
+			// If the result of the trace is an intrinsic element but it come from a component (eltUIAugmented has a key property), we attach the key
+			if (isIntrinsicElt(eltResult)) {
+				eltResult.props = { ...eltResult.props, ...eltUIAugmented.props.key !== undefined ? { key: eltUIAugmented.props.key } : {} }
+			}
+
+			console.log(`leafElement2: ${JSON.stringify(eltResult ?? "")}`)
 			return { componentElts: [eltUIAugmented], leafElement: eltResult ?? "" }
 		}
 	}
 	else { // eltUI is intrinsic or a value
+		console.log(`leafElement3: ${JSON.stringify(eltUI ?? "")}`)
 		return { componentElts: [], leafElement: eltUI ?? "" }
 	}
-
-	// (self as any).leafElement = ret.leafElement
-	// console.assert(ret.leafElement !== undefined, `Leaf elt in traceToLeafAsync return is misisng`)
-	// console.log(`Returning leaf elt from traceToLeafAsync: ${ret.leafElement}`)
-
-	// return ret
 }
 
 /** Gets leaf (intrinsic or value) element */

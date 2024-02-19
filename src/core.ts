@@ -14,7 +14,10 @@ export function createElement<T extends string | Component>(type: T, props: (typ
 	return { type, props: props ?? {}, children: [...flatten(children)] }
 }
 
-/** Render a UI element into a DOM node (augmented with information used for subsequent updates) */
+/**
+ * Render a UI element into a DOM node (augmented with information used for subsequent updates)
+ * @param uniqueKey A string passed if outside information is needed to make it unique (i.e. in a list)
+ */
 export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
 	if (hasValue(elt)
 		&& typeof elt === "object"
@@ -25,22 +28,36 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 			This is likely an error arising from creating an element with an undefined component`)
 		// return createDOMShallow(JSON.stringify(elt)) as Text
 	}
+	console.log(`renderAsync: elt ${JSON.stringify(elt)}, uniqueKey ${uniqueKey}`)
 
 	// We assign a key automatically, unless one was passed in the component's props.
 	if (isComponentElt(elt)) {
+		console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
+
+		// TODO: See if the assignment of elt.type.name is not unnecessary
 		elt.props = {
 			...elt.props,
-			key: uniqueKey !== undefined ? uniqueKey : elt.type.name
+			key: elt.props.customKey !== undefined && uniqueKey === undefined // Element is a root with custom key
+				? elt.props.customKey
+				: uniqueKey !== undefined // Element is a child with custom key assigned beforehand
+					? uniqueKey
+					: elt.type.name
 		}
-		console.log(`assigned key ${uniqueKey !== undefined ? uniqueKey : elt.type.name}`)
+
+		console.log(`renderAsync: uniqueKey key ${uniqueKey}`)
+		console.log(`renderAsync: assigned key ${elt.props.key}`)
+	}
+	else if (isIntrinsicElt(elt)) {
+		elt.props = {
+			...elt.props,
+			key: uniqueKey !== undefined ? uniqueKey : elt.type
+		}
+		console.log(`renderAsync: Intrinsic element assigned key ${elt.props.key}`)
 	}
 
 	const trace = await traceToLeafAsync(elt)
-	console.log(`trace: ${JSON.stringify(trace)}`)
 	const leaf = trace.leafElement
-	console.log(`leaf: ${JSON.stringify(leaf)}`)
 	const dom = createDOMShallow(leaf)
-	console.log(`dom: ${JSON.stringify(dom)}`)
 
 	if (!isTextDOM(dom)) {
 		await populateWithChildren(dom, getChildren(leaf))
@@ -132,6 +149,7 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 			throw `UpdateAsync: elt !== undefined`
 		}
 
+		console.log(`Creating a new element to replace the old one...`)
 		const replacement = await renderAsync(elt)
 		initialDOM.replaceWith(replacement)
 
@@ -150,12 +168,15 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 	)
 
 	const newDomChildren = await Promise.all(flattenChildren(children).map(async (child, i) => {
-		const matchingNode = isComponentElt(child) && child.props !== undefined && child.props.key !== undefined
-			? document.querySelector(`[key="${child.props.key as string}"]`) as DOMAugmented | undefined
-			: undefined
-
 		// We assign a unique key, possibly reusing one that was passed in the props
-		const uniqueKey = !isFragmentElt(emptyElement) ? getUniqueKey(child, emptyElement, i) : undefined
+		const parentPrefix = !isFragmentElt(emptyElement) ? getElementKey(emptyElement) : undefined
+		console.log(`populateWithChildren: parentPrefixKey: ${parentPrefix}`)
+		const uniqueKey = getUniqueKey(child, parentPrefix, i)
+		console.log(`populateWithChildren: uniqueKey: ${uniqueKey} for child ${JSON.stringify(child)}`)
+
+		const matchingNode = isComponentElt(child) && uniqueKey !== undefined
+			? document.querySelector(`[key="${uniqueKey as string}"]`) as DOMAugmented | undefined
+			: undefined
 
 		const updated = matchingNode
 			? updateAsync(matchingNode, child)
@@ -270,12 +291,16 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 }
 
 /** Returns a key for a child element that will be globally unique */
-export const getUniqueKey = (element: UIElement, parentElem?: DOMElement, iteration?: number) => {
-	const parentKey = parentElem && "key" in parentElem && typeof parentElem.key === "string" ? `${parentElem.key}-` : ""
-
+export const getUniqueKey = (element: UIElement, parentPrefixKey?: string, iteration?: number) => {
+	const parentKey = parentPrefixKey !== undefined ? `${parentPrefixKey}-` : ""
 	return isComponentElt(element)
 		? element.props.key !== undefined
 			? `${parentKey}${element.props.key}`
-			: `${parentKey}${element.type.name}${iteration !== undefined ? `-${iteration}` : ""}`
-		: undefined
+			: `${parentKey}${iteration !== undefined ? `(${iteration})` : ""}${element.type.name}`
+		: isIntrinsicElt(element)
+			? `${parentKey}${iteration !== undefined ? `(${iteration})` : ""}${element.type}` // No custom intrinsic element key through "element.props.key", since it should never be necessary
+			: undefined
 }
+
+/** Returns a key for a child element that will be globally unique */
+export const getElementKey = (parentElem: DOMElement) => "key" in parentElem && typeof parentElem.key === "string" ? parentElem.key : ""

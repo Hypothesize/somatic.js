@@ -5,8 +5,8 @@ import { deepMerge, mergeDeep } from "@sparkwave/standard"
 require('jsdom-global')()
 const nanomorph = require('nanomorph')
 
-import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, getUniqueKey, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
+import { IntrinsicElement, DOMAugmented, Component, CSSProperties } from '../dist/types'
+import { createElement, renderAsync, getUniqueKey, getElementKey, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
 import { StackPanel, View, HoverBox } from './components'
@@ -400,46 +400,71 @@ describe("CORE MODULE", () => {
 
 	describe("getUniqueKey", () => {
 		it("should return am element's name as its key by default", async () => {
-			const el = <StackPanel/>
+			const el = <StackPanel />
 			const uniqueKey = getUniqueKey(el)
 			assert.strictEqual(uniqueKey, 'StackPanel')
 		})
 
 		it("should use a component's custom key, if passed", async () => {
-			const el = <StackPanel key="myCustomKey"/>
+			const el = <StackPanel key="myCustomKey" />
 			const uniqueKey = getUniqueKey(el)
 			assert.strictEqual(uniqueKey, 'myCustomKey')
 		})
 
 		it("should include a parent's key and iteration, if the component has a parent", async () => {
-			const parentElement = await renderAsync(<StackPanel/>)
+			const parentElement = await renderAsync(<StackPanel />)
 			assert(!isTextDOM(parentElement))
 			assert(!(parentElement instanceof DocumentFragment))
 
-			const child = <StackPanel/>
-			const uniqueKey = getUniqueKey(child, parentElement, 2)
-			assert.strictEqual(uniqueKey, 'StackPanel-StackPanel-2')
+			const child = <StackPanel />
+			const parentKey = getElementKey(parentElement)
+			const uniqueKey = getUniqueKey(child, parentKey, 2)
+			assert.strictEqual(uniqueKey, 'StackPanel-(2)StackPanel')
 		})
 
-		it("should include a parent's key and iteration + custom key, if the component has a parent and a custom key", async () => {
-			const parentElement = await renderAsync(<StackPanel/>)
+		it("should include a parent's key + custom key without iteration, if the component has a parent and a custom key", async () => {
+			const parentElement = await renderAsync(<StackPanel />)
 			assert(!isTextDOM(parentElement))
 			assert(!(parentElement instanceof DocumentFragment))
 
-			const child = <StackPanel/>
-			const uniqueKey = getUniqueKey(child, parentElement, 2)
-			assert.strictEqual(uniqueKey, 'StackPanel-StackPanel-2')
+			const child = <StackPanel key="myStax"/>
+			const parentKey = getElementKey(parentElement)
+			const uniqueKey = getUniqueKey(child, parentKey, 2)
+			assert.strictEqual(uniqueKey, 'StackPanel-myStax')
 		})
 
-		it("should include a parent's custom key and iteration + its own custom key, if the component has a custom key, and a parent which also has one", async () => {
-			const parentElement = await renderAsync(<StackPanel key="customParentKey"/>)
+		it("should include a parent's custom key + its own custom key, if the component has a custom key, and a parent which also has one", async () => {
+			console.log("== Start rendering parent element ==")
+			const parentElement = await renderAsync(<StackPanel key="customParentKey" />)
 			assert(!isTextDOM(parentElement))
 			assert(!(parentElement instanceof DocumentFragment))
+			console.log("== parent element ==")
 			console.log(JSON.stringify(parentElement))
 
-			const child = <StackPanel key="myStackPanel"/>
-			const uniqueKey = getUniqueKey(child, parentElement, 5)
-			assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel-5')
+			const child = <StackPanel key="myStackPanel" />
+			const parentKey = getElementKey(parentElement)
+			const uniqueKey = getUniqueKey(child, parentKey, 5)
+			assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel')
+		})
+
+		it("should use an element ancestry to return a unique key, even if a simple custom key was passed", async () => {
+			console.log("== Start rendering parent element ==")
+			const rootElement = await renderAsync(
+				<StackPanel key="customParentKey">
+					<p>TEST</p>
+					<div>
+						<StackPanel key="myStackPanel" />
+					</div>
+				</StackPanel>
+			)
+			assert(!isTextDOM(rootElement))
+			assert(!(rootElement instanceof DocumentFragment))
+
+			const customStackPanelKey = rootElement.lastChild?.firstChild as DOMAugmented
+			assert(!isTextDOM(customStackPanelKey))
+			assert(!(customStackPanelKey instanceof DocumentFragment))
+
+			assert.strictEqual("key" in customStackPanelKey && customStackPanelKey["key"], 'customParentKey-(1)div-myStackPanel')
 		})
 	})
 
@@ -804,10 +829,10 @@ describe("CORE MODULE", () => {
 		it("should keep the state of updated elements' children", async () => {
 			document.body.innerHTML = ""
 
-			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
+			const MainComponent: Component = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
 				const defaultProps = {}
 				let props = deepMerge(defaultProps, _props)
-				const { id } = props
+				const { key } = props
 
 				const state = {
 					valueToKeep: 0
@@ -816,7 +841,7 @@ describe("CORE MODULE", () => {
 				while (true) {
 					const { valueToKeep } = state
 
-					const newProps = yield <div id={id}>
+					const newProps = yield <div>
 						<h1>Playground</h1>
 						<div>
 							<button
@@ -836,7 +861,7 @@ describe("CORE MODULE", () => {
 					)
 				}
 			}
-			const dom = await renderAsync(<div><MainComponent id={"test-component"} /></div>) as DOMAugmented
+			const dom = await renderAsync(<div><MainComponent key={"test-component"} /></div>) as DOMAugmented
 			document.body.appendChild(dom)
 
 			const button = dom.querySelector("#myButton") as HTMLButtonElement
