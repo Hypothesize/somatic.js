@@ -34,14 +34,20 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 	if (isComponentElt(elt)) {
 		console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
 
+		const keyAttribute = elt.props.fullKey !== undefined
+			? elt.props.fullKey // If a full key was defined before, we keep it
+			: uniqueKey !== undefined
+				? uniqueKey // If a unique key was passed (should be the case for any child component), we use it
+				: elt.props.key !== undefined
+					? elt.props.key // If the element is a root element & has a custom key, we use it
+					: elt.type.name // Otherwise, we default to the component name
+		const fullKey = keyAttribute
+
 		// TODO: See if the assignment of elt.type.name is not unnecessary
 		elt.props = {
 			...elt.props,
-			key: elt.props.customKey !== undefined && uniqueKey === undefined // Element is a root with custom key
-				? elt.props.customKey
-				: uniqueKey !== undefined // Element is a child with custom key assigned beforehand
-					? uniqueKey
-					: elt.type.name
+			key: keyAttribute,
+			fullKey: fullKey
 		}
 
 		console.log(`renderAsync: uniqueKey key ${uniqueKey}`)
@@ -174,8 +180,8 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 		const uniqueKey = getUniqueKey(child, parentPrefix, i)
 		console.log(`populateWithChildren: uniqueKey: ${uniqueKey} for child ${JSON.stringify(child)}`)
 
-		const matchingNode = isComponentElt(child) && uniqueKey !== undefined
-			? document.querySelector(`[key="${uniqueKey as string}"]`) as DOMAugmented | undefined
+		const matchingNode = isComponentElt(child) && child.props.key !== undefined
+			? document.querySelector(`[key="${child.props.key as string}"]`) as DOMAugmented | undefined
 			: undefined
 
 		const updated = matchingNode
@@ -292,6 +298,10 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 
 /** Returns a key for a child element that will be globally unique */
 export const getUniqueKey = (element: UIElement, parentPrefixKey?: string, iteration?: number) => {
+	if ((isComponentElt(element) && isIntrinsicElt(element)) && element.props.fullKEy !== undefined) {
+		return element.props.fullKey as string
+	}
+
 	const parentKey = parentPrefixKey !== undefined ? `${parentPrefixKey}-` : ""
 	return isComponentElt(element)
 		? element.props.key !== undefined

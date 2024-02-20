@@ -28,7 +28,7 @@ export type ComponentBase<Ret, Props extends Obj = Obj> =
 export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
 export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
-export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
+export type ComponentArgs<Props> = Props & { children?: Children, key?: string, fullKey?: string, id?: string }
 export type ComponentOptions<P extends Obj = Obj> = {
 	name?: string
 	isPure?: boolean
