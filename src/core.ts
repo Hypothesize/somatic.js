@@ -30,24 +30,23 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 	}
 	console.log(`renderAsync: elt ${JSON.stringify(elt)}, uniqueKey ${uniqueKey}`)
 
+	let customKey: string | undefined = undefined
+	
 	// We assign a key automatically, unless one was passed in the component's props.
 	if (isComponentElt(elt)) {
 		console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
+		customKey = elt.props.key as string | undefined
 
-		const keyAttribute = elt.props.fullKey !== undefined
-			? elt.props.fullKey // If a full key was defined before, we keep it
-			: uniqueKey !== undefined
+		const keyAttribute = uniqueKey !== undefined
 				? uniqueKey // If a unique key was passed (should be the case for any child component), we use it
 				: elt.props.key !== undefined
 					? elt.props.key // If the element is a root element & has a custom key, we use it
 					: elt.type.name // Otherwise, we default to the component name
-		const fullKey = keyAttribute
 
 		// TODO: See if the assignment of elt.type.name is not unnecessary
 		elt.props = {
 			...elt.props,
-			key: keyAttribute,
-			fullKey: fullKey
+			key: keyAttribute
 		}
 
 		console.log(`renderAsync: uniqueKey key ${uniqueKey}`)
@@ -69,7 +68,7 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 		await populateWithChildren(dom, getChildren(leaf))
 		return dom instanceof DocumentFragment
 			? dom
-			: Object.assign(dom, { renderTrace: trace })
+			: Object.assign(dom, { renderTrace: trace, customKey: customKey })
 	}
 	else {
 		return dom
@@ -298,10 +297,6 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 
 /** Returns a key for a child element that will be globally unique */
 export const getUniqueKey = (element: UIElement, parentPrefixKey?: string, iteration?: number) => {
-	if ((isComponentElt(element) && isIntrinsicElt(element)) && element.props.fullKEy !== undefined) {
-		return element.props.fullKey as string
-	}
-
 	const parentKey = parentPrefixKey !== undefined ? `${parentPrefixKey}-` : ""
 	return isComponentElt(element)
 		? element.props.key !== undefined

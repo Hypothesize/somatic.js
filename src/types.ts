@@ -62,7 +62,7 @@ export type ComponentResult = {
 }
 
 export type DOMElement = SVGElement | HTMLElement
-export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace }
+export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace, customKey: string | undefined }
 
 export interface RenderingTrace {
 	componentElts: ComponentEltAugmented[],
