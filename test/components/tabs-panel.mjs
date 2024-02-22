@@ -34,7 +34,7 @@ export const TabsPanel = (props) => {
 				itemsPanel: StackPanel,
 				itemTemplate: headerItemTemplate
 			}),
-			createElement('div', null, _children[_selectedIndex || 0])
+			createElement('div', {}, _children[_selectedIndex || 0])
 		);
 	}
 }

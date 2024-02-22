@@ -47,7 +47,7 @@ const Logo = MakeIcon(
 			xmlns: "http://www.w3.org/2000/svg",
 			viewBox: "0 0 122.88 78.97"
 		},
-		createElement("title", null, "logo"),
+		createElement("title", {}, "logo"),
 		createElement(
 			"path",
 			{
@@ -100,7 +100,7 @@ const Layout = async function (props) {
 					? createElement(
 						StackPanel,
 						{ style: { gap: "10%" } },
-						createElement("span", null, `Welcome, ${user.displayName}`),
+						createElement("span", {}, `Welcome, ${user.displayName}`),
 						createElement("a", { href: "/logout" }, "LOGOUT")
 					)
 					: createElement("a", { href: "/auth/google" }, "LOGIN")
@@ -140,8 +140,8 @@ const MainComponent = async function* (_props) {
 		const newProps = yield createElement(
 			"div",
 			{ id },
-			createElement("h1", null, "Playground"),
-			createElement("div", null, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++ } }, "TEST")),
+			createElement("h1", {}, "Playground"),
+			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++ } }, "TEST")),
 			createElement("div", { id: "valueKeeper" }, "Iterated value: ", iteratedVal)
 		)
 
@@ -522,9 +522,9 @@ describe("CORE MODULE", () => {
 			const actual = await renderToStringAsync(
 				createElement(
 					"div",
-					null,
-					createElement("span", null, "first"),
-					createElement("span", null, "second")
+					{},
+					createElement("span", {}, "first"),
+					createElement("span", {}, "second")
 				)
 			)
 			const expected = `<div><span>first</span><span>second</span></div>`
@@ -535,8 +535,8 @@ describe("CORE MODULE", () => {
 			const actual = await renderToStringAsync(
 				createElement(
 					'div',
-					null,
-					createElement('span', null, 'first'),
+					{},
+					createElement('span', {}, 'first'),
 					"second,",
 					"third"
 				)
@@ -648,7 +648,7 @@ describe("CORE MODULE", () => {
 			})
 			const newDiv = createElement(
 				"div",
-				null,
+				{},
 				createElement("div", { style: { display: "inline-block" } }),
 				createElement("span", { style: { display: "inline-block" } }),
 				createElement("span", { style: { display: "inline-block" } }),
@@ -689,7 +689,7 @@ describe("CORE MODULE", () => {
 			// We assign a value to that input
 			targetInput.value = "test"
 
-			const newChildren = createElement("div", null, createElement("input", { id: "myInput" }))
+			const newChildren = createElement("div", {}, createElement("input", { id: "myInput" }))
 
 			assert(!isTextDOM(dom))
 			assert(isAugmentedDOM(dom))
@@ -751,7 +751,7 @@ describe("CORE MODULE", () => {
 
 			const dom = await renderAsync(createElement(
 				"div",
-				null,
+				{},
 				createElement(MainComponent, { id: "test-component" })
 			))
 			assert(isAugmentedDOM(dom))

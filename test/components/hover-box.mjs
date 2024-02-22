@@ -40,7 +40,7 @@ export const HoverBox = function (props) {
 	}
 
 	return createElement('div', { style: { display: "inline" } },
-		createElement('style', null, `
+		createElement('style', {}, `
 		.${className__} {
 			${stringifyStyle({ ...style }, true)}
 		}
