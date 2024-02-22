@@ -14,15 +14,15 @@ document.addEventListener("DOMContentLoaded", async (_event) => {
 })
 
 export const MainComponent: ComponentAsyncStateful = async function* (_props) {
-    const defaultProps = { key: "mainComp" }
+    const defaultProps = {}
     let props = deepMerge(defaultProps, _props) as typeof _props
-    const { key } = props
-    assert(key !== undefined)
+    const { uniqueKey } = props
+    assert(uniqueKey !== undefined)
 
     document.addEventListener('grandchildSendsValue', function (event: Event) {
         if (event instanceof CustomEvent) {
             state.parentValue = (event as GrandChildEvent).detail.value
-            invalidateUI([key])
+            invalidateUI([uniqueKey])
         }
     })
 
@@ -30,7 +30,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
         if (event instanceof CustomEvent) {
             const deletedName = (event as DeleteIndependantEvent).detail.name
             state.independantStateComponents = state.independantStateComponents.filter(k => k !== deletedName)
-            invalidateUI([key])
+            invalidateUI([uniqueKey])
         }
     })
 
@@ -49,11 +49,11 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
             <div>
                 <button onClick={() => {
                     state.parentValue++
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>INCREMENT VALUE</button>
                 <button onClick={() => {
                     state.independantStateComponents.push(`indep-comp-${cuid()}`)
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>
                     Add independant child component
                 </button>
@@ -65,7 +65,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
                 parentValue={parentValue}
                 onMessageForParent={(childStateVal) => {
                     state.receivedMsgFromChild = `Received message 'myStateVal: ${childStateVal}' from child component`
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }} />
             {
                 state.receivedMsgFromChild
@@ -73,8 +73,8 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
                     : <div />
             }
             {
-                independantStateComponents.map(key =>
-                    <IndependantChildComponent key={key} name={key}>
+                independantStateComponents.map(componentName =>
+                    <IndependantChildComponent key={componentName} name={componentName}>
                         Test
                     </IndependantChildComponent>
                 )
@@ -98,8 +98,8 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
         parentValue: 0
     }
     let props = deepMerge(defaultProps, _props)
-    const { key } = props
-    assert(key !== undefined)
+    const { uniqueKey } = props
+    assert(uniqueKey !== undefined)
 
     const state = {
         myStateValue: props.parentValue as number,
@@ -126,14 +126,14 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
                     onInput={ev => {
                         state.inputValue = ev.currentTarget.value
                         state.myStateValue = myStateValue + 1
-                        invalidateUI([key])
+                        invalidateUI([uniqueKey])
                     }}></input>
             </p>
             <p>
                 <button onClick={() => {
                     console.log(props)
                     state.myStateValue = myStateValue + 1
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>
                     Increase state value
                 </button>
@@ -142,7 +142,7 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
                 <button onClick={() => {
                     console.log(props)
                     state.myStateValue = myStateValue + 1
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>
 
                     Also increase state value
@@ -166,8 +166,8 @@ export const ChildComponent: ComponentAsyncStateful<{ parentValue: number, onMes
 
 type DeleteIndependantEvent = CustomEvent<{ name: string }>
 export const IndependantChildComponent: ComponentAsyncStateful<{ name: string }> = async function* (_props) {
-    const { key, name } = _props
-    if (key === undefined) throw new Error("key is undefined")
+    const { uniqueKey, name } = _props
+    if (uniqueKey === undefined) throw new Error("key is undefined")
 
     const state = {
         myStateValue: 0
@@ -182,7 +182,6 @@ export const IndependantChildComponent: ComponentAsyncStateful<{ name: string }>
         const { myStateValue } = state
 
         yield <div
-            key={key}
             style={{ background: "#ddd", margin: "1rem" }}>
             <div>
                 <h3>Independant child component (no props, uses event)</h3>
@@ -191,7 +190,7 @@ export const IndependantChildComponent: ComponentAsyncStateful<{ name: string }>
             <p>
                 <button onClick={() => {
                     state.myStateValue++
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>
                     Increase state value
                 </button>
@@ -209,8 +208,8 @@ export const IndependantChildComponent: ComponentAsyncStateful<{ name: string }>
 
 type GrandChildEvent = CustomEvent<{ value: number }>
 export const GrandChildComponent: ComponentAsyncStateful = async function* (_props) {
-    const { key } = _props
-    assert(key !== undefined)
+    const { uniqueKey } = _props
+    assert(uniqueKey !== undefined)
 
     const state = {
         myStateValue: 0
@@ -224,7 +223,7 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
     // This tests the problem of updates to elements that have yet to exist in the DOM
     const immediateUpdate = () => {
         state.myStateValue = 3
-        invalidateUI([key])
+        invalidateUI([uniqueKey])
     }
     immediateUpdate()
 
@@ -243,7 +242,7 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
             <p>
                 <button onClick={() => {
                     state.myStateValue = myStateValue + 1
-                    invalidateUI([key])
+                    invalidateUI([uniqueKey])
                 }}>
                     Increase state value
                 </button>
@@ -261,8 +260,8 @@ export const GrandChildComponent: ComponentAsyncStateful = async function* (_pro
 
 /** This is just named like that because it WILL receive an explicit key */
 export const ExplicitelyKeyedComponent: Component = function (_props) {
-    const { key } = _props
-    assert(key !== undefined)
+    const { uniqueKey, key } = _props
+    assert(uniqueKey !== undefined)
 
     while (true) {
 
@@ -270,24 +269,8 @@ export const ExplicitelyKeyedComponent: Component = function (_props) {
             style={{ border: "1px solid #333", margin: "1rem", padding: "1rem" }}>
             <div>
                 <h3>Explicitely keyed component (a simple key was passed, and it should be unique through combination with the parent's key)</h3>
-                <span style={{ color: "#999" }}>Key: {key}</span>
-            </div>
-        </div>
-    }
-}
-
-/** No key is written in the resulting intrinsic DOM */
-export const AnonymousComponent: Component = function (_props) {
-    const { key } = _props
-    assert(key !== undefined)
-
-    while (true) {
-
-        return <div
-            style={{ border: "1px solid #333", margin: "1rem", padding: "1rem" }}>
-            <div>
-                <h3>Grandchild component (dispatch events to document)</h3>
-                <span style={{ color: "#999" }}>Key: {key}</span>
+                <p style={{ color: "#999" }}>Custom key: {key}</p>
+                <p style={{ color: "#c99" }}>Unique key: {uniqueKey}</p>
             </div>
         </div>
     }

@@ -6,7 +6,7 @@ require('jsdom-global')()
 const nanomorph = require('nanomorph')
 
 import { IntrinsicElement, DOMAugmented, Component, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, getUniqueKey, getElementKey, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
+import { createElement, renderAsync, getHierarchicalKey, getElementUniqueKey, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
 import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
 import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
 import { StackPanel, View, HoverBox } from './components'
@@ -398,16 +398,16 @@ describe("CORE MODULE", () => {
 
 	})
 
-	describe("getUniqueKey", () => {
+	describe("getHierarchicalKey", () => {
 		it("should return am element's name as its key by default", async () => {
 			const el = <StackPanel />
-			const uniqueKey = getUniqueKey(el)
+			const uniqueKey = getHierarchicalKey(el)
 			assert.strictEqual(uniqueKey, 'StackPanel')
 		})
 
 		it("should use a component's custom key, if passed", async () => {
 			const el = <StackPanel key="myCustomKey" />
-			const uniqueKey = getUniqueKey(el)
+			const uniqueKey = getHierarchicalKey(el)
 			assert.strictEqual(uniqueKey, 'myCustomKey')
 		})
 
@@ -417,8 +417,8 @@ describe("CORE MODULE", () => {
 			assert(!(parentElement instanceof DocumentFragment))
 
 			const child = <StackPanel />
-			const parentKey = getElementKey(parentElement)
-			const uniqueKey = getUniqueKey(child, parentKey, 2)
+			const parentKey = getElementUniqueKey(parentElement)
+			const uniqueKey = getHierarchicalKey(child, parentKey, 2)
 			assert.strictEqual(uniqueKey, 'StackPanel-(2)StackPanel')
 		})
 
@@ -428,8 +428,8 @@ describe("CORE MODULE", () => {
 			assert(!(parentElement instanceof DocumentFragment))
 
 			const child = <StackPanel key="myStax"/>
-			const parentKey = getElementKey(parentElement)
-			const uniqueKey = getUniqueKey(child, parentKey, 2)
+			const parentKey = getElementUniqueKey(parentElement)
+			const uniqueKey = getHierarchicalKey(child, parentKey, 2)
 			assert.strictEqual(uniqueKey, 'StackPanel-myStax')
 		})
 
@@ -442,8 +442,8 @@ describe("CORE MODULE", () => {
 			console.log(JSON.stringify(parentElement))
 
 			const child = <StackPanel key="myStackPanel" />
-			const parentKey = getElementKey(parentElement)
-			const uniqueKey = getUniqueKey(child, parentKey, 5)
+			const parentKey = getElementUniqueKey(parentElement)
+			const uniqueKey = getHierarchicalKey(child, parentKey, 5)
 			assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel')
 		})
 
@@ -464,7 +464,7 @@ describe("CORE MODULE", () => {
 			assert(!isTextDOM(customStackPanelKey))
 			assert(!(customStackPanelKey instanceof DocumentFragment))
 
-			assert.strictEqual("key" in customStackPanelKey && customStackPanelKey["key"], 'customParentKey-(1)div-myStackPanel')
+			assert.strictEqual("uniqueKey" in customStackPanelKey && customStackPanelKey["uniqueKey"], 'customParentKey-(1)div-myStackPanel')
 		})
 	})
 

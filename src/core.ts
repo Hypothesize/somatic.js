@@ -1,4 +1,6 @@
 const nanomorph = require('nanomorph')
+import { default as assert } from "assert"
+
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
 import { createDOMShallow, isTextDOM, isAugmentedDOM } from "./dom"
@@ -16,9 +18,9 @@ export function createElement<T extends string | Component>(type: T, props: (typ
 
 /**
  * Render a UI element into a DOM node (augmented with information used for subsequent updates)
- * @param uniqueKey A string passed if outside information is needed to make it unique (i.e. in a list)
+ * @param hierarchicalKey A string passed if outside information is needed to make it unique (i.e. in a list)
  */
-export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
+export async function renderAsync(elt: UIElement, hierarchicalKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
 	if (hasValue(elt)
 		&& typeof elt === "object"
 		&& "props" in elt &&
@@ -28,34 +30,35 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 			This is likely an error arising from creating an element with an undefined component`)
 		// return createDOMShallow(JSON.stringify(elt)) as Text
 	}
-	console.log(`renderAsync: elt ${JSON.stringify(elt)}, uniqueKey ${uniqueKey}`)
+	console.log(`renderAsync: elt ${JSON.stringify(elt)}, hierarchicalKey ${hierarchicalKey}`)
 
 	let customKey: string | undefined = undefined
-	
+
 	// We assign a key automatically, unless one was passed in the component's props.
 	if (isComponentElt(elt)) {
 		console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
 		customKey = elt.props.key as string | undefined
 
-		const keyAttribute = uniqueKey !== undefined
-				? uniqueKey // If a unique key was passed (should be the case for any child component), we use it
-				: elt.props.key !== undefined
-					? elt.props.key // If the element is a root element & has a custom key, we use it
-					: elt.type.name // Otherwise, we default to the component name
+		/** The uniqueKeyAttribute will be used by Somatic to retrieve this element in the DOM */
+		const uniqueKeyAttribute = hierarchicalKey !== undefined
+			? hierarchicalKey // If a hierarchical key was passed (should be the case for any child component), we use it
+			: customKey !== undefined
+				? customKey // If the element has no hierarchical key passed (it's a root element) but has a custom key, we use it
+				: elt.type.name // Otherwise, we default to the component name
 
 		// TODO: See if the assignment of elt.type.name is not unnecessary
 		elt.props = {
 			...elt.props,
-			key: keyAttribute
+			uniqueKey: uniqueKeyAttribute
 		}
 
-		console.log(`renderAsync: uniqueKey key ${uniqueKey}`)
+		console.log(`renderAsync: hierarchicalKey key ${hierarchicalKey}`)
 		console.log(`renderAsync: assigned key ${elt.props.key}`)
 	}
 	else if (isIntrinsicElt(elt)) {
 		elt.props = {
 			...elt.props,
-			key: uniqueKey !== undefined ? uniqueKey : elt.type
+			uniqueKey: hierarchicalKey !== undefined ? hierarchicalKey : elt.type
 		}
 		console.log(`renderAsync: Intrinsic element assigned key ${elt.props.key}`)
 	}
@@ -65,6 +68,7 @@ export async function renderAsync(elt: UIElement, uniqueKey?: string): Promise<(
 	const dom = createDOMShallow(leaf)
 
 	if (!isTextDOM(dom)) {
+		// assert("uniqueKey" in dom, `no uniqueKey in dom: ${JSON.stringify(dom)}`)
 		await populateWithChildren(dom, getChildren(leaf))
 		return dom instanceof DocumentFragment
 			? dom
@@ -174,18 +178,18 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 
 	const newDomChildren = await Promise.all(flattenChildren(children).map(async (child, i) => {
 		// We assign a unique key, possibly reusing one that was passed in the props
-		const parentPrefix = !isFragmentElt(emptyElement) ? getElementKey(emptyElement) : undefined
+		const parentPrefix = !isFragmentElt(emptyElement) ? getElementUniqueKey(emptyElement) : undefined
 		console.log(`populateWithChildren: parentPrefixKey: ${parentPrefix}`)
-		const uniqueKey = getUniqueKey(child, parentPrefix, i)
-		console.log(`populateWithChildren: uniqueKey: ${uniqueKey} for child ${JSON.stringify(child)}`)
+		const hierachicalKey = getHierarchicalKey(child, parentPrefix, i)
+		console.log(`populateWithChildren: hierchicalKey: ${hierachicalKey} for child ${JSON.stringify(child)}`)
 
-		const matchingNode = isComponentElt(child) && child.props.key !== undefined
-			? document.querySelector(`[key="${child.props.key as string}"]`) as DOMAugmented | undefined
+		const matchingNode = isComponentElt(child)
+			? document.querySelector(`[uniqueKey="${hierachicalKey}"]`) as DOMAugmented | undefined
 			: undefined
 
 		const updated = matchingNode
 			? updateAsync(matchingNode, child)
-			: renderAsync(child, uniqueKey)
+			: renderAsync(child, hierachicalKey)
 
 		updated.then(_ => {
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
@@ -248,15 +252,15 @@ const invalidationHandler = (() => {
 				const keysToProcess = invalidatedElementKeys.splice(0, invalidatedElementKeys.length)
 				await Promise.all(keysToProcess.map(async key => {
 					// console.log(`Updating "${id}" dom element...`)
-					const elt = document.querySelector(`[key="${key}"]`)
+					const elt = document.querySelector(`[uniqueKey="${key}"]`)
 					if (elt) {
 						const updatedElt = await updateAsync(elt as DOMAugmented) as HTMLElement
 						nanomorph(elt, updatedElt)
-						const childrenWithKeys = updatedElt.querySelectorAll("[key]")
+						const childrenWithKeys = updatedElt.querySelectorAll("[uniqueKey]")
 						await Promise.all([...childrenWithKeys, updatedElt].map(updatedElement => new Promise<void>(resolve => {
-							const elKey = updatedElement.getAttribute("key")
+							const elKey = updatedElement.getAttribute("uniqueKey")
 							if (elKey !== null) {
-								const initialDOMElement = document.querySelector(`[key="${elKey}"]`)
+								const initialDOMElement = document.querySelector(`[uniqueKey="${elKey}"]`)
 								if (initialDOMElement && isAugmentedDOM(initialDOMElement) && isAugmentedDOM(updatedElement)) {
 									initialDOMElement.renderTrace = updatedElement.renderTrace
 								}
@@ -296,7 +300,7 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 }
 
 /** Returns a key for a child element that will be globally unique */
-export const getUniqueKey = (element: UIElement, parentPrefixKey?: string, iteration?: number) => {
+export const getHierarchicalKey = (element: UIElement, parentPrefixKey?: string, iteration?: number) => {
 	const parentKey = parentPrefixKey !== undefined ? `${parentPrefixKey}-` : ""
 	return isComponentElt(element)
 		? element.props.key !== undefined
@@ -307,5 +311,7 @@ export const getUniqueKey = (element: UIElement, parentPrefixKey?: string, itera
 			: undefined
 }
 
-/** Returns a key for a child element that will be globally unique */
-export const getElementKey = (parentElem: DOMElement) => "key" in parentElem && typeof parentElem.key === "string" ? parentElem.key : ""
+/** Returns the unique key of an element, if any */
+export const getElementUniqueKey = (parentElem: DOMElement) => "uniqueKey" in parentElem && typeof parentElem.uniqueKey === "string"
+	? parentElem.uniqueKey
+	: ""
