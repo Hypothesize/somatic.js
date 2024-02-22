@@ -26,7 +26,7 @@
 	},
 	"homepage": "https://github.com/Hypothesize/somatic.js#readme",
 	"dependencies": {
-		"@sparkwave/standard": "^2.34.1",
+		"@sparkwave/standard": "2.34.2",
 		"cuid": "2.1.8",
 		"nanomorph": "^5.4.3"
 	},
