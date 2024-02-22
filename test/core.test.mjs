@@ -130,7 +130,6 @@ const SplashPage = props => createElement("div", {}, "Splash page")
 /** @type { import("../dist/index.js").ComponentAsyncStateful<{ id: string }> } */
 const MainComponent = async function* (_props) {
 	const state = { 
-		timeStamp: new Date().getTime(),
 		iteratedVal: 0
 	 }
 
@@ -733,7 +732,6 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should keep the state of updated elements", async () => {
-			// TODO: async generator
 			const mainComp = createElement(
 				"div",
 				{},
