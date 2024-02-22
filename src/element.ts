@@ -70,14 +70,14 @@ export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace
 
 		if (isComponentElt(eltResult)) {
 			const trace = await traceToLeafAsync(eltResult)
-			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement ?? "" }
+			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement/* ?? "" */ }
 		}
 		else { // intrinsic or value element
-			return { componentElts: [eltUIAugmented], leafElement: eltResult ?? "" }
+			return { componentElts: [eltUIAugmented], leafElement: eltResult/* ?? "" */ }
 		}
 	}
 	else { // eltUI is intrinsic or a value
-		return { componentElts: [], leafElement: eltUI ?? "" }
+		return { componentElts: [], leafElement: eltUI/* ?? "" */ }
 	}
 
 	// (self as any).leafElement = ret.leafElement
@@ -94,14 +94,14 @@ export async function getLeafAsync(eltUI: UIElement): Promise<IntrinsicElement |
 		const eltResult = eltUIAugmented.result.element
 
 		if (isComponentElt(eltResult)) { // eltResult is a component element
-			return (await getLeafAsync(eltResult)) ?? ""
+			return (getLeafAsync(eltResult))/* ?? "" */
 		}
 		else { // eltResult is a leaf (intrinsic or value element)
-			return eltResult ?? ""
+			return eltResult/* ?? "" */
 		}
 	}
 	else { // eltUI is already a leaf (intrinsic or a value)
-		return eltUI ?? ""
+		return eltUI/* ?? "" */
 	}
 }
 
@@ -112,7 +112,9 @@ export async function getLeafAsync(eltUI: UIElement): Promise<IntrinsicElement |
  */
 export async function updateTraceAsync(trace: RenderingTrace, eltComp?: ComponentElement): Promise<RenderingTrace> {
 	const firstElt = firstOrDefault(trace.componentElts)
-	if (!firstElt) return trace // trace does not contain any component element, i.e., it is already intrinsic
+	if (!firstElt) {
+		return { ...trace } // trace does not contain any component element, i.e., it is already intrinsic
+	}
 
 	if (eltComp) {
 		if (firstElt.type !== eltComp.type) { // invariant check
@@ -128,10 +130,10 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 		.skipAsync(1)
 		.reduceAsync(initialAugElts, async (eltPromisesAccum, eltCurrent) => {
 			const lastEltPromise = last(eltPromisesAccum)
-			if (!(Boolean(lastEltPromise))) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
+			if (!hasValue(lastEltPromise)) { // Last element accumulated for trace must not be null (since the takeWhile combinator below excludes such)
 				throw new Error(`Last element of accumulated trace is null in reducer`)
 			}
-			const eltResult = (await lastEltPromise!).result.element
+			const eltResult = (await lastEltPromise).result.element
 			if (isEltProper(eltResult) && eltResult.type === eltCurrent.type) {
 				const childrenResult = getChildren(eltResult)
 				const childrenCurr = getChildren(eltCurrent)
