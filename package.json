@@ -46,7 +46,7 @@
 		"publish:major": "run-s build version:major pubstage && cd dist && pnpm publish --access public && cd .."
 	},
 	"dependencies": {
-		"@sparkwave/standard": "^2.33.0",
+		"@sparkwave/standard": "2.33.0",
 		"cuid": "2.1.8",
 		"nanomorph": "^5.4.3"
 	},
