@@ -209,7 +209,7 @@ interface _CSSProperties {
 		| "contain"
 		| string
 	)
-	baselineShift?: CSSLength | "sub" | "super"
+	baselineShift?: CSSLength | `${number}%` | "sub" | "super" | "baseline" | "top" | "text-top" | "middle" | "bottom" | "text-bottom"
 
 	border?: CSSBorder
 	borderSpacing?: string | CSSLength

@@ -330,7 +330,6 @@ class IdProvider {
 }
 export const idProvider = new IdProvider()
 
-
 export function stringify(x: unknown): string {
 	return JSON.stringify(x, (key, val) => typeof val === "function" ? `[Function ${val.name}]` : val, 2)
 }

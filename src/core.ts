@@ -82,7 +82,7 @@ export async function renderToStringAsync(elt: UIElement): Promise<string> {
 
 	}
 	else {
-		return String(leaf ?? "")
+		return String(leaf/* ?? ""*/)
 	}
 }
 
@@ -116,7 +116,7 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 			: Object.assign(updatedDOM, { renderTrace: newTrace })
 	}
 	else {
-		if (elt === undefined || elt === null) {
+		if (elt === undefined /*|| elt === null*/) {
 			throw `UpdateAsync: elt !== undefined`
 		}
 
@@ -138,7 +138,7 @@ export async function populateWithChildren(emptyDOM: DOMElement | DocumentFragme
 	)
 
 	const newDomChildren = await Promise.all(flattenChildren(children).map(async child => {
-		const matchingNode = isComponentElt(child) && child.props !== undefined && child.props.id !== undefined
+		const matchingNode = isComponentElt(child) && typeof child.props !== "undefined" && child.props.id !== undefined
 			? document.getElementById(child.props.id as string) as DOMAugmented | undefined
 			: undefined
 
@@ -171,14 +171,14 @@ export async function mountElement(element: UIElement, container: Element) {
 }
 
 /** Invalidate UI */
-export function invalidateUI(invalidatedElementIds?: string[], reason?: string) {
+export function invalidateUI(invalidatedElementIds?: string[]/*, reason?: string */) {
 	const ev = new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds } })
 	if (document.readyState === "complete") {
 		document.dispatchEvent(ev)
 	}
 	else {
 		// console.log(`\ndocument.readyState: ${document.readyState}`)
-		document.onreadystatechange = async event => {
+		document.onreadystatechange = async _ => {
 			// console.log(`\ndocument.readyState changed to: ${document.readyState}`)
 			if (document.readyState === "complete") {
 				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementIds}" after document loading complete\n`)
@@ -238,7 +238,7 @@ function areCompatible(_dom: DOMAugmented | Text, _elt: UIElement) {
 	switch (true) {
 		case (!isEltProper(_elt)):
 			return false
-		case (isComponentElt(_elt) && _dom.renderTrace === undefined):
+		case (isComponentElt(_elt) && typeof _dom.renderTrace === "undefined"):
 			console.warn(`DOM element ${_dom.id} has no render trace`)
 			return false
 		case (isIntrinsicElt(_elt) && _dom.renderTrace.componentElts.length > 0):
