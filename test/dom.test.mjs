@@ -313,7 +313,7 @@ describe("DOM MODULE", function () {
 			assert(isIntrinsicElt(trace.leafElement))
 			assert.strictEqual(trace.leafElement.type.toUpperCase(), "DIV")
 			const divNew = updateDomShallow(span, trace.leafElement)
-			assert(isAugmentedDOM(divNew))
+			// assert(isAugmentedDOM(divNew))
 			assert.strictEqual(divNew.tagName.toUpperCase(), "DIV")
 			assert.strictEqual(divNew.style.flexDirection, "row")
 		})

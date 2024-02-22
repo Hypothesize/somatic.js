@@ -129,7 +129,10 @@ const SplashPage = props => createElement("div", {}, "Splash page")
 
 /** @type { import("../dist/index.js").ComponentAsyncStateful<{ id: string }> } */
 const MainComponent = async function* (_props) {
-	const state = { iteratedVal: 0 }
+	const state = { 
+		timeStamp: new Date().getTime(),
+		iteratedVal: 0
+	 }
 
 	const defaultProps = {}
 	let props = deepMerge(defaultProps, _props)
@@ -141,7 +144,7 @@ const MainComponent = async function* (_props) {
 			"div",
 			{ id },
 			createElement("h1", {}, "Playground"),
-			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++ } }, "TEST")),
+			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++	} }, "TEST")),
 			createElement("div", { id: "valueKeeper" }, "Iterated value: ", iteratedVal)
 		)
 
@@ -323,7 +326,7 @@ describe("CORE MODULE", () => {
 
 		it("should render SVG elements properly", async () => {
 
-			const elt = Layout({ user: undefined, children: [SplashPage({})] })
+			const elt = await Layout({ user: undefined, children: [SplashPage({})] })
 
 			const dom = await renderAsync(elt)
 			assert(!isTextDOM(dom))
@@ -730,7 +733,14 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should keep the state of updated elements", async () => {
-			const dom = await renderAsync(MainComponent({ id: "test-component" }))
+			// TODO: async generator
+			const mainComp = createElement(
+				"div",
+				{},
+				createElement(MainComponent, { id: "test-component" })
+			)
+			const container = await renderAsync(mainComp)
+			const dom = container.firstChild
 			assert(isAugmentedDOM(dom))
 			document.body.appendChild(dom)
 
