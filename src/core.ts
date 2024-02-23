@@ -143,6 +143,10 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 			: undefined
 
 	if (newTrace) {
+		if (isComponentElt(newTrace.leafElement) && isAugmentedDOM(initialDOM)) {
+			newTrace.leafElement.props.uniqueKey = initialDOM.getAttribute("uniqueKey")
+		}
+
 		const updatedDOM = createDOMShallow(newTrace.leafElement)
 
 		if (isIntrinsicElt(newTrace.leafElement) && !isTextDOM(updatedDOM)) {
