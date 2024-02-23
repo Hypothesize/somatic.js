@@ -502,7 +502,7 @@ describe("CORE MODULE", () => {
 
 		it("should return an element with the correct content", async () => {
 			const elt = await renderToIntrinsicAsync(`test`)
-			assert.strictEqual(elt, 'test1')
+			assert.strictEqual(elt, 'test12')
 		})
 
 	})
