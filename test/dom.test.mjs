@@ -316,7 +316,6 @@ describe("DOM MODULE", function () {
 			// assert(isAugmentedDOM(divNew))
 			assert.strictEqual(divNew.tagName.toUpperCase(), "DIV")
 			assert.strictEqual(divNew.style.flexDirection, "row")
-			assert.strictEqual("This should fail", "This should succeed")
 		})
 
 		it("should create a text DOM with content set to input primitive value", async function () {
