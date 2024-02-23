@@ -8,6 +8,9 @@
 		"*",
 		"!*.tsbuildinfo"
 	],
+	"engines": {
+		"node": ">=20.x"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/hypothesize/somatic.js.git"
@@ -67,7 +70,7 @@
 		"lintci": "eslint --ext ts --output-file .lint.run.json --format json-standard --cache 'src/**'",
 		"compile": "tsc --outDir dist",
 		"test": "node --test ./test/*.test.mjs",
-		"testci": "node --test --test-reporter node-test-github-reporter ./test/*.test.mjs",
+		"testci": "node --test --test-reporter junit --test-reporter-destination .test.results.xml ./test/*.test.mjs",
 		"build": "run-s clean lint compile test",
 		"buildci": "run-s lintci compile testci",
 		"buildsandbox": "browserify dist/index.js > sandbox/somatic_bundle.js && tsc --p ./sandbox/tsconfig.json && browserify ./sandbox/sandbox.js > sandbox/sandbox_bundle.js",

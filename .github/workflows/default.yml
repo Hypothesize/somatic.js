@@ -10,20 +10,16 @@ jobs:
   checks:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [18.x]
-
     steps:
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-
       - name: Checkout Repository
         uses: actions/checkout@v2
         with: 
           persist-credentials: false
+          
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: >=20.x
 
       - name: Install
         run: npm run deps
@@ -39,21 +35,25 @@ jobs:
         run: npm run testci
         continue-on-error: false
          
-      - name: Annotate code checks
-        uses: agyemanjp/ci-checks-action@v2.1.1
+      - name: Annotate
+        uses: mikepenz/action-junit-report@v4
+        if: success() || failure() # always run even if the previous step fails
         with:
-          ghToken: "${{ secrets.GITHUB_TOKEN }}"
-          checks: '[
-              {
-                "name": "lint",
-                "fileName": ".lint.run.json",
-                "prChangesOnly": true
-              },
-              {
-                "name": "test",
-                "fileName": ".test.run.json",
-                "prChangesOnly": false
-              }
-            ]'
-        
-     
+          report_paths: '.test.results.xml'
+
+      # - name: Annotate
+      #   uses: agyemanjp/ci-checks-action@v2.1.1
+      #   with:
+      #     ghToken: "${{ secrets.GITHUB_TOKEN }}"
+      #     checks: '[
+      #         {
+      #           "name": "lint",
+      #           "fileName": ".lint.run.json",
+      #           "prChangesOnly": true
+      #         },
+      #         {
+      #           "name": "test",
+      #           "fileName": ".test.run.json",
+      #           "prChangesOnly": false
+      #         }
+      #       ]'
