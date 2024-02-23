@@ -1,9 +1,9 @@
 import { Obj } from "@sparkwave/standard/utility"
+
 import { colorConstants } from "./common"
 
-/** Main component type */
 /** General component */
-export type Component<Props extends Obj = Obj> = ComponentBase<(
+export type Component<Props = any> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
 	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
 	| Generator<UIElement, UIElement, ComponentArgs<Props>>
@@ -12,24 +12,25 @@ export type Component<Props extends Obj = Obj> = ComponentBase<(
 ), Props>
 
 /** Stateful component */
-export type ComponentStateful<P extends Obj = Obj> = ComponentBase<ElementGenerator<P>, P>
+export type ComponentStateful<P = any> = ComponentBase<ElementGenerator<P>, P>
 
 /** Async stateful component */
-export type ComponentAsyncStateful<P extends Obj = Obj> = ComponentBase<ElementGeneratorAsync<P>, P>
+export type ComponentAsyncStateful<P = any> = ComponentBase<ElementGeneratorAsync<P>, P>
 
 /** Generic base component
  * @param props Component-specific properties passed to the component function
  * @param render Callback used for requesting re-rendering
  */
-export type ComponentBase<Ret, Props extends Obj = Obj> =
+export type ComponentBase<Ret, Props> = (
 	((props: ComponentArgs<Props>, render?: () => void) => Ret)
 	& ComponentOptions<Props>
+)
 
-export type ElementGenerator<P extends Obj = Obj, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
-export type ElementGeneratorAsync<P extends Obj = Obj, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
+export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
+export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
 export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
-export type ComponentOptions<P extends Obj = Obj> = {
+export type ComponentOptions<P> = {
 	name?: string
 	isPure?: boolean
 	defaultProps?: Partial<P>
@@ -43,12 +44,12 @@ export type Children = UIElement | UIElement[] // Children can be of various typ
  */
 export type UIElement<P extends Obj = Obj> = ComponentElement<P> | IntrinsicElement<P> | /*FragmentElement |*/ ValueElement
 
-export type IntrinsicElement<P extends Obj = Obj> = UIElementBase<P> & { type: string }
-export type ComponentElement<P extends Obj = Obj> = UIElementBase<P> & {
+export type IntrinsicElement<P = any> = UIElementBase<P> & { type: string }
+export type ComponentElement<P = any> = UIElementBase<P> & {
 	type: Component<P>,
 	result?: ComponentResult
 }
-export interface ComponentEltAugmented<P extends Obj = Obj> extends ComponentElement<P> {
+export interface ComponentEltAugmented<P = any> extends ComponentElement<P> {
 	result: ComponentResult
 }
 export type UIElementBase<P = unknown> = { props: P, children?: Children }
@@ -208,12 +209,12 @@ interface _CSSProperties {
 		| "contain"
 		| string
 	)
-	baselineShift?: CSSLength | "sub" | "super"
+	baselineShift?: CSSLength | `${number}%` | "sub" | "super" | "baseline" | "top" | "text-top" | "middle" | "bottom" | "text-bottom"
 
 	border?: CSSBorder
 	borderSpacing?: string | CSSLength
 	borderStyle?: CSSBorderStyle
-	borderWidth?: string | CSSLength | CSSNamedWidth
+	borderWidth?: string | CSSLength | CSSWidth
 	borderRadius?: CSSLength
 	borderCollapse?: "collapse" | "separate"
 	borderColor?: CSSColor
@@ -229,24 +230,24 @@ interface _CSSProperties {
 	borderBottomLeftRadius?: string | number
 	borderBottomRightRadius?: string | number
 	borderBottomStyle?: CSSBorderStyle
-	borderBottomWidth?: CSSLength | CSSNamedWidth
+	borderBottomWidth?: CSSLength | CSSWidth
 
 	borderLeft?: CSSBorder
 	borderLeftColor?: CSSColor
 	borderLeftStyle?: CSSBorderStyle
-	borderLeftWidth?: CSSNamedWidth | CSSLength
+	borderLeftWidth?: CSSWidth | CSSLength
 
 	borderRight?: CSSBorder
 	borderRightColor?: CSSColor
 	borderRightStyle?: CSSBorderStyle
-	borderRightWidth?: CSSNamedWidth | CSSLength
+	borderRightWidth?: CSSWidth | CSSLength
 
 	borderTop?: CSSBorder
 	borderTopColor?: CSSColor
 	borderTopLeftRadius?: string | CSSLength
 	borderTopRightRadius?: string | CSSLength
 	borderTopStyle?: CSSBorderStyle
-	borderTopWidth?: CSSNamedWidth | CSSLength
+	borderTopWidth?: CSSWidth | CSSLength
 
 	bottom?: CSSLength | "auto"
 	boxShadow?: string | null
@@ -386,22 +387,25 @@ interface _CSSProperties {
 		| "text-top"
 	)
 	emptyCells?: "show" | "hide"
-	enableBackground?: "accumulate" | `${number} ${number} ${number} ${number}`
+	enableBackground?: (
+		| "accumulate"
+		| `new ${number} ${number} ${number} ${number}`
+	)
 	fill?: string | null
-	fillOpacity?: number | `${number}%`
+	fillOpacity?: number | `${number}% `
 	fillRule?: "nonzero" | "evenodd"
 	filter?: (
 		| `url(${string})`
 		| `blur(${CSSLength})`
 		| `brightness(${number})`
-		| `contrast(${number}%)`
-		//| `drop-shadow(${CSSLength} ${CSSLength} ${CSSLength} ${CSSColor})`
-		| `grayscale(${number}%)`
-		| `hue-rotate(${number}deg)`
-		| `invert(${number}%)`
-		| `opacity(${number}%)`
-		| `saturate(${number}%)`
-		| `sepia(${number}%)`
+		| `contrast(${number} %)`
+		//| `drop - shadow(${ CSSLength } ${ CSSLength } ${ CSSLength } ${ CSSColor })`
+		| `grayscale(${number} %)`
+		| `hue - rotate(${number}deg)`
+		| `invert(${number} %)`
+		| `opacity(${number} %)`
+		| `saturate(${number} %)`
+		| `sepia(${number} %)`
 		| string
 		| "none"
 	)
@@ -435,31 +439,36 @@ interface _CSSProperties {
 		| "nowrap"
 		| "wrap"
 		| "wrap-reverse"
-		//| `${"row" | "row-reverse" | "column" | "column-reverse"} ${"nowrap" | "wrap" | "wrap-reverse"}`
+		//| `${ "row" | "row-reverse" | "column" | "column-reverse" } ${ "nowrap" | "wrap" | "wrap-reverse" } `
 	)
 	flexGrow?: number
 	flexShrink?: number
 	flexWrap?: "nowrap" | "wrap" | "wrap-reverse"
 	floodColor?: CSSColor
 	floodOpacity?: number | `${number}%`
-	font?: string | null
+
+	font?: (
+		/* font-size font-family */
+		| `${_CSSProperties["fontSize"]} ${_CSSProperties["fontFamily"]} `
+
+		/* font-size/line height font-family */
+		| `${_CSSProperties["fontSize"]}/${_CSSProperties["lineHeight"]} ${_CSSProperties["fontFamily"]} `
+
+		/* font-style font-weight font-size font-family */
+		| `${_CSSProperties["fontStyle"]} ${_CSSProperties["fontWeight"]} ${_CSSProperties["fontSize"]} ${_CSSProperties["fontFamily"]} `
+
+		/* font-stretch font-variant font-size font-family */
+		| `${_CSSProperties["fontStretch"]} ${_CSSProperties["fontVariant"]} ${_CSSProperties["fontSize"]} ${_CSSProperties["fontFamily"]} `
+
+		/* System font */
+		| `${CSSSystemFont}`
+	)
+
+	/** Specifies a prioritized list of one or more font family names and/or generic family names for the selected element */
 	fontFamily?: (
-		| "serif"
-		| "sans-serif"
-		| "cursive"
-		| "fantasy"
-		| "monospace"
-		| "system-ui"
-		| "ui-serif"
-		| "ui-sans-serif"
-		| "ui-monospace"
-		| "ui-rounded"
-		| "emoji"
-		| "math"
-		| "fangsong"
-		| string
-		//         | `${string} ${"serif" | "sans-serif" | "cursive" | "fantasy" | "monospace" | "system-ui" | "ui-serif" |
-		// "ui-sans-serif" | "ui-monospace" | "ui-rounded" | "emoji" | "math" | "fangsong"}`
+		| `${string}` // specific font name
+		| `${string}, ${CSSFontFamilyGeneric}`
+		| `${CSSFontFamilyGeneric}`
 	)
 	fontFeatureSettings?: (
 		| "normal"
@@ -504,6 +513,7 @@ interface _CSSProperties {
 		| `oblique ${number}deg`
 	)
 	fontVariant?: (
+		| "none"
 		| "normal"
 		| "small-caps"
 		| "all-small-caps"
@@ -678,28 +688,33 @@ interface _CSSProperties {
 	maxHeight?: (
 		| "max-content"
 		| "min-content"
-		//| `fit-content(${CSSLength})`
+		| `fit-content`
+		| `fit-content(${CSSLength})`
 		| "auto"
 		| CSSLength
 	)
 	maxWidth?: (
 		| "max-content"
 		| "min-content"
-		//| `fit-content(${CSSLength})`
+		| `fit-content`
+		| `fit-content`
+		| `fit-content(${CSSLength})`
 		| "auto"
 		| CSSLength
 	)
 	minHeight?: (
 		| "max-content"
 		| "min-content"
-		//| `fit-content(${CSSLength})`
+		| `fit-content`
+		| `fit-content(${CSSLength})`
 		| "auto"
 		| CSSLength
 	)
 	minWidth?: (
 		| "max-content"
 		| "min-content"
-		//| `fit-content(${CSSLength})`
+		| `fit-content`
+		| `fit-content(${CSSLength})`
 		| "auto"
 		| CSSLength
 	)
@@ -756,7 +771,7 @@ interface _CSSProperties {
 	outline?: CSSBorderStyle | string
 	outlineColor?: CSSColor | "invert"
 	outlineStyle?: CSSBorderStyle
-	outlineWidth?: CSSNamedWidth | CSSLength
+	outlineWidth?: CSSWidth | CSSLength
 	overflow?: (
 		| "visible"
 		| "hidden"
@@ -828,15 +843,15 @@ interface _CSSProperties {
 	rubyOverhang?: string | null
 	rubyPosition?: "over" | "under" | "alternate" | "inter-character"
 	stopColor?: CSSColor
-	stopOpacity?: number
+	stopOpacity?: number | `${number}`
 	stroke?: string | null
 	strokeDasharray?: "none" | "inherit" | string | CSSLength
 	strokeDashoffset?: CSSLength
 	strokeLinecap?: "butt" | "round" | "square"
 	strokeLinejoin?: "miter" | "round" | "bevel" | "arcs" | "miter-clip"
 	strokeMiterlimit?: number
-	strokeOpacity?: `${number}%`
-	strokeWidth?: CSSLength
+	strokeOpacity?: number | `${number}%`
+	strokeWidth?: CSSLength | number
 	tableLayout?: "auto" | "fixed"
 	textAlign?: (
 		| "start"
@@ -881,7 +896,7 @@ interface _CSSProperties {
 	/** Stroke thickness of the decoration line that is used on text in an element, such as a line-through, underline, or overline. 
 	 * The from-font value means: If the font file includes info about a preferred thickness, use that value;
 	 * If not, behave as if auto was set, with the browser choosing an appropriate thickness.
-	*/
+	 */
 	textDecorationThickness?: CSSLength | "from-font"
 
 	/** Color of decorations added to text by text-decoration-line. */
@@ -1171,8 +1186,15 @@ interface _CSSProperties {
 }
 
 type CSSProperty<T> = T | "inherit" | "initial" | "revert" | "unset"
-type CSSNamedWidth = (| "thin" | "medium" | "thick")
-type CSSBorder = `${CSSNamedWidth} ${CSSBorderStyle} ${CSSColor}`
+type CSSWidth = (CSSLength | "thin" | "medium" | "thick")
+type CSSBorder = (
+	| `${CSSWidth}`
+	| `${CSSBorderStyle}`
+	| `${CSSColor}`
+	| `${CSSWidth} ${CSSBorderStyle}`
+	| `${CSSBorderStyle} ${CSSColor}`
+	| `${CSSWidth} ${CSSBorderStyle} ${CSSColor}`
+)
 type CSSBorderStyle = (
 	| "none"
 	| "hidden"
@@ -1269,6 +1291,29 @@ type CSSLengthUnit = (
 	| "vh" // 1% of the viewport's height.
 	| "vmin" // 1% of the viewport's smaller dimension.
 	| "vmax" // 1% of the viewport's larger dimension.
+)
+type CSSFontFamilyGeneric = (
+	| "serif"
+	| "sans-serif"
+	| "cursive"
+	| "fantasy"
+	| "monospace"
+	| "system-ui"
+	| "ui-serif"
+	| "ui-sans-serif"
+	| "ui-monospace"
+	| "ui-rounded"
+	| "emoji"
+	| "math"
+	| "fangsong"
+)
+type CSSSystemFont = (
+	| "caption"
+	| "icon"
+	| "menu"
+	| "message-box"
+	| "small-caption"
+	| "status-bar"
 )
 
 export type HtmlProps = Partial<HTMLAttributes<HTMLElement>>
@@ -1583,7 +1628,7 @@ export type SVGAttributes<T> = DOMAttributes<T> & {
 	autoReverse?: number | string
 	azimuth?: number | string
 	baseFrequency?: number | string
-	baselineShift?: number | string
+	baselineShift?: CSSLength | `${number}%` | "sub" | "super" | "baseline" | "top" | "text-top" | "middle" | "bottom" | "text-bottom"
 	baseProfile?: number | string
 	bbox?: number | string
 	begin?: number | string
@@ -2351,7 +2396,7 @@ type TransitionEventHandler<T = Element> = EventHandler<TransitionEvent<T>>
 	props?: ClassAttributes<Elt> & Attr | null,
 	// eslint-disable-next-line fp/no-rest-parameters
 	...children: VNode[]
-) => DOMElement<Attr, Elt>
+ ) => DOMElement<Attr, Elt>
 */
 
 
