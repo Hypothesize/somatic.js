@@ -1,24 +1,162 @@
-import { default as assert } from "assert"
+//@ts-check
+
+import assert from "node:assert/strict"
+import { describe, it, beforeEach } from "node:test";
+
 import { expect, use } from "chai"
 import { default as chaiHTML } from "chai-html"
 import { deepMerge, mergeDeep } from "@sparkwave/standard"
-require('jsdom-global')()
-const nanomorph = require('nanomorph')
+import nanomorph from 'nanomorph'
 
-import { IntrinsicElement, DOMAugmented, Component, UIElement, CSSProperties } from '../dist/types'
-import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core'
-import { isComponentElt, normalizeChildren, isIntrinsicElt, traceToLeafAsync, getChildren } from '../dist/element'
-import { isAugmentedDOM, isTextDOM, createDOMShallow, updateDomShallow } from '../dist/dom'
-import { StackPanel, View, HoverBox } from './components'
-import { idProvider } from '../dist/common'
-import { normalizeHTML } from './utils'
+await import('jsdom-global').then(_ => _.default())
+
+import { createElement, renderAsync, renderToIntrinsicAsync, renderToStringAsync, populateWithChildren, updateAsync, mountElement } from '../dist/core.js'
+import { isAugmentedDOM, isTextDOM, createDOMShallow } from '../dist/dom.js'
+import { traceToLeafAsync, getChildren } from '../dist/element.js'
+import { idProvider } from '../dist/common.js'
+
+import { View } from './components/view.mjs'
+import { StackPanel } from './components/stack-panel.mjs'
+import { HoverBox } from './components/hover-box.mjs'
+
+import { normalizeHTML } from './utils.mjs'
+
+/** @typedef { import("../dist/types.js").Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>} FontIcon */
+
+const MakeIcon = (svgElement/*: JSX.Element*/)/*: FontIcon*/ => function (props) {
+	const elt = svgElement //as any
+	return createElement(
+		'svg',
+		{
+			preserveAspectRatio: 'xMidYMid meet',
+			...elt.props,
+			style: props.style,
+			color: props.color || (props.style || {}).color || undefined,
+			stroke: props.color || (props.style || {}).color || undefined,
+			fill: 'currentColor',
+		},
+		elt.children
+	)
+}
+
+const Logo = MakeIcon(
+	createElement(
+		"svg",
+		{
+			id: "Layer_1",
+			xmlns: "http://www.w3.org/2000/svg",
+			viewBox: "0 0 122.88 78.97"
+		},
+		createElement("title", {}, "logo"),
+		createElement(
+			"path",
+			{
+				fillRule: "evenodd",
+				d: "M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z"
+			}
+		)
+	)
+)
+
+/** @typedef {Object} User
+ * @property {string} id - The unique identifier for the user.
+ * @property {string} displayName - The display name of the user.
+ * @property {string} [emailAddress] - The email address of the user. Optional.
+ * @property {string} [imageUrl] - The URL of the user's image. Optional.
+ * @property {"google" | "microsoft" | "dropbox" | "amazon" | "facebook" | "twitter"} provider - The provider of the user account.
+ * @property {string} refreshToken - The refresh token associated with the user's authentication.
+ * @property {string} accessToken - The access token associated with the user's authentication.
+*/
+
+/** @type { import("../dist/index.js").Component<{ user: User | undefined }> } */
+const Layout = async function (props) {
+	// console.log(`Starting layout component render`)
+	const { user, children } = props
+	return createElement(
+		StackPanel,
+		{
+			id: "root",
+			orientation: "vertical",
+			style: { padding: 0, margin: 0 }
+		},
+		createElement(
+			StackPanel,
+			{
+				id: "header",
+				itemsAlignH: "uniform",
+				itemsAlignV: "center",
+				style: { backgroundColor: "purple", width: "100vw", height: "10vh" }
+			},
+			createElement(Logo, {
+				style: { stroke: "white", fill: "transparent", height: "7vh" }
+			}),
+			createElement(
+				StackPanel,
+				{
+					id: "user-info",
+					style: { padding: "0.25em", color: "whitesmoke" }
+				},
+				user
+					? createElement(
+						StackPanel,
+						{ style: { gap: "10%" } },
+						createElement("span", {}, `Welcome, ${user.displayName}`),
+						createElement("a", { href: "/logout" }, "LOGOUT")
+					)
+					: createElement("a", { href: "/auth/google" }, "LOGIN")
+			)
+		),
+		createElement(
+			StackPanel,
+			{
+				id: "content",
+				style: { backgroundColor: "whitesmoke", height: "75vh" }
+			},
+			children
+		),
+		createElement(
+			StackPanel,
+			{
+				id: "footer",
+				style: { height: "10vh" }
+			}
+		)
+	)
+}
+
+/** @type { import("../dist/index.js").Component } */
+const SplashPage = props => createElement("div", {}, "Splash page")
+
+/** @type { import("../dist/index.js").ComponentAsyncStateful<{ id: string }> } */
+const MainComponent = async function* (_props) {
+	const state = { 
+		iteratedVal: 0
+	 }
+
+	const defaultProps = {}
+	let props = deepMerge(defaultProps, _props)
+	const { id } = props
+
+	while (true) {
+		const { iteratedVal } = state
+		const newProps = yield createElement(
+			"div",
+			{ id },
+			createElement("h1", {}, "Playground"),
+			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++	} }, "TEST")),
+			createElement("div", { id: "valueKeeper" }, "Iterated value: ", iteratedVal)
+		)
+
+		props = mergeDeep()(props, newProps ?? {})
+	}
+}
 
 describe("CORE MODULE", () => {
 	use(chaiHTML)
 
 	describe("populateWithChildren", () => {
 		it("should work for a single value child", async () => {
-			const intrinsic: IntrinsicElement = {
+			const intrinsic = {
 				type: "div",
 				props: { className: "clss", style: { backgroundColor: "blue" } },
 				children: ["val"]
@@ -32,8 +170,8 @@ describe("CORE MODULE", () => {
 			await populateWithChildren(dom, getChildren(trace.leafElement))
 			assert.strictEqual(dom.childNodes.length, 1)
 		})
-		it("should work for with multiple intrinsic children", async () => {
-			const intrinsic: IntrinsicElement = {
+		it("should work for multiple intrinsic children", async () => {
+			const intrinsic = {
 				type: "div",
 				props: { className: "clss", style: { backgroundColor: "blue" } },
 				children: [{ type: "span", props: { style: { display: "inline-block" } } }, "val"]
@@ -47,13 +185,15 @@ describe("CORE MODULE", () => {
 			await populateWithChildren(dom, getChildren(trace.leafElement))
 			assert.strictEqual(dom.childNodes.length, 2)
 
-			const firstChild = dom.childNodes.item(0) as HTMLElement
+			/** @type { HTMLElement } */
+			// @ts-ignore
+			const firstChild = dom.childNodes.item(0)
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "SPAN")
 			assert.strictEqual(firstChild.style.display, "inline-block")
 		})
 
 		it("should work for component children", async () => {
-			const intrinsic: IntrinsicElement = {
+			const intrinsic = {
 				type: "div",
 				props: {},
 				children: [
@@ -69,7 +209,9 @@ describe("CORE MODULE", () => {
 			await populateWithChildren(dom, getChildren(trace.leafElement))
 			assert.strictEqual(dom.childNodes.length, 2)
 
-			const firstChild = dom.childNodes.item(0) as HTMLElement
+			/** @type {HTMLElement } */
+			// @ts-ignore
+			const firstChild = dom.childNodes.item(0)
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
 			assert.strictEqual(firstChild.style.flexDirection, "column")
 		})
@@ -78,11 +220,7 @@ describe("CORE MODULE", () => {
 	describe("renderAsync", () => {
 		it("should return elt with same html as renderToString, for an elt without children", async () => {
 			try {
-				const elt = <HoverBox
-					// icon={{ on: ()=><span>On</span>, off: ()=><span>Off</span> }}
-					style={{ height: "auto", width: "auto", fontSize: "14px" }}
-				/>
-
+				const elt = HoverBox({ style: { height: "auto", width: "auto", fontSize: "14px" } })
 				const dom = await renderAsync(elt)
 				assert(isAugmentedDOM(dom))
 
@@ -91,19 +229,18 @@ describe("CORE MODULE", () => {
 				assert.strictEqual(normalizeHTML(dom.outerHTML), normalizeHTML(renderedString))
 			}
 			catch (e) {
-
 				assert.equal(1, 1)
-				// console.error(e)
-				// assert.fail()
+				console.error(e)
+				assert.fail()
 			}
 		})
 
 		it("should return elt with same html as renderToString, for an elt with children", async () => {
-			const elt = <StackPanel style={{ height: "auto", width: "auto", fontSize: "14px" }}>
-				<span style={{ fontSize: "1.25em", fontWeight: 900 }}>
-					Get Started
-				</span>
-			</StackPanel>
+			const elt = createElement(
+				StackPanel,
+				{ style: { height: "auto", width: "auto", fontSize: "14px" } },
+				createElement("span", { style: { fontSize: "1.25em", fontWeight: 900 } }, "Get Started")
+			)
 
 			const dom = await renderAsync(elt)
 			assert(isAugmentedDOM(dom))
@@ -115,9 +252,7 @@ describe("CORE MODULE", () => {
 
 		it("should render an element with the correct text content", async () => {
 			const dom = await renderAsync(
-				<div className={'test'} style={{ backgroundColor: "blue" }}>
-					{`test`}
-				</div>
+				createElement("div", { className: 'test', style: { backgroundColor: "blue" } }, "test")
 			)
 
 			assert(isAugmentedDOM(dom))
@@ -125,10 +260,10 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should render an element with its corresponding attributes", async () => {
-			const dom = await renderAsync(<div className={'test-class'} style={{ backgroundColor: "blue" }}>{`test`}</div>)
+			const dom = await renderAsync(createElement("div", { className: 'test-class', style: { backgroundColor: "blue" } }, "test"))
 
 			assert(isAugmentedDOM(dom))
-			assert.strictEqual((dom as DOMAugmented).getAttribute("class"), 'test-class')
+			assert.strictEqual((dom).getAttribute("class"), 'test-class')
 		})
 
 		it('should render a value element correctly', async () => {
@@ -138,11 +273,13 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should render multiple children properly", async () => {
-			const dom = await renderAsync(<div>
-				<span>1</span>
-				<span>20</span>
-				<span>300</span>
-			</div>)
+			const dom = await renderAsync(createElement(
+				"div",
+				{},
+				createElement("span", {}, 1),
+				createElement("span", {}, 20),
+				createElement("span", {}, 300)
+			))
 
 			assert(isAugmentedDOM(dom))
 			assert.strictEqual(dom.childNodes.length, 3)
@@ -153,12 +290,12 @@ describe("CORE MODULE", () => {
 
 		it("should render nested children properly", async () => {
 			const dom = await renderAsync(
-				<div id="1">
-					<div id="2">
-						<div id="3">Hi</div>
-					</div>
-					<span><i>4000</i></span>
-				</div>
+				createElement(
+					"div",
+					{ id: "1" },
+					createElement("div", { id: "2" }, createElement("div", { id: "3" }, "Hi")),
+					createElement("span", {}, createElement("i", {}, 4000))
+				)
 			)
 
 			const firstChild = dom.firstChild
@@ -167,101 +304,45 @@ describe("CORE MODULE", () => {
 			assert(firstChild.firstChild)
 			assert("tagName" in (firstChild.firstChild))
 
-			const firstfirstChild = firstChild.firstChild as HTMLElement
+
+			/** @type {HTMLElement } */
+			// @ts-ignore
+			const firstfirstChild = firstChild.firstChild
 			assert.strictEqual(firstfirstChild.tagName.toUpperCase(), "DIV")
 			assert.strictEqual(firstfirstChild.textContent, "Hi")
 
+			/** @type {HTMLElement } */
+			// @ts-ignore
 			const lastChild = dom.lastChild
 			assert(lastChild)
-			assert(lastChild.firstChild)
+			const lastFirstChild = lastChild.firstChild
+			assert(lastFirstChild)
+
 			assert.strictEqual(lastChild.firstChild, lastChild.lastChild)
-			assert("tagName" in (lastChild.firstChild as HTMLElement))
-			assert.strictEqual((lastChild.firstChild as HTMLElement)["tagName"].toUpperCase(), "I")
+			assert.strictEqual(lastFirstChild["tagName"].toUpperCase(), "I")
 			assert.strictEqual(lastChild.firstChild.textContent, "4000")
 		})
 
 		it("should render SVG elements properly", async () => {
-			const VytalsLogo = MakeIcon(
-				<svg
-					id="Layer_1"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 122.88 78.97">
-					<title>logo</title>
-					<path
-						fillRule="evenodd"
-						d="M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z" />
-				</svg>
-			)
 
-			interface User {
-				id: string
-				displayName: string
-				emailAddress?: string
-				imageUrl?: string
-				provider: "google" | "microsoft" | "dropbox" | "amazon" | "facebook" | "twitter",
-				refreshToken: string
-				accessToken: string
-			}
-			type Props = { user: User | undefined }
-			const Layout: Component<Props> = async function (props) {
-				// console.log(`Starting layout component render`)
-				const { user, children } = props
-				return <StackPanel
-					id="root"
-					orientation="vertical"
-					style={{ padding: 0, margin: 0 }}>
-
-					<StackPanel
-						id="header"
-						itemsAlignH="uniform"
-						itemsAlignV="center"
-						style={{ backgroundColor: "purple", width: "100vw", height: "10vh" }}>
-
-						<VytalsLogo style={{ stroke: "white", fill: "transparent", height: "7vh" }} />
-
-						<StackPanel id="user-info" style={{ padding: "0.25em", color: "whitesmoke" }}>
-							{user
-								? <StackPanel style={{ gap: "10%" } as any}>
-									<span>Welcome, {user.displayName}</span>
-									<a href="/logout">LOGOUT</a>
-								</StackPanel>
-								: <a href="/auth/google">LOGIN</a>
-							}
-
-						</StackPanel>
-
-					</StackPanel>
-
-					<StackPanel
-						id="content"
-						style={{ backgroundColor: "whitesmoke", height: "75vh" }}>
-						{children}
-					</StackPanel>
-
-					<StackPanel
-						id="footer"
-						style={{ height: "10vh" }}>
-
-					</StackPanel>
-
-				</StackPanel>
-			}
-			const SplashPage: Component<Props> = props => <div>Splash page</div>
-
-			const elt = <Layout user={undefined}><SplashPage user={undefined} /></Layout>
+			const elt = await Layout({ user: undefined, children: [SplashPage({})] })
 
 			const dom = await renderAsync(elt)
 			assert(!isTextDOM(dom))
 			assert(!(dom instanceof DocumentFragment))
-			const svg = dom.getElementsByTagName("svg").item(0) /*document.getElementById("Layer_1")*/ as any as SVGSVGElement
+			const svg = dom.getElementsByTagName("svg").item(0) /*document.getElementById("Layer_1")*/ //as any as SVGSVGElement
+			assert(svg !== null)
+
 			assert(svg.id === "Layer_1")
 			assert(svg.tagName.toUpperCase() === "SVG")
 			assert.strictEqual(svg.children.length, 2)
 
-			const title = svg.children.item(0) as SVGTitleElement
+			const title = svg.children.item(0) //as SVGTitleElement
+			assert(title !== null)
 			assert.strictEqual(title.textContent, "logo")
 
-			const path = dom.getElementsByTagName("path").item(0) as SVGPathElement
+			const path = dom.getElementsByTagName("path").item(0) //as SVGPathElement
+			assert(path !== null)
 			assert.strictEqual(path.tagName.toUpperCase(), "PATH")
 			assert.strictEqual(path.getAttribute("fill-rule"), "evenodd")
 			assert.strictEqual(path.getAttribute("d"), "M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z")
@@ -401,10 +482,7 @@ describe("CORE MODULE", () => {
 	describe("renderToIntrinsicAsync", () => {
 		it("should return elt with same html as renderToString, for an elt without children", async () => {
 			try {
-				const elt = <HoverBox
-					// icon={{ on: ()=><span>On</span>, off: ()=><span>Off</span> }}
-					style={{ height: "auto", width: "auto", fontSize: "14px" }}
-				/>
+				const elt = HoverBox({ style: { height: "auto", width: "auto", fontSize: "14px" } })
 
 				const intrinsic = await renderToIntrinsicAsync(elt)
 				const dom = await renderAsync(elt)
@@ -434,20 +512,22 @@ describe("CORE MODULE", () => {
 		// 	assert.strictEqual(await renderToStringAsync(null), "")
 		// })
 		it("should work for intrinsic elements without properties or children", async () => {
-			assert.strictEqual(await renderToStringAsync(<div></div>), `<div></div>`)
-			assert.strictEqual(await renderToStringAsync(<abbr></abbr>), `<abbr></abbr>`)
+			assert.strictEqual(await renderToStringAsync(createElement("div", {})), `<div></div>`)
+			assert.strictEqual(await renderToStringAsync(createElement("abbr", {})), `<abbr></abbr>`)
 		})
 		it("should work for an intrinsic element with a single child but without properties", async () => {
-			const actual = await renderToStringAsync(<div>Splash page</div>)
+			const actual = await renderToStringAsync(createElement("div", {}, "Splash page"))
 			const expected = `<div>Splash page</div>`
 			expect(expected).html.to.equal(actual)
 		})
 		it("should work for an intrinsic element with multiple children, but without properties", async () => {
 			const actual = await renderToStringAsync(
-				<div>
-					<span>first</span>
-					<span>second</span>
-				</div>
+				createElement(
+					"div",
+					{},
+					createElement("span", {}, "first"),
+					createElement("span", {}, "second")
+				)
 			)
 			const expected = `<div><span>first</span><span>second</span></div>`
 			expect(expected).html.to.equal(actual)
@@ -455,24 +535,25 @@ describe("CORE MODULE", () => {
 		})
 		it("should work for an intrinsic element with array children, but without properties", async () => {
 			const actual = await renderToStringAsync(
-				<div>
-					<span>first</span>
-					{["second,", "third"]}
-				</div>
+				createElement(
+					'div',
+					{},
+					createElement('span', {}, 'first'),
+					"second,",
+					"third"
+				)
 			)
 			const expected = `<div><span>first</span>second,third</div>`
 			expect(expected).html.to.equal(actual)
 		})
 		it("should work for intrinsic elements with properties and a child", async () => {
-			const actual = await renderToStringAsync(<div style={{ position: "static" }}>Splash page</div>)
+			const actual = await renderToStringAsync(createElement("div", { style: { position: "static" } }, "Splash page"))
 			const expected = `<div style="position: static">Splash page</div>`
 			expect(expected).html.to.equal(actual)
 		})
 		it("should work for component elements with properties and a child", async () => {
 			const actual = await renderToStringAsync(
-				<StackPanel orientation="horizontal">
-					<input type="text" />
-				</StackPanel>
+				StackPanel({ orientation: "horizontal", children: [createElement("input", { type: "text" })] })
 			)
 
 			const expected = `
@@ -487,20 +568,11 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should render SVG elements properly", async () => {
-
-			const VytalsLogo = MakeIcon(
-				<svg
-					id="Layer_1"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 122.88 78.97">
-					<title>logo</title>
-					<path
-						fillRule="evenodd"
-						d="M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z" />
-				</svg>
+			const elt = createElement(
+				Logo,
+				{ style: { stroke: "white", fill: "transparent", height: "7vh" } },
+				null
 			)
-
-			const elt = <VytalsLogo style={{ stroke: "white", fill: "transparent", height: "7vh" }} />
 
 			const actual = await renderToStringAsync(elt)
 			const expected = `<svg 
@@ -523,78 +595,11 @@ describe("CORE MODULE", () => {
 		})
 
 		it("should return a string representation of a complex page component", async () => {
-
-			const VytalsLogo = MakeIcon(
-				<svg
-					id="Layer_1"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 122.88 78.97">
-					<title>logo</title>
-					<path
-						fillRule="evenodd"
-						d="M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z" />
-				</svg>
-			)
-
-			interface User {
-				id: string
-				displayName: string
-				emailAddress?: string
-				imageUrl?: string
-				provider: "google" | "microsoft" | "dropbox" | "amazon" | "facebook" | "twitter",
-				refreshToken: string
-				accessToken: string
-			}
-			const SplashPage: Component<any> = async function* (props) {
-				// console.log(`Starting splash page render`)
-				yield <div>Splash page</div>
-			}
-			const Layout: Component<{ user: User | undefined }> = async function* (props) {
-				// console.log(`Starting layout component render`)
-				const { user, children } = props
-
-				yield <StackPanel
-					id="root"
-					orientation="vertical"
-					style={{ padding: 0, margin: 0 }}>
-
-					<StackPanel
-						id="header"
-						itemsAlignH="uniform"
-						itemsAlignV="center"
-						style={{ backgroundColor: "purple", width: "100vw", height: "10vh" }}>
-
-						<VytalsLogo style={{ stroke: "white", fill: "transparent", height: "7vh" }} />
-
-						<StackPanel id="user-info" style={{ padding: "0.25em", color: "whitesmoke" }}>
-							{user
-								? <StackPanel style={{ gap: "10%" } as any}>
-									<span>Welcome, {user.displayName}</span>
-									<a href="/logout">LOGOUT</a>
-								</StackPanel>
-								: <a href="/auth/google">LOGIN</a>
-							}
-						</StackPanel>
-
-					</StackPanel>
-
-					<StackPanel
-						id="content"
-						style={{ backgroundColor: "whitesmoke", height: "75vh" }}>
-						{children}
-					</StackPanel>
-
-					<StackPanel
-						id="footer"
-						style={{ height: "10vh" }}>
-
-					</StackPanel>
-
-				</StackPanel>
-			}
-			const str = await renderToStringAsync(<Layout user={/*injectedInfo.user*/ undefined}>
-				<SplashPage user={undefined} objectId={undefined} />
-			</Layout>)
+			const str = await renderToStringAsync(createElement(
+				Layout,
+				{ user: undefined },
+				createElement(SplashPage, { user: undefined, objectId: undefined })
+			))
 			// console.warn(`renderToStringAsync of layout result (in test): ${str}`)
 
 			assert(str.length > 0)
@@ -602,15 +607,14 @@ describe("CORE MODULE", () => {
 		})
 	})
 
-
 	describe("updateAsync", async () => {
 		it("should update while maintaining the element type, if no overriding element is passed", async () => {
-			const dom = await renderAsync(<View<string>
-				id={"test_view"}
-				sourceData={["a", "b", "c"]}
-				itemsPanel={StackPanel}
-				itemTemplate={item => <i style={{ width: "7em", border: "thin solid orange" }}>{item.value}</i>}
-			/>)
+			const dom = await renderAsync(createElement(View, {
+				id: "test_view",
+				sourceData: ["a", "b", "c"],
+				itemsPanel: StackPanel,
+				itemTemplate: item => createElement("i", { style: { width: "7em", border: "thin solid orange" } }, item.value)
+			}))
 			assert(!isTextDOM(dom))
 			assert(!(dom instanceof DocumentFragment))
 
@@ -627,9 +631,10 @@ describe("CORE MODULE", () => {
 				children: [{ type: "span", props: { style: { display: "inline-block" } } }, "val"]
 			})
 			assert(!isTextDOM(dom))
+			assert(isAugmentedDOM(dom))
 			assert.strictEqual(dom.childNodes.length, 2)
 
-			const updatedDOM = await updateAsync(dom as DOMAugmented, <div></div>)
+			const updatedDOM = await updateAsync(dom /*as DOMAugmented*/, createElement("div", {}))
 			assert.strictEqual(updatedDOM.childNodes.length, 0)
 		})
 
@@ -643,21 +648,30 @@ describe("CORE MODULE", () => {
 					{ type: "div", props: { style: { display: "inline-block" } } }
 				]
 			})
-			const newDiv = <div>
-				<div style={{ display: "inline-block" }}></div>
-				<span style={{ display: "inline-block" }}></span>
-				<span style={{ display: "inline-block" }}></span>
-				<span style={{ display: "inline-block" }}></span>
-			</div>
+			const newDiv = createElement(
+				"div",
+				{},
+				createElement("div", { style: { display: "inline-block" } }),
+				createElement("span", { style: { display: "inline-block" } }),
+				createElement("span", { style: { display: "inline-block" } }),
+				createElement("span", { style: { display: "inline-block" } })
+			)
 
 			assert(!isTextDOM(dom))
+			assert(isAugmentedDOM(dom))
 
-			const updatedDOM = await updateAsync(dom as DOMAugmented, newDiv)
-			const firstChild = updatedDOM.childNodes.item(0) as HTMLElement
+			const updatedDOM = await updateAsync(dom, newDiv)
+			/** @type { HTMLElement } */
+			// @ts-ignore
+			const firstChild = updatedDOM.childNodes.item(0)
 			assert.strictEqual(firstChild.tagName.toUpperCase(), "DIV")
-			const secondChild = updatedDOM.childNodes.item(1) as HTMLElement
+			/** @type { HTMLElement } */
+			// @ts-ignore
+			const secondChild = updatedDOM.childNodes.item(1)
 			assert.strictEqual(secondChild.tagName.toUpperCase(), "SPAN")
-			const fourthChild = updatedDOM.childNodes.item(3) as HTMLElement
+			/** @type { HTMLElement } */
+			// @ts-ignore
+			const fourthChild = updatedDOM.childNodes.item(3)
 			assert.strictEqual(fourthChild.tagName.toUpperCase(), "SPAN")
 		})
 
@@ -671,20 +685,22 @@ describe("CORE MODULE", () => {
 					{ type: "input", props: { id: "myInput" } }
 				]
 			})
-			const targetInput = dom.childNodes.item(2) as HTMLInputElement
+			/** @type { HTMLInputElement } */
+			// @ts-ignore
+			const targetInput = dom.childNodes.item(2) /*as HTMLInputElement*/
 			// We assign a value to that input
 			targetInput.value = "test"
 
-			const newChildren = <div>
-				<input id="myInput" />
-			</div>
+			const newChildren = createElement("div", {}, createElement("input", { id: "myInput" }))
 
 			assert(!isTextDOM(dom))
+			assert(isAugmentedDOM(dom))
+
 			const thirdChild = dom.childNodes.item(2)
 
-			const updatedDOM = await updateAsync(dom as DOMAugmented, newChildren)
+			const updatedDOM = await updateAsync(dom, newChildren)
 			nanomorph(dom, updatedDOM)
-			const updatedFirstChild = dom.childNodes.item(0) as HTMLInputElement
+			const updatedFirstChild = dom.childNodes.item(0) /*as HTMLInputElement*/
 			assert.ok(thirdChild === updatedFirstChild)
 		})
 
@@ -697,120 +713,80 @@ describe("CORE MODULE", () => {
 					"val",
 					{ type: "input", props: { id: "myInput" } }
 				]
-			}) as DOMAugmented
-			const targetInput = dom.childNodes.item(2) as HTMLInputElement
+			}) /* as DOMAugmented */
+			/** @type { HTMLInputElement } */
+			// @ts-ignore
+			const targetInput = dom.childNodes.item(2) /*as HTMLInputElement*/
 			// We assign a value to that input
 			targetInput.value = "test"
 
-			const newChildren = <div>
-				<input id="myInput" />
-			</div>
+			const newChildren = createElement('div', {}, createElement('input', { id: 'myInput' }))
 
 			assert(!isTextDOM(dom))
+			assert(isAugmentedDOM(dom))
 
-			const updatedDOM = await updateAsync(dom as DOMAugmented, newChildren) as DOMAugmented
+			const updatedDOM = await updateAsync(dom, newChildren)
+			assert(isAugmentedDOM(updatedDOM))
 			nanomorph(dom, updatedDOM)
 			assert.ok(updatedDOM.renderTrace !== undefined)
 		})
 
 		it("should keep the state of updated elements", async () => {
-			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
-				const defaultProps = {}
-				let props = deepMerge(defaultProps, _props)
-				const { id } = props
-
-				const state = {
-					iteratedVal: 0
-				}
-
-				while (true) {
-					const { iteratedVal } = state
-					const newProps = yield <div id={id}>
-						<h1>Playground</h1>
-						<div>
-							<button
-								id={"myButton"}
-								onClick={() => {
-									state.iteratedVal++
-								}}>TEST</button>
-						</div>
-						<div id={"valueKeeper"}>
-							Iterated value: {iteratedVal}
-						</div>
-					</div>
-
-					props = mergeDeep()(
-						props,
-						newProps ?? {}
-					)
-				}
-			}
-			const dom = await renderAsync(<MainComponent id={"test-component"} />) as DOMAugmented
+			const mainComp = createElement(
+				"div",
+				{},
+				createElement(MainComponent, { id: "test-component" })
+			)
+			const container = await renderAsync(mainComp)
+			const dom = container.firstChild
+			assert(isAugmentedDOM(dom))
 			document.body.appendChild(dom)
 
-			const button = dom.querySelector("#myButton") as HTMLButtonElement
-			button.click()
-			button.click()
-			const updatedDOM = await updateAsync(dom) as HTMLElement
-			const valueKeeper = updatedDOM.querySelector("#valueKeeper") as HTMLButtonElement
-			assert.strictEqual(valueKeeper.textContent, "Iterated value: 2")
+			/** @type { HTMLButtonElement | null } */
+			const button = dom.querySelector("#myButton")
+			button?.click()
+			button?.click()
+			const updatedDOM = await updateAsync(dom)
+			assert(isAugmentedDOM(updatedDOM))
+
+			/** @type { HTMLButtonElement | null } */
+			const valueKeeper = updatedDOM.querySelector("#valueKeeper")//  as HTMLButtonElement
+			assert.strictEqual(valueKeeper?.textContent, "Iterated value: 2")
 		})
 
 		it("should keep the state of updated elements' children", async () => {
 			document.body.innerHTML = ""
 
-			const MainComponent: Component<{ id: string }> = async function* (_props): AsyncGenerator<JSX.Element, JSX.Element, typeof _props> {
-				const defaultProps = {}
-				let props = deepMerge(defaultProps, _props)
-				const { id } = props
+			const dom = await renderAsync(createElement(
+				"div",
+				{},
+				createElement(MainComponent, { id: "test-component" })
+			))
+			assert(isAugmentedDOM(dom))
 
-				const state = {
-					valueToKeep: 0
-				}
-
-				while (true) {
-					const { valueToKeep } = state
-
-					const newProps = yield <div id={id}>
-						<h1>Playground</h1>
-						<div>
-							<button
-								id={"myButton"}
-								onClick={() => {
-									state.valueToKeep++
-								}}>TEST</button>
-						</div>
-						<div id={"valueKeeper"}>
-							Iterated value: {valueToKeep}
-						</div>
-					</div>
-
-					props = mergeDeep()(
-						props,
-						newProps ?? {}
-					)
-				}
-			}
-			const dom = await renderAsync(<div><MainComponent id={"test-component"} /></div>) as DOMAugmented
 			document.body.appendChild(dom)
 
-			const button = dom.querySelector("#myButton") as HTMLButtonElement
-			button.click()
-			button.click()
-			const updatedDOM = await updateAsync(dom) as HTMLElement
-			const valueKeeper = updatedDOM.querySelector("#valueKeeper") as HTMLButtonElement
-			assert.strictEqual(valueKeeper.textContent, "Iterated value: 2")
+			/** @type { HTMLButtonElement | null } */
+			const button = dom.querySelector("#myButton")
+			button?.click()
+			button?.click()
+			const updatedDOM = await updateAsync(dom)
+			assert(isAugmentedDOM(updatedDOM))
+
+			/** @type { HTMLButtonElement | null } */
+			const valueKeeper = updatedDOM.querySelector("#valueKeeper")
+			assert.strictEqual(valueKeeper?.textContent, "Iterated value: 2")
 		})
 	})
 
 	describe("mountElement", async () => {
 		it("should work", async () => {
-			await mountElement(<View<string>
-				id={"test_view_id"}
-				sourceData={["a", "b", "c"]}
-				itemsPanel={StackPanel}
-				itemTemplate={item => <i style={{ width: "7em", border: "thin solid orange" }}>{item.value}</i>}
-			/>, document.body)
+			await mountElement(View({
+				id: "test_view_id",
+				sourceData: ["a", "b", "c"],
+				itemsPanel: StackPanel,
+				itemTemplate: item => createElement("i", { style: { width: "7em", border: "thin solid orange" } }, item.value)
+			}), document.body)
 
 			document.dispatchEvent(new CustomEvent('UIInvalidated', { detail: { invalidatedElementIds: ["test_view_id"] } }))
 
@@ -820,7 +796,7 @@ describe("CORE MODULE", () => {
 
 	describe("createElement", async () => {
 		it("should create a element with props and children corresponsing to the arguments passed", async () => {
-			const elt = createElement(View as Component, { sourceData: [], itemsPanel: StackPanel })
+			const elt = createElement(View/* as Component*/, { sourceData: [], itemsPanel: StackPanel })
 
 			assert.deepStrictEqual(elt.props, { sourceData: [], itemsPanel: StackPanel })
 			assert.deepStrictEqual(elt.children, [])
@@ -839,34 +815,17 @@ describe("CORE MODULE", () => {
 // TYPE CHECKS
 
 // these should fail type-checking
-// const elt = createElement(StackPanel, { itemsAlignH: "stretch", x: 1 }, createElement("div", {}))
-// const elt1 = createElement(StackPanel, { itemsAlignHX: "stretch" }, createElement("div", {}))
+// const elt = createElement(StackPanel, {itemsAlignH: "stretch", x: 1 }, createElement("div", { }))
+// const elt1 = createElement(StackPanel, {itemsAlignHX: "stretch" }, createElement("div", { }))
 
 // this should pass type-checking
-// const elt = createElement(StackPanel, { itemsAlignH: "stretch" }, createElement("div", {}))
+// const elt = createElement(StackPanel, {itemsAlignH: "stretch" }, createElement("div", { }))
 
 // this should pass type-checking when children of elements are required
 // const stack = <StackPanel itemsAlignH="start"><div /></StackPanel>
 
 // cleanup()
-type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
+// type FontIcon = Component<Partial<{ color: string | null | undefined; size: string | number; style: CSSProperties }>>
 
-const MakeIcon = (svgElement: JSX.Element): FontIcon =>
-	// console.log(`MakeIcon svg elt props: ${JSON.stringify((svgElement as any).props)}`)
-	function (props) {
-		const elt = svgElement as any
-		// console.log(`icon elt props: ${JSON.stringify((elt as any).props)}`)
-		return <svg
-			preserveAspectRatio='xMidYMid meet'
-			{...elt.props}
-			style={props.style}
-			// width={props.size || (props.style || {}).width || undefined}
-			// height={props.size || (props.style || {}).height || undefined}
 
-			color={props.color || (props.style || {}).color || undefined}
-			stroke={props.color || (props.style || {}).color || undefined}
-			fill='currentColor'>
 
-			{elt.children}
-		</svg>
-	}

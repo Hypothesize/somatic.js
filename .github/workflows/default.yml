@@ -2,10 +2,9 @@ name: Default
 
 on:
   push:
-  #   branches: [ dev ]
+    branches: ['master']
   pull_request:
-  # branches: [ dev ]
-    types: ['synchronize']
+    types: ['synchronize', 'opened']
 
 jobs:
   checks:
@@ -13,35 +12,32 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-        with: 
-          persist-credentials: false
-
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install pnpm 
-        run: npm install -g pnpm
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with: 
+          persist-credentials: false
 
       - name: Install
-        run: pnpm run deps
+        run: npm run deps
         
-      - name: Build
-        run: pnpm run compile
+      - name: Compile
+        run: npm run compile
         
-      - name: Run Lint Check
-        run: pnpm run lintci
+      - name: Lint
+        run: npm run lintci
         continue-on-error: true
         
-      - name: Run Test Check
-        run: pnpm run testci
-        continue-on-error: true
+      - name: Test
+        run: npm run testci
+        continue-on-error: false
          
       - name: Annotate code checks
         uses: agyemanjp/ci-checks-action@v2.1.1

@@ -1,4 +1,4 @@
-import { Obj, keys, toDashCase } from "@sparkwave/standard"
+import { Obj, keys, dashCase } from "@sparkwave/standard"
 import { HTMLAttributes, CSSProperties } from "./types"
 import { booleanAttributes, attributeConversions, stringify } from "./common"
 
@@ -38,12 +38,12 @@ export function stringifyAttributes<E>(props: HTMLAttributes<any> & E): string {
 export function stringifyStyle(style: CSSProperties, important = false): string {
 	if (typeof style === "object") {
 		return Object.keys(style)
-			.map(key => `${toDashCase(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
+			.map(key => `${dashCase(key)}: ${(style)[key as keyof typeof style]}${important === true ? " !important" : ""}`)
 			.join("; ")
 		// .concat(";")
 	}
 	else {
-		console.warn(`Input "${JSON.stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
+		console.warn(`Input "${stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
 		return ""
 	}
 }

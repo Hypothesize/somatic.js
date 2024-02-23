@@ -1,8 +1,8 @@
-import { keys, skip, hasValue, indexesOf, first } from "@sparkwave/standard"
+import { keys, skip } from "@sparkwave/standard"
 
 import { stringifyStyle } from "./html"
-import { isEltProper, isIntrinsicElt } from "./element"
-import { svgTags, isEventKey, eventNames, booleanAttributes, attributeConversions } from "./common"
+import { isIntrinsicElt } from "./element"
+import { svgTags, isEventKey, booleanAttributes, attributeConversions } from "./common"
 import { DOMAugmented, DOMElement, IntrinsicElement, ValueElement } from "./types"
 
 export type LeafElement = IntrinsicElement | ValueElement
@@ -107,7 +107,7 @@ export function createDOMShallow(eltUI: LeafElement): DOMElement | DocumentFragm
 		return dom
 	}
 	else {
-		return document.createTextNode(globalThis.String(eltUI ?? ""))
+		return document.createTextNode(globalThis.String(eltUI/* ?? ""*/))
 	}
 }
 
