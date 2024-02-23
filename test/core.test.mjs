@@ -502,7 +502,7 @@ describe("CORE MODULE", () => {
 
 		it("should return an element with the correct content", async () => {
 			const elt = await renderToIntrinsicAsync(`test`)
-			assert.strictEqual(elt, 'test12')
+			assert.strictEqual(elt, 'test')
 		})
 
 	})
@@ -739,6 +739,7 @@ describe("CORE MODULE", () => {
 			)
 			const container = await renderAsync(mainComp)
 			const dom = container.firstChild
+			assert(dom)
 			assert(isAugmentedDOM(dom))
 			document.body.appendChild(dom)
 
