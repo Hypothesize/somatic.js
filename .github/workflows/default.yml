@@ -37,7 +37,7 @@ jobs:
         
       - name: Test
         run: npm run testci
-        continue-on-error: true
+        continue-on-error: false
          
       - name: Annotate code checks
         uses: agyemanjp/ci-checks-action@v2.1.1
