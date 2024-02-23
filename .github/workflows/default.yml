@@ -43,6 +43,13 @@ jobs:
           require_passed_tests: true
           check_name: results
 
+                
+
+      - name: Annotate Alt
+        uses: shyim/junit-report-annotations-action@0.2.0
+        with:
+          path: .test.results.xml
+
       # - name: Annotate
       #   uses: agyemanjp/ci-checks-action@v2.1.1
       #   with:
