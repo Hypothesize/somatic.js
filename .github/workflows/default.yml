@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js 20
         uses: actions/setup-node@v4.0.2
         with:
-          node-version: >=20.x
+          node-version: [>=20.x]
 
       - name: Install
         run: npm run deps
