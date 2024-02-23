@@ -129,9 +129,9 @@ const SplashPage = props => createElement("div", {}, "Splash page")
 
 /** @type { import("../dist/index.js").ComponentAsyncStateful<{ id: string }> } */
 const MainComponent = async function* (_props) {
-	const state = { 
+	const state = {
 		iteratedVal: 0
-	 }
+	}
 
 	const defaultProps = {}
 	let props = deepMerge(defaultProps, _props)
@@ -143,7 +143,7 @@ const MainComponent = async function* (_props) {
 			"div",
 			{ id },
 			createElement("h1", {}, "Playground"),
-			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++	} }, "TEST")),
+			createElement("div", {}, createElement("button", { id: "myButton", onClick: () => { state.iteratedVal++ } }, "TEST")),
 			createElement("div", { id: "valueKeeper" }, "Iterated value: ", iteratedVal)
 		)
 
@@ -739,6 +739,7 @@ describe("CORE MODULE", () => {
 			)
 			const container = await renderAsync(mainComp)
 			const dom = container.firstChild
+			assert(dom)
 			assert(isAugmentedDOM(dom))
 			document.body.appendChild(dom)
 

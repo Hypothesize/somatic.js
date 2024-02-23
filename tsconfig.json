@@ -21,13 +21,12 @@
 		"jsx": "react",
 		"jsxFactory": "createElement",
 		"preserveConstEnums": true,
-		"experimentalDecorators": true,
+		"experimentalDecorators": false,
 		"strict": true,
 		"strictNullChecks": true,
 		"skipDefaultLibCheck": true,
 		"skipLibCheck": true,
-		"incremental": true,
-		"outDir": "./dist"
+		"incremental": true
 	},
 	"include": [
 		"./src"

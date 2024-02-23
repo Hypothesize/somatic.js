@@ -25,7 +25,8 @@ workspace.xml
 
 *.tgz
 
-# Test files #
+# Test results
+.test.results.xml
 /sandbox/*.*
 !sandbox/sandbox.html
 !sandbox/sandbox.tsx
