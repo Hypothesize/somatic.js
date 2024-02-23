@@ -40,6 +40,8 @@ jobs:
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '.test.results.xml'
+          require_passed_tests: true
+          check_name: results
 
       # - name: Annotate
       #   uses: agyemanjp/ci-checks-action@v2.1.1
