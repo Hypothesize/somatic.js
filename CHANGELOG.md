@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.5...v2.5.0) (2024-02-23)
+
+
+### Features
+
+* Dependencies and Scripts Cleanup ([f908e3e](https://www.github.com/Hypothesize/somatic.js/commit/f908e3ef88ca2f935c011f0cd4183b100c0cebd9))
+
 ### [2.4.5](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.4...v2.4.5) (2024-01-10)
 
 
