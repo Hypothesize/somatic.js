@@ -1,5 +1,3 @@
-import { default as assert } from "assert"
-
 import { Obj, hasValue, firstOrDefault, skip, last, shallowEquals, isGenerator, union, SequenceAsync, flatten } from "@sparkwave/standard"
 import {
 	Children,

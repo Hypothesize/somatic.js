@@ -1,5 +1,4 @@
 const nanomorph = require('nanomorph')
-import { default as assert } from "assert"
 
 import { String as String__, hasValue, flatten } from "@sparkwave/standard"
 import { stringifyAttributes } from "./html"
