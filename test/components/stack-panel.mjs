@@ -1,12 +1,11 @@
+//@ts-check
 
-import { createElement } from '../../dist/core'
-import { Component, PanelProps, HtmlProps, CSSLength } from '../../dist/types'
+import { createElement } from '../../dist/core.js'
 
-export type StackPanelProps = PanelProps & HtmlProps & {
+/** @typedef {import('../../dist/types').PanelProps & import('../../dist/types').HtmlProps} StackPanelProps */
 
-}
-
-export const StackPanel: Component<StackPanelProps> = function (props) {
+/** @type {import('../../dist').Component<StackPanelProps>} */
+export const StackPanel = function (props) {
 	const {
 		key,
 		orientation,
@@ -47,23 +46,19 @@ export const StackPanel: Component<StackPanelProps> = function (props) {
 		}
 	}
 
-	return <div
-		{...htmlProps}
-		style={{
+	return createElement("div", {
+		...htmlProps,
+		style: {
 			...style,
 			display: "flex",
 			flexDirection: orientation === "vertical" ? "column" : "row",
 			justifyContent: justifyContent(),
 			alignItems: alignItems()
-		}}>
-
-		{children}
-
-	</div>
+		}
+	}, children)
 }
 
 StackPanel.isPure = true
-
 
 // const elt = createElement(StackPanel, { itemsAlignH: "stretch", x: 1 }, createElement("div", {}))
 // const elt1 = createElement(StackPanel, { itemsAlignHX: "stretch" }, createElement("div", {}))

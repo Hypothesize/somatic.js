@@ -1,17 +1,21 @@
-import { default as assert} from "assert"
-import { stringifyAttributes, stringifyStyle, encodeHTML } from '../dist/html'
+
+import { test } from "node:test";
+import { describe, it, beforeEach } from "node:test";
+import assert from "node:assert/strict";
+
+import { stringifyAttributes, stringifyStyle, encodeHTML } from '../dist/index.js'
 
 // const SplashPage: Component = () => <div>Splash page</div>
 
-describe("HTML MODULE", () => {
+describe("HTML MODULE", function () {
 	describe("stringifyAttributes", function () {
-		it('should return empty string for empty object argument', () => {
+		it('should return empty string for empty object argument', function () {
 			assert.strictEqual(stringifyAttributes({}), '')
 		})
-		it('should maintain empty string values of attributes', () => {
+		it('should maintain empty string values of attributes', function () {
 			assert.strictEqual(stringifyAttributes({ title: "" }), 'title=""')
 		})
-		it('should include all valid properties in input object, in order, separated by spaces', () => {
+		it('should include all valid properties in input object, in order, separated by spaces', function () {
 			assert.strictEqual(
 				stringifyAttributes({
 					title: "",
@@ -28,13 +32,13 @@ describe("HTML MODULE", () => {
 				'title="" placeholder="hello" accept-charset="utf-8" http-equiv="refresh" style="position: absolute; background-color: blue" disabled'
 			)
 		})
-		it("should process class attributes properly", () => {
+		it("should process class attributes properly", function () {
 			assert.strictEqual(stringifyAttributes({
 				class: "clss",
 				style: { backgroundColor: "blue" }
 			}), 'class="clss" style="background-color: blue"')
 		})
-		it('should return only the name for "presence" attributes, when they are set to a truthy value', () => {
+		it('should return only the name for "presence" attributes, when they are set to a truthy value', function () {
 			assert.strictEqual(stringifyAttributes({ disabled: "disabled" }), 'disabled')
 			assert.strictEqual(stringifyAttributes({ disabled: "" }), 'disabled')
 			assert.strictEqual(stringifyAttributes({ disabled: true }), 'disabled')
@@ -52,7 +56,7 @@ describe("HTML MODULE", () => {
 			assert.strictEqual(stringifyAttributes({ readOnly: "checked" }), 'readonly')
 
 		})
-		it('should omit "presence" attributes, when they are set to a falsy value', () => {
+		it('should omit "presence" attributes, when they are set to a falsy value', function () {
 			assert.strictEqual(stringifyAttributes({ checked: false }), '')
 			assert.strictEqual(stringifyAttributes({ disabled: false }), '')
 			assert.strictEqual(stringifyAttributes({ required: false }), '')
@@ -73,6 +77,8 @@ describe("HTML MODULE", () => {
 
 	describe("stringifyStyle", function () {
 		it('should return empty string for empty object argument', function () {
+			// const actual = stringifyStyle({})
+			// assert.ok(true)
 			assert.strictEqual(stringifyStyle({}), '')
 		})
 
@@ -82,7 +88,7 @@ describe("HTML MODULE", () => {
 					margin: "0.5em",
 					marginLeft: "0.5em",
 					WIDTH: "1.5em"
-				} as any),
+				}),
 				'margin: 0.5em; margin-left: 0.5em; width: 1.5em'
 			)
 		})

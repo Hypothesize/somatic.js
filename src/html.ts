@@ -43,7 +43,7 @@ export function stringifyStyle(style: CSSProperties, important = false): string 
 		// .concat(";")
 	}
 	else {
-		console.warn(`Input "${JSON.stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
+		console.warn(`Input "${stringify(style)}" to somatic.stringifyStyle() is of type ${typeof style}, returning empty string`)
 		return ""
 	}
 }
