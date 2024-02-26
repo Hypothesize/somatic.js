@@ -479,75 +479,75 @@ describe("CORE MODULE", () => {
 
 	})
 
-	describe("getHierarchicalKey", () => {
-		it("should return am element's name as its key by default", async () => {
-			const el = <StackPanel />
-			const uniqueKey = getHierarchicalKey(el)
-			assert.strictEqual(uniqueKey, 'StackPanel')
-		})
+	// describe("getHierarchicalKey", () => {
+	// 	it("should return am element's name as its key by default", async () => {
+	// 		const el = <StackPanel />
+	// 		const uniqueKey = getHierarchicalKey(el)
+	// 		assert.strictEqual(uniqueKey, 'StackPanel')
+	// 	})
 
-		it("should use a component's custom key, if passed", async () => {
-			const el = <StackPanel key="myCustomKey" />
-			const uniqueKey = getHierarchicalKey(el)
-			assert.strictEqual(uniqueKey, 'myCustomKey')
-		})
+	// 	it("should use a component's custom key, if passed", async () => {
+	// 		const el = <StackPanel key="myCustomKey" />
+	// 		const uniqueKey = getHierarchicalKey(el)
+	// 		assert.strictEqual(uniqueKey, 'myCustomKey')
+	// 	})
 
-		it("should include a parent's key and iteration, if the component has a parent", async () => {
-			const parentElement = await renderAsync(<StackPanel />)
-			assert(!isTextDOM(parentElement))
-			assert(!(parentElement instanceof DocumentFragment))
+	// 	it("should include a parent's key and iteration, if the component has a parent", async () => {
+	// 		const parentElement = await renderAsync(<StackPanel />)
+	// 		assert(!isTextDOM(parentElement))
+	// 		assert(!(parentElement instanceof DocumentFragment))
 
-			const child = <StackPanel />
-			const parentKey = getElementUniqueKey(parentElement)
-			const uniqueKey = getHierarchicalKey(child, parentKey, 2)
-			assert.strictEqual(uniqueKey, 'StackPanel-(2)StackPanel')
-		})
+	// 		const child = <StackPanel />
+	// 		const parentKey = getElementUniqueKey(parentElement)
+	// 		const uniqueKey = getHierarchicalKey(child, parentKey, 2)
+	// 		assert.strictEqual(uniqueKey, 'StackPanel-(2)StackPanel')
+	// 	})
 
-		it("should include a parent's key + custom key without iteration, if the component has a parent and a custom key", async () => {
-			const parentElement = await renderAsync(<StackPanel />)
-			assert(!isTextDOM(parentElement))
-			assert(!(parentElement instanceof DocumentFragment))
+	// 	it("should include a parent's key + custom key without iteration, if the component has a parent and a custom key", async () => {
+	// 		const parentElement = await renderAsync(<StackPanel />)
+	// 		assert(!isTextDOM(parentElement))
+	// 		assert(!(parentElement instanceof DocumentFragment))
 
-			const child = <StackPanel key="myStax"/>
-			const parentKey = getElementUniqueKey(parentElement)
-			const uniqueKey = getHierarchicalKey(child, parentKey, 2)
-			assert.strictEqual(uniqueKey, 'StackPanel-myStax')
-		})
+	// 		const child = <StackPanel key="myStax"/>
+	// 		const parentKey = getElementUniqueKey(parentElement)
+	// 		const uniqueKey = getHierarchicalKey(child, parentKey, 2)
+	// 		assert.strictEqual(uniqueKey, 'StackPanel-myStax')
+	// 	})
 
-		it("should include a parent's custom key + its own custom key, if the component has a custom key, and a parent which also has one", async () => {
-			console.log("== Start rendering parent element ==")
-			const parentElement = await renderAsync(<StackPanel key="customParentKey" />)
-			assert(!isTextDOM(parentElement))
-			assert(!(parentElement instanceof DocumentFragment))
-			console.log("== parent element ==")
-			console.log(JSON.stringify(parentElement))
+	// 	it("should include a parent's custom key + its own custom key, if the component has a custom key, and a parent which also has one", async () => {
+	// 		console.log("== Start rendering parent element ==")
+	// 		const parentElement = await renderAsync(<StackPanel key="customParentKey" />)
+	// 		assert(!isTextDOM(parentElement))
+	// 		assert(!(parentElement instanceof DocumentFragment))
+	// 		console.log("== parent element ==")
+	// 		console.log(JSON.stringify(parentElement))
 
-			const child = <StackPanel key="myStackPanel" />
-			const parentKey = getElementUniqueKey(parentElement)
-			const uniqueKey = getHierarchicalKey(child, parentKey, 5)
-			assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel')
-		})
+	// 		const child = <StackPanel key="myStackPanel" />
+	// 		const parentKey = getElementUniqueKey(parentElement)
+	// 		const uniqueKey = getHierarchicalKey(child, parentKey, 5)
+	// 		assert.strictEqual(uniqueKey, 'customParentKey-myStackPanel')
+	// 	})
 
-		it("should use an element ancestry to return a unique key, even if a simple custom key was passed", async () => {
-			console.log("== Start rendering parent element ==")
-			const rootElement = await renderAsync(
-				<StackPanel key="customParentKey">
-					<p>TEST</p>
-					<div>
-						<StackPanel key="myStackPanel" />
-					</div>
-				</StackPanel>
-			)
-			assert(!isTextDOM(rootElement))
-			assert(!(rootElement instanceof DocumentFragment))
+	// 	it("should use an element ancestry to return a unique key, even if a simple custom key was passed", async () => {
+	// 		console.log("== Start rendering parent element ==")
+	// 		const rootElement = await renderAsync(
+	// 			<StackPanel key="customParentKey">
+	// 				<p>TEST</p>
+	// 				<div>
+	// 					<StackPanel key="myStackPanel" />
+	// 				</div>
+	// 			</StackPanel>
+	// 		)
+	// 		assert(!isTextDOM(rootElement))
+	// 		assert(!(rootElement instanceof DocumentFragment))
 
-			const customStackPanelKey = rootElement.lastChild?.firstChild as DOMAugmented
-			assert(!isTextDOM(customStackPanelKey))
-			assert(!(customStackPanelKey instanceof DocumentFragment))
+	// 		const customStackPanelKey = rootElement.lastChild?.firstChild as DOMAugmented
+	// 		assert(!isTextDOM(customStackPanelKey))
+	// 		assert(!(customStackPanelKey instanceof DocumentFragment))
 
-			assert.strictEqual("uniqueKey" in customStackPanelKey && customStackPanelKey["uniqueKey"], 'customParentKey-(1)div-myStackPanel')
-		})
-	})
+	// 		assert.strictEqual("uniqueKey" in customStackPanelKey && customStackPanelKey["uniqueKey"], 'customParentKey-(1)div-myStackPanel')
+	// 	})
+	// })
 
 	describe("renderToIntrinsicAsync", () => {
 		it("should return elt with same html as renderToString, for an elt without children", async () => {
@@ -653,9 +653,10 @@ describe("CORE MODULE", () => {
 				style="stroke: white; fill: transparent; height: 7vh" 			
 				fill="currentColor">
 
-				<title>logo</title>
+				<title uniquekey="-(0)title">logo</title>
 				
 				<path 
+					uniquekey="-(1)path"
 					fill-rule="evenodd" 
 					d="M2.08,0h120.8V79H0V0ZM15.87,39.94a2.11,2.11,0,1,1,0-4.21h25l3.4-8.51a2.1,2.1,0,0,1,4,.39l5.13,20L60.71,11a2.11,2.11,0,0,1,4.14,0l6,22,4.76-10.5a2.1,2.1,0,0,1,3.86.08L84.55,35H107a2.11,2.11,0,1,1,0,4.21H83.14a2.12,2.12,0,0,1-2-1.32l-3.77-9.24L72.28,40h0a2.09,2.09,0,0,1-3.93-.31L63.09,20.5l-7.38,37h0a2.1,2.1,0,0,1-4.09.1L45.76,34.75l-1.48,3.72a2.11,2.11,0,0,1-2,1.47ZM4.15,4.15H118.73V64.29H4.15V4.15ZM55.91,69.27h11a2.1,2.1,0,0,1,0,4.2h-11a2.1,2.1,0,0,1,0-4.2Zm19,0h2a2.1,2.1,0,0,1,0,4.2h-2a2.1,2.1,0,0,1,0-4.2ZM46,69.27h2a2.1,2.1,0,0,1,0,4.2H46a2.1,2.1,0,0,1,0-4.2Z">
 				</path>

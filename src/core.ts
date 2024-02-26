@@ -11,7 +11,7 @@ export const Fragment = ""
 export type Fragment = typeof Fragment
 
 /** JSX is transformed into calls of this function */
-export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: number[]) {
+export function createElement<T extends string | Component>(type: T, props: (typeof type) extends Component<infer P> ? P : unknown, ...children: unknown[]) {
 	return { type, props: props ?? {}, children: [...flatten(children)] }
 }
 
