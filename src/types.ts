@@ -137,6 +137,7 @@ interface _CSSProperties {
 		| "center"
 		| "bottom"
 	)
+	all?: (CSSProperty<"revert-layer">)
 	animation?: (
 		`${string} ${number} ${(
 			| "normal"
@@ -1082,6 +1083,7 @@ interface _CSSProperties {
 		| "auto"
 		| "max-content"
 		| "min-content"
+		| "fit-content"
 		| `fit-content(${CSSLength})`
 		| CSSLength
 	)
