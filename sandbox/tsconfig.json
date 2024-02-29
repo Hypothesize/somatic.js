@@ -1,0 +1,34 @@
+{
+	"compilerOptions": {
+		"target": "es2015",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"traceResolution": false,
+		"declaration": true,
+		"lib": [
+			"ESNext",
+			"ES2018",
+			"es7",
+			"es6",
+			"es5",
+			"dom",
+			"es2015.promise",
+			"scripthost",
+			"dom.iterable",
+			"esnext.asynciterable"
+		],
+		"jsx": "react",
+		"jsxFactory": "createElement",
+		"preserveConstEnums": true,
+		"experimentalDecorators": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"skipDefaultLibCheck": true,
+		"skipLibCheck": true,
+		"incremental": true,
+	},
+	"include": [
+		"./"
+	]
+}

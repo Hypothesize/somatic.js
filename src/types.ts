@@ -22,14 +22,14 @@ export type ComponentAsyncStateful<P = any> = ComponentBase<ElementGeneratorAsyn
  * @param render Callback used for requesting re-rendering
  */
 export type ComponentBase<Ret, Props> = (
-	((props: ComponentArgs<Props>, render?: () => void) => Ret)
+	((props: ComponentArgs<Props>, /*render?: () => void*/) => Ret)
 	& ComponentOptions<Props>
 )
 
 export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
 export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
-export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
+export type ComponentArgs<Props> = Props & { children?: Children, key?: string, uniqueKey?: string, id?: string }
 export type ComponentOptions<P> = {
 	name?: string
 	isPure?: boolean
@@ -63,7 +63,7 @@ export type ComponentResult = {
 }
 
 export type DOMElement = SVGElement | HTMLElement
-export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace }
+export type DOMAugmented = DOMElement & { renderTrace: RenderingTrace, customKey: string | undefined }
 
 export interface RenderingTrace {
 	componentElts: ComponentEltAugmented[],
