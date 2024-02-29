@@ -181,7 +181,7 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 
 	const newDomChildren = await Promise.all(flattenChildren(children).map(async (child, i) => {
 		// We assign a unique key, possibly reusing one that was passed in the props
-		const parentPrefix = !isFragmentElt(emptyElement) ? getElementUniqueKey(emptyElement) : undefined
+		const parentPrefix = getElementUniqueKey(emptyElement)
 		console.log(`populateWithChildren: parentPrefixKey: ${parentPrefix}`)
 		const hierachicalKey = getHierarchicalKey(child, parentPrefix, i)
 		console.log(`populateWithChildren: hierchicalKey: ${hierachicalKey} for child ${JSON.stringify(child)}`)
@@ -195,6 +195,7 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 			: renderAsync(child, hierachicalKey)
 
 		updated.then(_ => {
+			console.log(`populateWithChildren: updated child ${JSON.stringify(child)} to dom ${JSON.stringify(_)}`)
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
 				console.warn(`populateWithChildren: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
 			}
@@ -315,6 +316,6 @@ export const getHierarchicalKey = (element: UIElement, parentPrefixKey?: string,
 }
 
 /** Returns the unique key of an element, if any */
-export const getElementUniqueKey = (parentElem: DOMElement) => "uniqueKey" in parentElem && typeof parentElem.uniqueKey === "string"
+export const getElementUniqueKey = (parentElem: DOMElement | DocumentFragment) => "uniqueKey" in parentElem && typeof parentElem.uniqueKey === "string"
 	? parentElem.uniqueKey
 	: ""

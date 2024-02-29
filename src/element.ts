@@ -150,6 +150,9 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 	}
 
 	if (eltComp) {
+		// We ensure that the uniqueKey of the first element of the trace is the same as the uniqueKey of the incoming elt
+		eltComp.props = { ...eltComp.props, uniqueKey: firstElt.props.uniqueKey }
+
 		if (firstElt.type !== eltComp.type) { // invariant check
 			throw new Error(`updateTraceAsync: trace argument not compatible with component element argument`)
 		}
