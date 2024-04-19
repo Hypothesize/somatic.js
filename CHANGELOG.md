@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.5.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.5.0...v2.5.1) (2024-02-28)
+
+
+### Bug Fixes
+
+* 127: Typing updates Update ([73e56f9](https://www.github.com/Hypothesize/somatic.js/commit/73e56f9cf5c3d863cfc819690904ae892c347a7e))
+
 ## [2.5.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.4.5...v2.5.0) (2024-02-23)
 
 
