@@ -3,7 +3,7 @@ import { Obj } from "@sparkwave/standard/utility"
 import { colorConstants } from "./common"
 
 /** General component */
-export type Component<Props = any> = ComponentBase<(
+export type Component<Props = Obj> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
 	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
 	| Generator<UIElement, UIElement, ComponentArgs<Props>>
@@ -12,10 +12,10 @@ export type Component<Props = any> = ComponentBase<(
 ), Props>
 
 /** Stateful component */
-export type ComponentStateful<P = any> = ComponentBase<ElementGenerator<P>, P>
+export type ComponentStateful<P = Obj> = ComponentBase<ElementGenerator<P>, P>
 
 /** Async stateful component */
-export type ComponentAsyncStateful<P = any> = ComponentBase<ElementGeneratorAsync<P>, P>
+export type ComponentAsyncStateful<P = Obj> = ComponentBase<ElementGeneratorAsync<P>, P>
 
 /** Generic base component
  * @param props Component-specific properties passed to the component function
@@ -26,10 +26,10 @@ export type ComponentBase<Ret, Props> = (
 	& ComponentOptions<Props>
 )
 
-export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
-export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
+export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P> | undefined>
+export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P> | undefined>
 
-export type ComponentArgs<Props> = Props & { children?: Children, key?: string, uniqueKey?: string, id?: string }
+export type ComponentArgs<Props = Obj> = Props & { children?: Children, key?: string, uniqueKey?: string, id?: string }
 export type ComponentOptions<P> = {
 	name?: string
 	isPure?: boolean
@@ -70,7 +70,7 @@ export interface RenderingTrace {
 	leafElement: IntrinsicElement | ValueElement
 }
 
-export type CSSProperties = { [k in keyof _CSSProperties]: CSSProperty<_CSSProperties[k]> }
+export type CSSProperties = { [k in keyof _CSSProperties]: any }
 interface _CSSProperties {
 	alignContent?: (
 		| "center"

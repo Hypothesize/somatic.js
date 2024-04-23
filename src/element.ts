@@ -19,7 +19,7 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-		console.log(`generator elt.props: ${JSON.stringify(elt.props)}`)
+		// console.log(`generator elt.props: ${JSON.stringify(elt.props)}`)
 		// We pass the key as a props to be used in the component generator
 		let nextInfo = await generator.next({ ...newProps, uniqueKey: elt.props.uniqueKey })
 
@@ -90,17 +90,17 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace> {
 	// let ret: RenderingTrace | undefined = undefined
 	if (isComponentElt(eltUI)) {
-		console.log(`eltUI: ${JSON.stringify(eltUI)}`)
+		// console.log(`eltUI: ${JSON.stringify(eltUI)}`)
 
 		const eltUIAugmented = eltUI.result ? eltUI as ComponentEltAugmented : await updateResultAsync(eltUI)
 		// assert("uniqueKey" in eltUIAugmented.props, "Component element must have a uniqueKey prop")
-		console.log(`eltUIAugmented: ${JSON.stringify(eltUIAugmented)}`)
+		// console.log(`eltUIAugmented: ${JSON.stringify(eltUIAugmented)}`)
 
 		const eltResult = eltUIAugmented.result.element
 
 		if (isComponentElt(eltResult)) {
 			const trace = await traceToLeafAsync(eltResult)
-			console.log(`leafElement1: ${JSON.stringify(trace.leafElement)}`)
+			// console.log(`leafElement1: ${JSON.stringify(trace.leafElement)}`)
 			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement }
 		}
 		else { // intrinsic or value element
@@ -110,12 +110,12 @@ export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace
 				eltResult.props = { ...eltResult.props, ...eltUIAugmented.props.uniqueKey !== undefined ? { uniqueKey: eltUIAugmented.props.uniqueKey } : {} }
 			}
 
-			console.log(`leafElement2: ${JSON.stringify(eltResult)}`)
+			// console.log(`leafElement2: ${JSON.stringify(eltResult)}`)
 			return { componentElts: [eltUIAugmented], leafElement: eltResult }
 		}
 	}
 	else { // eltUI is intrinsic or a value
-		console.log(`leafElement3: ${JSON.stringify(eltUI)}`)
+		// console.log(`leafElement3: ${JSON.stringify(eltUI)}`)
 		return { componentElts: [], leafElement: eltUI }
 	}
 }

@@ -29,13 +29,13 @@ export async function renderAsync(elt: UIElement, hierarchicalKey?: string): Pro
 			This is likely an error arising from creating an element with an undefined component`)
 		// return createDOMShallow(JSON.stringify(elt)) as Text
 	}
-	console.log(`renderAsync: elt ${JSON.stringify(elt)}, hierarchicalKey ${hierarchicalKey}`)
+	// console.log(`renderAsync: elt ${JSON.stringify(elt)}, hierarchicalKey ${hierarchicalKey}`)
 
 	let customKey: string | undefined = undefined
 
 	// We assign a key automatically, unless one was passed in the component's props.
 	if (isComponentElt(elt)) {
-		console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
+		// console.log(`renderAsync: isComponentElt ${JSON.stringify(elt)}`)
 		customKey = elt.props.key as string | undefined
 
 		/** The uniqueKeyAttribute will be used by Somatic to retrieve this element in the DOM */
@@ -51,15 +51,15 @@ export async function renderAsync(elt: UIElement, hierarchicalKey?: string): Pro
 			uniqueKey: uniqueKeyAttribute
 		}
 
-		console.log(`renderAsync: hierarchicalKey key ${hierarchicalKey}`)
-		console.log(`renderAsync: assigned key ${elt.props.key}`)
+		// console.log(`renderAsync: hierarchicalKey key ${hierarchicalKey}`)
+		// console.log(`renderAsync: assigned key ${elt.props.key}`)
 	}
 	else if (isIntrinsicElt(elt)) {
 		elt.props = {
 			...elt.props,
 			uniqueKey: hierarchicalKey !== undefined ? hierarchicalKey : elt.type
 		}
-		console.log(`renderAsync: Intrinsic element assigned key ${elt.props.key}`)
+		// console.log(`renderAsync: Intrinsic element assigned key ${elt.props.key}`)
 	}
 
 	const trace = await traceToLeafAsync(elt)
@@ -161,7 +161,7 @@ export async function updateAsync(initialDOM: DOMAugmented/* | Text*/, elt?: UIE
 			throw `UpdateAsync: elt !== undefined`
 		}
 
-		console.log(`Creating a new element to replace the old one...`)
+		// console.log(`Creating a new element to replace the old one...`)
 		const replacement = await renderAsync(elt)
 		initialDOM.replaceWith(replacement)
 
@@ -178,13 +178,14 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 				: c
 		).flat()
 	)
+	
+	const parentPrefix = getElementUniqueKey(emptyElement)
 
 	const newDomChildren = await Promise.all(flattenChildren(children).map(async (child, i) => {
 		// We assign a unique key, possibly reusing one that was passed in the props
-		const parentPrefix = getElementUniqueKey(emptyElement)
-		console.log(`populateWithChildren: parentPrefixKey: ${parentPrefix}`)
+		//console.log(`populateWithChildren: parentPrefixKey: ${parentPrefix}`)
 		const hierachicalKey = getHierarchicalKey(child, parentPrefix, i)
-		console.log(`populateWithChildren: hierchicalKey: ${hierachicalKey} for child ${JSON.stringify(child)}`)
+		//console.log(`populateWithChildren: hierchicalKey: ${hierachicalKey} for child ${JSON.stringify(child)}`)
 
 		const matchingNode = isComponentElt(child)
 			? document.querySelector(`[uniqueKey="${hierachicalKey}"]`) as DOMAugmented | undefined
@@ -195,7 +196,7 @@ export async function populateWithChildren(emptyElement: DOMElement | DocumentFr
 			: renderAsync(child, hierachicalKey)
 
 		updated.then(_ => {
-			console.log(`populateWithChildren: updated child ${JSON.stringify(child)} to dom ${JSON.stringify(_)}`)
+			// console.log(`populateWithChildren: updated child ${JSON.stringify(child)} to dom ${JSON.stringify(_)}`)
 			if (_ instanceof DocumentFragment && _.children.length === 0) {
 				console.warn(`populateWithChildren: Returning empty doc fragment as dom for child ${JSON.stringify(child)}`)
 			}
@@ -230,7 +231,7 @@ export function invalidateUI(invalidatedElementKeys?: string[]/*, reason?: strin
 		document.onreadystatechange = async _ => {
 			// console.log(`\ndocument.readyState changed to: ${document.readyState}`)
 			if (document.readyState === "complete") {
-				console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementKeys}" after document loading complete\n`)
+				// console.log(`\nDispatching UIInvalidated event for ids "${ev.detail.invalidatedElementKeys}" after document loading complete\n`)
 				document.dispatchEvent(ev)
 			}
 		}
