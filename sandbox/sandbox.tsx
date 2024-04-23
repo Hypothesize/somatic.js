@@ -79,7 +79,7 @@ export const MainComponent: ComponentAsyncStateful = async function* (_props) {
                     </IndependantChildComponent>
                 )
             }
-
+            <StatelessComponent />
         </div>
 
         props = mergeDeep()(
@@ -274,4 +274,15 @@ export const ExplicitelyKeyedComponent: Component = function (_props) {
             </div>
         </div>
     }
+}
+
+export const StatelessComponent: Component = function (_props) {
+    const { uniqueKey } = _props
+    if(uniqueKey === undefined) throw new Error("uniqueKey is undefined")
+
+    return <div>
+        <h3>Stateless component</h3>
+        <p>Unique key: {uniqueKey}</p>
+        <IndependantChildComponent name={"Whatever"} />
+    </div>
 }
