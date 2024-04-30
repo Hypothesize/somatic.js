@@ -80,7 +80,10 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 		}
 		else {
 			// We transmit the key to the result element
-			resultElt.props.uniqueKey = elt.props.uniqueKey
+			if(isComponentElt(resultElt)){
+				resultElt.props.uniqueKey = elt.props.uniqueKey
+			}
+
 			return { element: resultElt }
 		}
 	}
