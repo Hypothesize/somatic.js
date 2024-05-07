@@ -17,7 +17,7 @@ export function createElement<T extends string | Component>(type: T, props: (typ
 
 /**
  * Render a UI element into a DOM node (augmented with information used for subsequent updates)
- * @param hierarchicalKey A string passed if outside information is needed to make it unique (i.e. in a list)
+ * @param hierarchicalKey If the element is a child component, this key will be used to uniquely identify it in the DOM
  */
 export async function renderAsync(elt: UIElement, hierarchicalKey?: string): Promise<(DOMAugmented | DocumentFragment | Text)> {
 	if (hasValue(elt)
@@ -71,7 +71,7 @@ export async function renderAsync(elt: UIElement, hierarchicalKey?: string): Pro
 		await populateWithChildren(dom, getChildren(leaf))
 		return dom instanceof DocumentFragment
 			? dom
-			: Object.assign(dom, { renderTrace: trace, customKey: customKey })
+			: Object.assign(dom, { renderTrace: trace })
 	}
 	else {
 		return dom
