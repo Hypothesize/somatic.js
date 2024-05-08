@@ -17,5 +17,3 @@ Somatic allows component authors to manage the interaction between state and pro
 ### Strong JSX typing 
 Somatic supports very strong JSX typing. Elements and children are well typed, and components can specify if they accept children, something not possible in react
 
-### Key system
-Every component is uniquely identified internally by a key. This key is comprised of the component xpath ("Layout-(3)div-(0)-span"), and the component's name. If a component is stateful (generator-based), changing its key (by updating its "key" attribute) will trigger a full re-initialization instead of an additional yield. That allows the refreshing of data defined outside of the "while" loop.

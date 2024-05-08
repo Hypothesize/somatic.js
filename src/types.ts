@@ -3,7 +3,7 @@ import { Obj } from "@sparkwave/standard/utility"
 import { colorConstants } from "./common"
 
 /** General component */
-export type Component<Props = Obj> = ComponentBase<(
+export type Component<Props = any> = ComponentBase<(
 	// UIElement generic types below should not be generic type since we don't know their props in advance
 	| AsyncGenerator<UIElement, UIElement, ComponentArgs<Props>>
 	| Generator<UIElement, UIElement, ComponentArgs<Props>>
@@ -12,24 +12,24 @@ export type Component<Props = Obj> = ComponentBase<(
 ), Props>
 
 /** Stateful component */
-export type ComponentStateful<P = Obj> = ComponentBase<ElementGenerator<P>, P>
+export type ComponentStateful<P = any> = ComponentBase<ElementGenerator<P>, P>
 
 /** Async stateful component */
-export type ComponentAsyncStateful<P = Obj> = ComponentBase<ElementGeneratorAsync<P>, P>
+export type ComponentAsyncStateful<P = any> = ComponentBase<ElementGeneratorAsync<P>, P>
 
 /** Generic base component
  * @param props Component-specific properties passed to the component function
  * @param render Callback used for requesting re-rendering
  */
 export type ComponentBase<Ret, Props> = (
-	((props: ComponentArgs<Props>, /*render?: () => void*/) => Ret)
+	((props: ComponentArgs<Props>, render?: () => void) => Ret)
 	& ComponentOptions<Props>
 )
 
-export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P> | undefined>
-export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P> | undefined>
+export type ElementGenerator<P, Elt = UIElement> = Generator<Elt, Elt, ComponentArgs<P>>
+export type ElementGeneratorAsync<P, Elt = UIElement> = AsyncGenerator<Elt, Elt, ComponentArgs<P>>
 
-export type ComponentArgs<Props = Obj> = Props & { children?: Children, key?: string, uniqueKey?: string, id?: string }
+export type ComponentArgs<Props> = Props & { children?: Children, key?: string, id?: string }
 export type ComponentOptions<P> = {
 	name?: string
 	isPure?: boolean
