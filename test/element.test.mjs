@@ -207,8 +207,7 @@ describe("ELEMENT MODULE", function () {
 			assert.deepStrictEqual(updatedResult.element.props, {
 				// id: "root",
 				orientation: "vertical",
-				style: { padding: 0, margin: 0 },
-				uniqueKey: undefined
+				style: { padding: 0, margin: 0 }
 			})
 		})
 	})
