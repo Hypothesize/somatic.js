@@ -5,11 +5,12 @@ import {
 	ComponentElement, UIElement, ValueElement, IntrinsicElement, /*FragmentElement,*/
 	RenderingTrace
 } from "./types"
+import { getHierarchicalKey } from "./core"
 
 export const isEltProper = <P extends Obj>(elt?: UIElement<P>): elt is (IntrinsicElement<P> | ComponentElement<P>) =>
 	(hasValue(elt) && typeof elt === "object" && "type" in elt && (typeof elt.type === "string" || typeof elt.type === "function"))
 export const isIntrinsicElt = <P extends Obj>(elt: UIElement<P>): elt is IntrinsicElement<P> => isEltProper(elt) && typeof elt.type === "string"
-export const isFragmentElt = (elt: UIElement): boolean /*elt is FragmentElement*/ => isEltProper(elt) && elt.type === ""
+export const isFragmentElt = (elt: UIElement): elt is DocumentFragment => isEltProper(elt) && elt.type === ""
 // export const isFragmentElt = (elt: UIElement): elt is FragmentElement => isEltProper(elt) && elt.type === ""
 export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is ComponentElement<P> => isEltProper(elt) && typeof elt.type !== "string"
 
@@ -18,13 +19,37 @@ export const isComponentElt = <P extends Obj>(elt: UIElement<P>): elt is Compone
  */
 export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentElement<P>): Promise<ComponentEltAugmented<P>> {
 	const getNextAsync = async (generator: Generator<UIElement, UIElement> | AsyncGenerator<UIElement, UIElement>, newProps?: any): Promise<ComponentResult | undefined> => {
-		let nextInfo = await generator.next(newProps)
+		// console.log(`generator elt.props: ${JSON.stringify(elt.props)}`)
+		// We pass the key as a props to be used in the component generator
+		let nextInfo = await generator.next({ ...newProps, uniqueKey: elt.props.uniqueKey })
+
 		// If new props were passed, call next() on generator again so latest props is used
 		if (hasValue(newProps)) nextInfo = await generator.next()
 
 		const next: UIElement | undefined = (nextInfo.done === true)
 			? undefined
 			: nextInfo.value
+
+		// We re-attach the key to the element
+		if (typeof next === "object" && "props" in next && typeof next.props === "object") {
+			next.props = { ...next.props, uniqueKey: elt.props.uniqueKey }
+
+			// We re-attach the keys to its children
+			if ("children" in next && Array.isArray(next.children)) {
+				next.children = next.children.map((child: UIElement, i) => {
+					if (isComponentElt(child)) {
+						const uniqueKey = (isComponentElt(child) || isIntrinsicElt(child)) && "key" in child.props
+							? getHierarchicalKey(child, elt.props.uniqueKey as string | undefined, i)
+							: undefined
+						return { ...child, props: { ...child.props, uniqueKey: uniqueKey } }
+						// return child
+					}
+					else {
+						return child
+					}
+				})
+			}
+		}
 		return next !== undefined ? { generator, element: next } : undefined
 	}
 
@@ -41,7 +66,7 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 			}
 		}
 
-		const resultElt = await elt.type({ ...elt.props, children: elt.children }/*, { invalidate: ()=>{} }*/)
+		const resultElt = await elt.type({ ...elt.props, children: elt.children })
 		if (isGenerator(resultElt)) {
 			// No need to inject props again since call to elt.type above already used them
 			const next = await getNextAsync(resultElt)
@@ -54,6 +79,11 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 			}
 		}
 		else {
+			// We transmit the key to the result element
+			if(isComponentElt(resultElt)){
+				resultElt.props.uniqueKey = elt.props.uniqueKey
+			}
+
 			return { element: resultElt }
 		}
 	}
@@ -65,26 +95,34 @@ export async function updateResultAsync<P extends Obj = Obj>(elt: ComponentEleme
 export async function traceToLeafAsync(eltUI: UIElement): Promise<RenderingTrace> {
 	// let ret: RenderingTrace | undefined = undefined
 	if (isComponentElt(eltUI)) {
+		// console.log(`eltUI: ${JSON.stringify(eltUI)}`)
+
 		const eltUIAugmented = eltUI.result ? eltUI as ComponentEltAugmented : await updateResultAsync(eltUI)
+		// assert("uniqueKey" in eltUIAugmented.props, "Component element must have a uniqueKey prop")
+		// console.log(`eltUIAugmented: ${JSON.stringify(eltUIAugmented)}`)
+
 		const eltResult = eltUIAugmented.result.element
 
 		if (isComponentElt(eltResult)) {
 			const trace = await traceToLeafAsync(eltResult)
-			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement/* ?? "" */ }
+			// console.log(`leafElement1: ${JSON.stringify(trace.leafElement)}`)
+			return { componentElts: [eltUIAugmented, ...trace.componentElts], leafElement: trace.leafElement }
 		}
 		else { // intrinsic or value element
-			return { componentElts: [eltUIAugmented], leafElement: eltResult/* ?? "" */ }
+
+			// If the result of the trace is an intrinsic element but it come from a component (eltUIAugmented has a key property), we attach the key
+			if (isIntrinsicElt(eltResult)) {
+				eltResult.props = { ...eltResult.props, ...eltUIAugmented.props.uniqueKey !== undefined ? { uniqueKey: eltUIAugmented.props.uniqueKey } : {} }
+			}
+
+			// console.log(`leafElement2: ${JSON.stringify(eltResult)}`)
+			return { componentElts: [eltUIAugmented], leafElement: eltResult }
 		}
 	}
 	else { // eltUI is intrinsic or a value
-		return { componentElts: [], leafElement: eltUI/* ?? "" */ }
+		// console.log(`leafElement3: ${JSON.stringify(eltUI)}`)
+		return { componentElts: [], leafElement: eltUI }
 	}
-
-	// (self as any).leafElement = ret.leafElement
-	// console.assert(ret.leafElement !== undefined, `Leaf elt in traceToLeafAsync return is misisng`)
-	// console.log(`Returning leaf elt from traceToLeafAsync: ${ret.leafElement}`)
-
-	// return ret
 }
 
 /** Gets leaf (intrinsic or value) element */
@@ -117,6 +155,9 @@ export async function updateTraceAsync(trace: RenderingTrace, eltComp?: Componen
 	}
 
 	if (eltComp) {
+		// We ensure that the uniqueKey of the first element of the trace is the same as the uniqueKey of the incoming elt
+		eltComp.props = { ...eltComp.props, uniqueKey: firstElt.props.uniqueKey }
+
 		if (firstElt.type !== eltComp.type) { // invariant check
 			throw new Error(`updateTraceAsync: trace argument not compatible with component element argument`)
 		}
