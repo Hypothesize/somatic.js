@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.6.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.6.0...v2.6.1) (2024-05-09)
+
+
+### Bug Fixes
+
+* Required node version updated in Github actions release script ([666b782](https://www.github.com/Hypothesize/somatic.js/commit/666b7820fb02775c24f7c0a5340f4836b008877e))
+
 ## [2.6.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.5.1...v2.6.0) (2024-05-08)
 
 
