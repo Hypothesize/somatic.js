@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://www.github.com/Hypothesize/somatic.js/compare/v2.5.1...v2.6.0) (2024-05-08)
+
+
+### Features
+
+* 110:  Use globally unique key attributes instead of ids ([9d92d69](https://www.github.com/Hypothesize/somatic.js/commit/9d92d6946a1f819bb5059de7b776da34a6e05cd4))
+
 ### [2.5.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.5.0...v2.5.1) (2024-02-28)
 
 
