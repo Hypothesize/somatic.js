@@ -70,7 +70,7 @@ export interface RenderingTrace {
 	leafElement: IntrinsicElement | ValueElement
 }
 
-export type CSSProperties = { [k in keyof _CSSProperties]: CSSProperty<_CSSProperties[k]> }
+export type CSSProperties = { [k in keyof _CSSProperties]: any }
 interface _CSSProperties {
 	alignContent?: (
 		| "center"
