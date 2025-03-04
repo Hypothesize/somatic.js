@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.6.2](https://www.github.com/Hypothesize/somatic.js/compare/v2.6.1...v2.6.2) (2025-03-04)
+
+
+### Bug Fixes
+
+* Simplified typings ([e73ed88](https://www.github.com/Hypothesize/somatic.js/commit/e73ed888733a191cd64695344c80d7f28d3dc694))
+
 ### [2.6.1](https://www.github.com/Hypothesize/somatic.js/compare/v2.6.0...v2.6.1) (2024-05-09)
 
 
